@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>資訊管理與權限知識庫</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft JhengHei", Arial, sans-serif
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: #f4f6f9;
+            color: #1e293b
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #1e293b;
+            color: #fff;
+            flex-shrink: 0
+        }
+
+        .sidebar h2 {
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            background: #0f172a
+        }
+
+        .sidebar nav a {
+            display: block;
+            padding: 14px 20px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-left: 4px solid transparent
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #334155;
+            color: #fff;
+            border-left-color: #8b5cf6
+        }
+
+        .main {
+            flex: 1;
+            min-width: 0
+        }
+
+        header {
+            background: #fff;
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px #0000000d
+        }
+
+        .container {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1.2fr .8fr;
+            gap: 20px;
+            max-width: 1250px;
+            margin: auto
+        }
+
+        .panel {
+            background: #fff;
+            padding: 22px;
+            border-radius: 9px;
+            box-shadow: 0 2px 6px #0000000d
+        }
+
+        .panel h3 {
+            margin-bottom: 6px
+        }
+
+        .hint {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 18px
+        }
+
+        .role-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 18px
+        }
+
+        .role-btn {
+            padding: 9px 15px;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            border-radius: 20px;
+            cursor: pointer
+        }
+
+        .role-btn.active {
+            background: #8b5cf6;
+            color: #fff;
+            border-color: #8b5cf6
+        }
+
+        .matrix {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        .matrix th,
+        .matrix td {
+            padding: 11px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center
+        }
+
+        .matrix th:first-child,
+        .matrix td:first-child {
+            text-align: left
+        }
+
+        .allow {
+            color: #047857;
+            font-weight: bold
+        }
+
+        .deny {
+            color: #b91c1c
+        }
+
+        .role-note {
+            margin-top: 16px;
+            padding: 14px;
+            background: #f5f3ff;
+            border-left: 4px solid #8b5cf6;
+            line-height: 1.6
+        }
+
+        .user {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid #f1f5f9
+        }
+
+        .user:last-child {
+            border-bottom: 0
+        }
+
+        .user small {
+            color: #64748b
+        }
+
+        .btn {
+            padding: 7px 11px;
+            background: #8b5cf6;
+            color: #fff;
+            border: 0;
+            border-radius: 5px;
+            cursor: pointer;
+            white-space: nowrap
+        }
+
+        .btn:hover {
+            background: #7c3aed
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: #0f172acc;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 10
+        }
+
+        .modal.open {
+            display: flex
+        }
+
+        .modal-box {
+            background: #fff;
+            width: min(620px, 100%);
+            max-height: 88vh;
+            overflow: auto;
+            border-radius: 12px;
+            padding: 25px;
+            position: relative
+        }
+
+        .close {
+            position: absolute;
+            right: 14px;
+            top: 8px;
+            border: 0;
+            background: transparent;
+            font-size: 28px;
+            cursor: pointer
+        }
+
+        .permission-list {
+            display: grid;
+            gap: 9px;
+            margin: 18px 0
+        }
+
+        .permission-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border-radius: 6px
+        }
+
+        .security {
+            padding: 14px;
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            line-height: 1.7
+        }
+
+        .legend {
+            display: flex;
+            gap: 18px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #64748b
+        }
+
+        @media(max-width:900px) {
+            .container {
+                grid-template-columns: 1fr
+            }
+        }
+
+        @media(max-width:760px) {
+            body {
+                display: block
+            }
+
+            .sidebar {
+                width: 100%
+            }
+
+            .sidebar nav {
+                display: flex;
+                overflow: auto
+            }
+
+            .sidebar nav a {
+                white-space: nowrap;
+                border-left: 0;
+                border-bottom: 3px solid transparent
+            }
+
+            .container {
+                padding: 18px
+            }
+
+            header {
+                padding: 14px 18px
+            }
+
+            .matrix {
+                font-size: 13px
+            }
+
+            .matrix th,
+            .matrix td {
+                padding: 8px 4px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <h2>ERP 知識學習中心</h2>
+        <nav><a href="home.html">🏠 知識百科</a><a href="sales.html">📊 銷貨流程</a><a href="mis.html" class="active">⚙️
+                權限知識庫</a><a href="exam.html">📝 模擬考試</a><a href="game.html">🎮 紓壓遊戲</a></nav>
+    </aside>
+    <main class="main">
+        <header>
+            <h2>資訊管理與權限知識庫</h2><span>最小權限原則示範</span>
+        </header>
+        <div class="container">
+            <section class="panel">
+                <h3>角色權限矩陣模擬器</h3>
+                <p class="hint">切換角色，觀察各職務在 ERP 中可閱讀或操作的功能範圍。</p>
+                <div class="role-tabs" id="roleTabs"></div>
+                <table class="matrix">
+                    <thead>
+                        <tr>
+                            <th>ERP 功能</th>
+                            <th>閱讀</th>
+                            <th>新增</th>
+                            <th>修改</th>
+                            <th>核准</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixBody"></tbody>
+                </table>
+                <div class="legend"><span>✓ 允許</span><span>— 不開放</span></div>
+                <div class="role-note" id="roleNote"></div>
+            </section>
+            <section class="panel">
+                <h3>帳號與角色範例</h3>
+                <p class="hint">查看該角色的完整權限與資安注意事項。</p>
+                <div id="users"></div>
+            </section>
+        </div>
+    </main>
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-box"><button class="close" aria-label="關閉">×</button>
+            <h2 id="modalTitle"></h2>
+            <p class="hint" id="modalAccount"></p>
+            <div class="permission-list" id="permissionList"></div>
+            <div class="security"><strong>資安注意事項</strong>
+                <div id="securityText"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 權限值依序代表：閱讀、新增、修改、核准。
+        const roles = {
+            '業務': { note: '可維護自己負責的客戶與訂單，但折扣、退貨及信用額度異動須由主管核准。', security: '不得共用帳號；客戶個資僅限業務用途，匯出名單後應依公司規範妥善保管。', permissions: { '客戶資料': [1, 1, 1, 0], '報價與訂單': [1, 1, 1, 0], '庫存查詢': [1, 0, 0, 0], '應收帳款': [1, 0, 0, 0], '使用者管理': [0, 0, 0, 0] } },
+            '會計': { note: '可處理應收應付與會計資料；不得自行建立客戶訂單，以維持職務分離。', security: '關帳與傳票核准應啟用雙人覆核；包含銀行或稅務資料的畫面不得任意截圖外傳。', permissions: { '客戶資料': [1, 0, 0, 0], '報價與訂單': [1, 0, 0, 0], '庫存查詢': [1, 0, 0, 0], '應收帳款': [1, 1, 1, 1], '使用者管理': [0, 0, 0, 0] } },
+            '系統管理員': { note: '負責帳號、系統設定與事件調查；原則上不代替業務部門進行日常交易。', security: '管理員帳號須啟用多因素驗證並使用獨立帳號；高權限操作要保留日誌並定期由他人覆核。', permissions: { '客戶資料': [1, 0, 0, 0], '報價與訂單': [1, 0, 0, 0], '庫存查詢': [1, 0, 0, 0], '應收帳款': [1, 0, 0, 0], '使用者管理': [1, 1, 1, 1] } }
+        };
+        const accounts = [{ account: 'admin', name: '系統管理員', role: '系統管理員' }, { account: 'sales01', name: '張業務', role: '業務' }, { account: 'acc01', name: '陳會計', role: '會計' }]; let currentRole = '業務'; const modal = document.getElementById('modal');
+        function mark(v) { return `<span class="${v ? 'allow' : 'deny'}">${v ? '✓' : '—'}</span>` } function renderRole() { document.getElementById('roleTabs').innerHTML = Object.keys(roles).map(r => `<button class="role-btn ${r === currentRole ? 'active' : ''}" data-role="${r}">${r}</button>`).join(''); document.getElementById('matrixBody').innerHTML = Object.entries(roles[currentRole].permissions).map(([feature, p]) => `<tr><td>${feature}</td>${p.map(x => `<td>${mark(x)}</td>`).join('')}</tr>`).join(''); document.getElementById('roleNote').innerHTML = `<strong>${currentRole}角色說明：</strong>${roles[currentRole].note}` }
+        function renderUsers() { document.getElementById('users').innerHTML = accounts.map((u, i) => `<div class="user"><div><strong>${u.account}（${u.name}）</strong><br><small>角色：${u.role}</small></div><button class="btn" data-user="${i}">權限設定</button></div>`).join('') }
+        function openUser(index) { const u = accounts[index], r = roles[u.role]; document.getElementById('modalTitle').textContent = `${u.name}｜${u.role}權限`; document.getElementById('modalAccount').textContent = `帳號：${u.account}`; document.getElementById('permissionList').innerHTML = Object.entries(r.permissions).map(([f, p]) => `<div class="permission-item"><strong>${f}</strong><span>${['閱讀', '新增', '修改', '核准'].filter((_, i) => p[i]).join('、') || '無權限'}</span></div>`).join(''); document.getElementById('securityText').textContent = r.security; modal.classList.add('open'); modal.querySelector('.close').focus() }
+        document.getElementById('roleTabs').addEventListener('click', e => { if (e.target.dataset.role) { currentRole = e.target.dataset.role; renderRole() } }); document.getElementById('users').addEventListener('click', e => { if (e.target.dataset.user !== undefined) openUser(Number(e.target.dataset.user)) }); modal.addEventListener('click', e => { if (e.target === modal || e.target.closest('.close')) modal.classList.remove('open') }); document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.classList.remove('open') }); renderRole(); renderUsers();
+    </script>
+</body>
+
+</html>

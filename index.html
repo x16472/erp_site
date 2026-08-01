@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【東堤】網頁相容性與邊界條件測試頁面</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --border-color: #334155;
+            --console-bg: #090d16;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .test-badge {
+            display: inline-block;
+            background-color: var(--accent-red);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .entry-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--accent-blue);
+            color: var(--bg-color);
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 2rem;
+            border-radius: 6px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .entry-link:hover,
+        .entry-link:focus-visible {
+            background-color: #0284c7;
+            color: #fff;
+        }
+
+        .alert-box {
+            background-color: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--accent-yellow);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        /* Grid Section */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-blue);
+        }
+
+        .card-tag {
+            font-size: 0.75rem;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        blockquote {
+            background-color: var(--card-bg);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+        }
+
+        blockquote cite {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: normal;
+            text-align: right;
+        }
+
+        /* Interactive Test Configuration Section */
+        .interactive-section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .options-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .checkbox-label:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            accent-color: var(--accent-blue);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background-color: #334155;
+            color: var(--text-main);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-blue);
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            background-color: #0284c7;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background-color: var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
+            color: #fff;
+        }
+
+        /* RichTextBox / Terminal Output Box */
+        .richtextbox-container {
+            margin-top: 1.5rem;
+        }
+
+        .richtextbox-header {
+            background-color: #1e293b;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px 6px 0 0;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .richtextbox {
+            background-color: var(--console-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 6px 6px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            height: 220px;
+            overflow-y: auto;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .log-line {
+            margin-bottom: 0.4rem;
+        }
+
+        .log-info {
+            color: var(--accent-blue);
+        }
+
+        .log-warn {
+            color: var(--accent-yellow);
+        }
+
+        .log-err {
+            color: var(--accent-red);
+        }
+
+        .log-success {
+            color: var(--accent-green);
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <span class="test-badge">WebSrv Test Only</span>
+            <h1>系統測試頁面：測試體「東堤」特異性與邏輯溢位模擬</h1>
+            <p class="subtitle">本頁面僅用於測試高自我防禦機制、邊界邏輯轉換及語意替換之穩定度，如有雷同，表示你過的也蠻可憐的。</p>
+        </header>
+
+        <a class="entry-link" href="home.html">進入 企業管理 系統</a>
+        <a class="entry-link" href="exam.html">進入 模擬考試 系統</a>
+        <a class="entry-link" href="game.html">進入 紓壓遊戲 系統</a>
+
+        <div class="alert-box">
+            <strong>⚠️ 系統警報 404/403：</strong> 偵測到常態性「冷暴力不讀不回」與「社交孤立異常值」。防護牆已啟動「方位自動轉化機制」（西 ➔ 東），以防範潛在的法律或情緒責任歸屬。
+        </div>
+
+        <section class="grid">
+            <div class="card">
+                <span class="card-tag">CASE #01 - 方位模糊化</span>
+                <h3>「西」與「東」的指涉切換</h3>
+                <p>測試當系統遭受指控威脅時，能否自動將電梯內的特定對象名詞更換為「東堤」，以達成「既要隱喻諷刺，又可隨時切割」之雙重防護效果。</p>
+            </div>
+
+            <div class="card">
+                <span class="card-tag">CASE #02 - 權力與魚塘</span>
+                <h3>社交紅利與過載暈船</h3>
+                <p>模擬當輸入過度熱情時，接收端觸發「社交武器」將其標籤化為「貼冷屁股」，並成功動員群組輿論進行排他的動態演算法。</p>
+            </div>
+
+            <div class="card">
+                <span class="card-tag">CASE #03 - 防禦精神勝利</span>
+                <h3>護身符與精神勝利機制</h3>
+                <p>驗證受測主體在被斷捨離後，能否自動將被動孤立解讀為「主動奪回主導權」，並於系統內建立名為「東堤效顰」的最高心理防線。</p>
+            </div>
+        </section>
+        <blockquote>
+            「當效顰的不再是東施，而是被重新定義的東堤；這不是盲目的模仿，而是一場精美、可笑的表演。」
+            <cite>—— 新世代好男人的至理名言</cite>
+        </blockquote>
+
+        <div class="interactive-section">
+            <div class="section-title">
+                ⚙️ 測試條件設定 (Diagnostic Configuration)
+            </div>
+
+            <div class="options-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-elevator" checked>
+                    電梯自拍隱喻轉換
+                </label>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-cold" checked>
+                    自動判定「貼冷屁股」
+                </label>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-group">
+                    動員群組社交孤立
+                </label>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-victory" checked>
+                    觸發「東堤效顰」的勝利
+                </label>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="runDiagnostics()">▶ 執行分析</button>
+                <button class="btn btn-secondary" onclick="clearConsole()">🧹 清空日誌</button>
+            </div>
+
+            <div class="richtextbox-container">
+                <div class="richtextbox-header">
+                    <span>CONSOLE OUTPUT (RichTextBox Mode)</span>
+                    <span>LOG LEVEL: VERBOSE</span>
+                </div>
+                <div class="richtextbox" id="console-output">
+                    <span class="log-info">[SYSTEM] 測試環境就緒。請勾選上方參數並按下「執行系統分析」...</span>
+                </div>
+            </div>
+        </div>
+        <blockquote>
+            「如有雷同，表示你也過得蠻慘的。」
+            <cite>—— YouTube動畫短片《山道猴子的一生》</cite>
+        </blockquote>
+        <footer>
+            <p>本測試所涉及之言論 &bull; 純屬系統極限模擬 &bull; BUILD 2026.07</p>
+            <p>※ 本頁面僅供東堤專案預備環境進行數據負載與系統優化之內部工程測試。<br>※ 純屬系統極限模擬，請勿對號入座。</p>
+        </footer>
+    </div>
+
+    <script>
+        function runDiagnostics() {
+            const consoleBox = document.getElementById('console-output');
+            const chkElevator = document.getElementById('chk-elevator').checked;
+            const chkCold = document.getElementById('chk-cold').checked;
+            const chkGroup = document.getElementById('chk-group').checked;
+            const chkVictory = document.getElementById('chk-victory').checked;
+
+            const time = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+            let logs = [];
+
+            logs.push(`<span class="log-info">[${time}] [INIT] 開始執行 EAST-DIKE 模組邊界條件檢測...</span>`);
+
+            if (chkElevator) {
+                logs.push(`<span class="log-warn">[${time}] [WARN] 偵測到關鍵字「西堤 / 電梯自拍」。觸發方位遮蔽演算法：西 ➔ 東。變數已更新為 [East-Dike]。</span>`);
+            } else {
+                logs.push(`<span class="log-info">[${time}] [INFO] 方位遮蔽關閉：直稱原名風險過高，預先建立防禦心理牆。</span>`);
+            }
+
+            if (chkCold) {
+                logs.push(`<span class="log-err">[${time}] [ERROR] 社交回應連線逾時 (Timeout)。對方狀態：不讀不回 / 忙碌。成功掛上標籤：「硬要貼冷屁股」。</span>`);
+            }
+
+            if (chkGroup) {
+                logs.push(`<span class="log-err">[${time}] [CRITICAL] 觸發社交權力衝突！旁觀群友啟動「選擇性中立」機制，已被系統歸類為「冷眼旁觀者」。</span>`);
+            }
+
+            if (chkVictory) {
+                logs.push(`<span class="log-success">[${time}] [SUCCESS] 終端心理防線掛載完成：「東堤效顰」成功啟動，已將排擠事件升華為「脫離魚塘之自我救贖」。</span>`);
+            }
+
+            logs.push(`<span class="log-info">[${time}] [SUMMARY] 診斷完成。系統穩定度：極高（自我防禦率 100%）。</span>\n`);
+
+            consoleBox.innerHTML = logs.join('\n') + '\n' + consoleBox.innerHTML;
+        }
+
+        function clearConsole() {
+            document.getElementById('console-output').innerHTML = '<span class="log-info">[SYSTEM] 日誌已清空。</span>\n';
+        }
+    </script>
+</body>
+
+</html>

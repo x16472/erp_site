@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>ERP 模擬考試</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft JhengHei", Arial, sans-serif
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: #f4f6f9;
+            color: #1e293b
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #1e293b;
+            color: #fff;
+            flex-shrink: 0
+        }
+
+        .sidebar h2 {
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            background: #0f172a
+        }
+
+        .sidebar nav a {
+            display: block;
+            padding: 14px 20px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-left: 4px solid transparent
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #334155;
+            color: #fff;
+            border-left-color: #f59e0b
+        }
+
+        .main {
+            flex: 1;
+            min-width: 0
+        }
+
+        header {
+            background: #fff;
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px #0000000d
+        }
+
+        .container {
+            padding: 30px;
+            max-width: 900px;
+            margin: auto
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 10px;
+            padding: 28px;
+            box-shadow: 0 2px 8px #0000000d
+        }
+
+        .intro {
+            text-align: center;
+            padding: 20px
+        }
+
+        .intro .icon {
+            font-size: 58px
+        }
+
+        .intro h1 {
+            margin: 12px 0
+        }
+
+        .intro p {
+            color: #64748b;
+            line-height: 1.7;
+            max-width: 600px;
+            margin: 0 auto 20px
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 22px
+        }
+
+        .badge {
+            padding: 8px 12px;
+            background: #fffbeb;
+            color: #92400e;
+            border-radius: 18px
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #f59e0b;
+            color: #fff;
+            font-weight: bold
+        }
+
+        .btn:hover {
+            background: #d97706
+        }
+
+        .btn.secondary {
+            background: #64748b
+        }
+
+        .topline {
+            display: flex;
+            justify-content: space-between;
+            color: #64748b;
+            margin-bottom: 10px
+        }
+
+        .progress {
+            height: 9px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 24px
+        }
+
+        .progress span {
+            display: block;
+            height: 100%;
+            background: #f59e0b;
+            transition: .3s
+        }
+
+        .question {
+            font-size: 21px;
+            line-height: 1.5;
+            margin-bottom: 18px
+        }
+
+        .options {
+            display: grid;
+            gap: 11px
+        }
+
+        .option {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            text-align: left;
+            padding: 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 16px
+        }
+
+        .option:hover {
+            background: #fffbeb;
+            border-color: #f59e0b
+        }
+
+        .option.selected {
+            background: #fef3c7;
+            border-color: #f59e0b
+        }
+
+        .letter {
+            display: inline-grid;
+            place-items: center;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            flex-shrink: 0
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 24px
+        }
+
+        .result {
+            text-align: center
+        }
+
+        .score {
+            font-size: 60px;
+            font-weight: bold;
+            color: #f59e0b;
+            margin: 15px
+        }
+
+        .review {
+            margin-top: 24px;
+            text-align: left;
+            display: grid;
+            gap: 12px
+        }
+
+        .review-item {
+            padding: 14px;
+            border-radius: 8px;
+            background: #f8fafc;
+            border-left: 4px solid
+        }
+
+        .review-item.correct {
+            border-color: #10b981
+        }
+
+        .review-item.wrong {
+            border-color: #ef4444
+        }
+
+        .review-item p {
+            margin-top: 6px;
+            color: #64748b;
+            line-height: 1.5
+        }
+
+        .hidden {
+            display: none
+        }
+
+        @media(max-width:760px) {
+            body {
+                display: block
+            }
+
+            .sidebar {
+                width: 100%
+            }
+
+            .sidebar nav {
+                display: flex;
+                overflow: auto
+            }
+
+            .sidebar nav a {
+                white-space: nowrap;
+                border-left: 0;
+                border-bottom: 3px solid transparent
+            }
+
+            .container {
+                padding: 18px
+            }
+
+            header {
+                padding: 14px 18px
+            }
+
+            .panel {
+                padding: 20px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <h2>ERP 知識學習中心</h2>
+        <nav><a href="home.html">🏠 知識百科</a><a href="sales.html">📊 銷貨流程</a><a href="mis.html">⚙️ 權限知識庫</a><a
+                href="exam.html" class="active">📝 模擬考試</a><a href="game.html">🎮 紓壓遊戲</a></nav>
+    </aside>
+    <main class="main">
+        <header>
+            <h2>ERP 知識模擬考試</h2><span id="bestLabel">最佳成績：尚無</span>
+        </header>
+        <div class="container">
+            <section class="panel intro" id="intro">
+                <div class="icon">📝</div>
+                <h1>準備檢視學習成果</h1>
+                <p>共 6 題單選題，內容涵蓋銷貨流程、庫存、會計結轉與資訊權限。作答完可查看每題解析並重新挑戰。</p>
+                <div class="stats"><span class="badge">6 題單選</span><span class="badge">不限時間</span><span class="badge">80
+                        分過關</span></div><button class="btn" id="startBtn">開始作答</button>
+            </section>
+            <section class="panel hidden" id="quiz">
+                <div class="topline"><span id="counter"></span><span id="answered"></span></div>
+                <div class="progress"><span id="bar"></span></div>
+                <h2 class="question" id="question"></h2>
+                <div class="options" id="options"></div>
+                <div class="actions"><button class="btn secondary" id="prevBtn">上一題</button><button class="btn"
+                        id="nextBtn">下一題</button></div>
+            </section>
+            <section class="panel result hidden" id="result">
+                <h1 id="resultTitle"></h1>
+                <div class="score" id="score"></div>
+                <p id="resultText"></p><button class="btn" id="retryBtn" style="margin-top:18px">重新挑戰</button>
+                <div class="review" id="review"></div>
+            </section>
+        </div>
+    </main>
+    <script>
+        const questions = [
+            { q: '客戶接受報價後，通常下一個正式流程是什麼？', o: ['盤點', '建立訂單', '月底結轉', '建立帳號'], a: 1, e: '訂單代表客戶已確認購買，是備貨與後續出貨的依據。' },
+            { q: '銷貨單確認後，最可能同時影響哪些資料？', o: ['庫存與應收帳款', '員工出勤與薪資', '網站流量與廣告', '帳號密碼與權限'], a: 0, e: '銷貨會反映商品離庫，並形成向客戶收款的應收帳款。' },
+            { q: '「最小權限原則」的正確意思是？', o: ['每個人都只有讀取權', '主管擁有全部權限', '只給完成職務所需的最低權限', '每月刪除所有帳號'], a: 2, e: '權限應以職務需求為基礎，降低誤用或帳號遭冒用時的風險。' },
+            { q: '月底結轉前，哪一項最適合優先確認？', o: ['瀏覽器主題顏色', '單據完整且帳務已核對', '員工大頭照', '印表機品牌'], a: 1, e: '結轉前應確認交易單據、庫存、應收應付等資料完整且正確。' },
+            { q: '帳面庫存扣除已配置給訂單的數量，稱為什麼？', o: ['安全庫存', '報廢量', '可用量', '採購量'], a: 2, e: '可用量代表目前還能承諾給新訂單的數量。' },
+            { q: '高權限管理員帳號最適合採取哪項措施？', o: ['多人共用以免忘記', '停用操作日誌', '啟用多因素驗證並保留稽核紀錄', '將密碼貼在螢幕旁'], a: 2, e: '獨立帳號、多因素驗證與不可任意竄改的操作日誌是重要保護措施。' }];
+        let index = 0, answers = []; const intro = document.getElementById('intro'), quiz = document.getElementById('quiz'), result = document.getElementById('result'); function best() { const v = localStorage.getItem('erpExamBest'); document.getElementById('bestLabel').textContent = `最佳成績：${v === null ? '尚無' : v + ' 分'}` } function showQuestion() { const x = questions[index]; document.getElementById('counter').textContent = `第 ${index + 1} / ${questions.length} 題`; document.getElementById('answered').textContent = `已作答 ${questions.filter((_, i) => answers[i] !== undefined).length} 題`; document.getElementById('bar').style.width = `${(index + 1) / questions.length * 100}%`; document.getElementById('question').textContent = x.q; document.getElementById('options').innerHTML = x.o.map((o, i) => `<button class="option ${answers[index] === i ? 'selected' : ''}" data-choice="${i}"><span class="letter">${String.fromCharCode(65 + i)}</span><span>${o}</span></button>`).join(''); document.getElementById('prevBtn').disabled = index === 0; document.getElementById('nextBtn').textContent = index === questions.length - 1 ? '交卷' : '下一題' } function start() { index = 0; answers = []; intro.classList.add('hidden'); result.classList.add('hidden'); quiz.classList.remove('hidden'); showQuestion() } function finish() { if (questions.some((_, i) => answers[i] === undefined)) { document.getElementById('question').textContent = '請先完成所有題目再交卷。'; return } const correct = questions.filter((x, i) => answers[i] === x.a).length, score = Math.round(correct / questions.length * 100), stored = localStorage.getItem('erpExamBest'), old = Number(stored || 0); if (stored === null || score > old) localStorage.setItem('erpExamBest', score); quiz.classList.add('hidden'); result.classList.remove('hidden'); document.getElementById('resultTitle').textContent = score >= 80 ? '恭喜通過！' : '再複習一下就會更好'; document.getElementById('score').textContent = `${score} 分`; document.getElementById('resultText').textContent = `答對 ${correct} 題，共 ${questions.length} 題。`; document.getElementById('review').innerHTML = questions.map((x, i) => `<div class="review-item ${answers[i] === x.a ? 'correct' : 'wrong'}"><strong>第 ${i + 1} 題：${answers[i] === x.a ? '答對' : '答錯'}｜正解：${x.o[x.a]}</strong><p>${x.e}</p></div>`).join(''); best() }
+        document.getElementById('startBtn').addEventListener('click', start); document.getElementById('retryBtn').addEventListener('click', start); document.getElementById('options').addEventListener('click', e => { const b = e.target.closest('[data-choice]'); if (b) { answers[index] = Number(b.dataset.choice); showQuestion() } }); document.getElementById('prevBtn').addEventListener('click', () => { if (index > 0) { index--; showQuestion() } }); document.getElementById('nextBtn').addEventListener('click', () => { if (index === questions.length - 1) finish(); else { index++; showQuestion() } }); best();
+    </script>
+</body>
+
+</html>
