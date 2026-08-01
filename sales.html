@@ -1,412 +1,95 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>銷貨模組百科與模擬器</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: "Microsoft JhengHei", Arial, sans-serif
-        }
-
-        body {
-            display: flex;
-            min-height: 100vh;
-            background: #f4f6f9;
-            color: #1e293b
-        }
-
-        .sidebar {
-            width: 240px;
-            background: #1e293b;
-            color: #fff;
-            flex-shrink: 0
-        }
-
-        .sidebar h2 {
-            padding: 20px;
-            text-align: center;
-            font-size: 18px;
-            background: #0f172a
-        }
-
-        .sidebar nav a {
-            display: block;
-            padding: 14px 20px;
-            color: #94a3b8;
-            text-decoration: none;
-            border-left: 4px solid transparent
-        }
-
-        .sidebar nav a:hover,
-        .sidebar nav a.active {
-            background: #334155;
-            color: #fff;
-            border-left-color: #10b981
-        }
-
-        .main {
-            flex: 1;
-            min-width: 0
-        }
-
-        header {
-            background: #fff;
-            padding: 16px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px #0000000d
-        }
-
-        .container {
-            padding: 30px;
-            max-width: 1250px;
-            margin: auto
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px
-        }
-
-        .btn {
-            padding: 9px 16px;
-            border: 0;
-            border-radius: 5px;
-            cursor: pointer;
-            background: #10b981;
-            color: #fff
-        }
-
-        .btn:hover {
-            background: #059669
-        }
-
-        .btn.secondary {
-            background: #64748b
-        }
-
-        .panel {
-            background: #fff;
-            border-radius: 9px;
-            padding: 20px;
-            box-shadow: 0 2px 6px #0000000d;
-            margin-bottom: 20px;
-            overflow: auto
-        }
-
-        .panel h3 {
-            margin-bottom: 6px
-        }
-
-        .hint {
-            color: #64748b;
-            font-size: 14px;
-            margin-bottom: 16px
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 760px
-        }
-
-        th,
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-            text-align: left
-        }
-
-        th {
-            background: #f8fafc;
-            color: #475569
-        }
-
-        tbody tr {
-            cursor: pointer
-        }
-
-        tbody tr:hover,
-        tbody tr.selected {
-            background: #ecfdf5
-        }
-
-        .status {
-            padding: 4px 9px;
-            border-radius: 12px;
-            font-size: 12px
-        }
-
-        .ok {
-            background: #d1fae5;
-            color: #065f46
-        }
-
-        .wait {
-            background: #fef3c7;
-            color: #92400e
-        }
-
-        .detail {
-            display: none
-        }
-
-        .detail.open {
-            display: block
-        }
-
-        .flow {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin: 18px 0
-        }
-
-        .step {
-            padding: 13px 16px;
-            background: #f1f5f9;
-            border-radius: 8px;
-            border: 2px solid transparent
-        }
-
-        .step.done {
-            background: #d1fae5;
-            border-color: #10b981
-        }
-
-        .step.current {
-            background: #fef3c7;
-            border-color: #f59e0b
-        }
-
-        .arrow {
-            color: #94a3b8;
-            font-size: 20px
-        }
-
-        .terms {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 10px
-        }
-
-        .term {
-            padding: 12px;
-            background: #f8fafc;
-            border-left: 3px solid #10b981
-        }
-
-        .term strong {
-            display: block;
-            margin-bottom: 4px
-        }
-
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: #0f172acc;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 10
-        }
-
-        .modal.open {
-            display: flex
-        }
-
-        .modal-box {
-            background: #fff;
-            width: min(600px, 100%);
-            border-radius: 12px;
-            padding: 25px;
-            position: relative;
-            max-height: 90vh;
-            overflow: auto
-        }
-
-        .close {
-            position: absolute;
-            right: 14px;
-            top: 10px;
-            border: 0;
-            background: transparent;
-            font-size: 28px;
-            cursor: pointer
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-top: 18px
-        }
-
-        .field label {
-            display: block;
-            margin-bottom: 5px;
-            color: #475569;
-            font-size: 14px
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            padding: 9px;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px
-        }
-
-        .full {
-            grid-column: 1/-1
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 18px
-        }
-
-        .toast {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            background: #064e3b;
-            color: #fff;
-            padding: 12px 18px;
-            border-radius: 7px;
-            display: none
-        }
-
-        .toast.show {
-            display: block
-        }
-
-        @media(max-width:760px) {
-            body {
-                display: block
-            }
-
-            .sidebar {
-                width: 100%
-            }
-
-            .sidebar nav {
-                display: flex;
-                overflow: auto
-            }
-
-            .sidebar nav a {
-                white-space: nowrap;
-                border-left: 0;
-                border-bottom: 3px solid transparent
-            }
-
-            .container {
-                padding: 18px
-            }
-
-            header {
-                padding: 14px 18px
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr
-            }
-
-            .full {
-                grid-column: auto
-            }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>收費營運流程｜福祿貝爾營運中心</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <aside class="sidebar">
-        <h2>ERP 知識學習中心</h2>
-        <nav><a href="home.html">🏠 知識百科</a><a href="sales.html" class="active">📊 銷貨流程</a><a href="mis.html">⚙️
-                權限知識庫</a><a href="exam.html">📝 模擬考試</a><a href="game.html">🎮 紓壓遊戲</a></nav>
+  <div class="app">
+    <aside class="sidebar"><a class="brand" href="index.html"><img class="brand-logo" src="static/0-3-08.png" alt="福祿貝爾標誌"><span>福祿貝爾<small>園務營運中心</small></span></a>
+            <nav class="nav"><a href="index.html">園務總覽</a><a href="home.html">資料查閱</a><a class="active"
+          href="sales.html">托育收費</a><a href="mis.html">人事權限</a><a href="exam.html">園務研習</a><a href="game.html">團隊小憩</a>
+      </nav>
     </aside>
     <main class="main">
-        <header>
-            <h2>銷貨流程互動說明表</h2><span>點選單據查看生命週期</span>
-        </header>
-        <div class="container">
-            <div class="toolbar"><button class="btn" id="addBtn">＋ 新增銷貨單</button><button class="btn secondary"
-                    id="filterBtn">只看待處理</button><button class="btn secondary" id="resetBtn">顯示全部</button></div>
-            <section class="panel">
-                <h3>模擬銷貨單據</h3>
-                <p class="hint">資料僅儲存在這台裝置的瀏覽器 LocalStorage。</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>單據編號</th>
-                            <th>客戶名稱</th>
-                            <th>日期</th>
-                            <th>金額</th>
-                            <th>目前階段</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rows"></tbody>
-                </table>
-            </section>
-            <section class="panel detail" id="detail">
-                <h3 id="detailTitle"></h3>
-                <p class="hint" id="detailMeta"></p>
-                <div class="flow" id="flow"></div>
-                <div class="terms">
-                    <div class="term"><strong>報價</strong>向客戶提出品項、價格與有效期限。</div>
-                    <div class="term"><strong>訂單</strong>客戶確認購買後，成為備貨依據。</div>
-                    <div class="term"><strong>出貨</strong>商品離庫並留下物流與批號紀錄。</div>
-                    <div class="term"><strong>請款</strong>建立應收帳款並追蹤收款狀態。</div>
-                </div>
-            </section>
+      <header class="topbar">
+        <div><span class="top-kicker">托育財務</span>
+          <h1>幼兒收費資料生命週期</h1>
+        </div><span class="api-state" id="apiState">載入中</span>
+      </header>
+      <div class="container corporate-container">
+        <section class="section-head">
+          <div><span class="eyebrow">PAYMENT OPERATIONS</span>
+            <h2>從學期規則到家長繳費核對</h2>
+            <p>依 SQL Server 實際資料呈現學費、餐點、活動、交通與減免的作業流程。</p>
+          </div><button class="btn" id="addBtn">＋ 建立檢核練習</button>
+        </section>
+        <div class="split process-layout">
+          <section class="panel table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>流程</th>
+                  <th>資料表</th>
+                  <th>目前筆數</th>
+                  <th>說明</th>
+                </tr>
+              </thead>
+              <tbody id="rows">
+                <tr>
+                  <td colspan="4">正在讀取資料庫…</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="panel"><span class="eyebrow">PROCESS DETAIL</span>
+            <h2 id="detailTitle">選取流程節點</h2>
+            <p class="hint" id="detailMeta">查看此節點在整體收費作業中的位置。</p>
+            <div class="vertical-flow" id="flow"></div>
+          </section>
         </div>
+        <section class="section-head">
+          <div><span class="eyebrow">PRACTICE CASES</span>
+            <h2>收費檢核練習</h2>
+            <p>模擬新學期收費設定，僅儲存在瀏覽器，不會寫入園務資料庫。</p>
+          </div>
+        </section>
+        <div class="grid" id="practice">
+          <div class="empty">尚未建立練習案件。</div>
+        </div>
+      </div>
     </main>
-    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
-        <form class="modal-box" id="salesForm"><button class="close" type="button" aria-label="關閉">×</button>
-            <h2 id="formTitle">新增模擬銷貨單</h2>
-            <div class="form-grid">
-                <div class="field"><label for="customer">客戶名稱</label><input id="customer" required maxlength="40"
-                        placeholder="例如：台灣範例公司"></div>
-                <div class="field"><label for="date">單據日期</label><input id="date" type="date" required></div>
-                <div class="field"><label for="amount">總金額</label><input id="amount" type="number" required min="1"
-                        step="1" placeholder="10000"></div>
-                <div class="field"><label for="stage">目前階段</label><select id="stage">
-                        <option>報價</option>
-                        <option>訂單</option>
-                        <option>出貨</option>
-                        <option>請款</option>
-                    </select></div>
-                <div class="field full"><label for="note">備註</label><input id="note" maxlength="80" placeholder="此欄可留白">
-                </div>
-            </div>
-            <div class="form-actions"><button type="button" class="btn secondary close-action">取消</button><button
-                    type="submit" class="btn">儲存到瀏覽器</button></div>
-        </form>
-    </div>
-    <div class="toast" id="toast" role="status"></div>
-    <script>
-        // 預設教學資料與使用者新增資料合併呈現。
-        const defaults = [{ id: 'SA-2026030101', customer: '成功科技股份有限公司', date: '2026-03-01', amount: 150000, stage: '請款', note: '已完成出貨並進入請款' }, { id: 'SA-2026030102', customer: '億得科技', date: '2026-03-02', amount: 88000, stage: '訂單', note: '等待庫存配置' }, { id: 'SA-2026030201', customer: '第一企業', date: '2026-03-02', amount: 320000, stage: '出貨', note: '倉庫揀貨中' }];
-        const storageKey = 'erpSalesSimulatorRecords'; let custom = []; try { custom = JSON.parse(localStorage.getItem(storageKey)) || [] } catch (e) { custom = [] } let filter = 'all'; const stages = ['報價', '訂單', '出貨', '請款'], rows = document.getElementById('rows'), detail = document.getElementById('detail'), modal = document.getElementById('modal');
-        function allRecords() { return [...defaults, ...custom] } function money(n) { return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(n) } function render() { const list = allRecords().filter(x => filter === 'all' || x.stage !== '請款'); rows.innerHTML = list.map(x => `<tr data-id="${x.id}"><td>${x.id}</td><td>${escapeHtml(x.customer)}</td><td>${x.date.replaceAll('-', '/')}</td><td>${money(x.amount)}</td><td><span class="status ${x.stage === '請款' ? 'ok' : 'wait'}">${x.stage}</span></td><td><button class="btn view" type="button">查看流程</button></td></tr>`).join('') || '<tr><td colspan="6">目前沒有符合條件的資料。</td></tr>' }
-        function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v; return d.innerHTML } function showDetail(id) { const x = allRecords().find(r => r.id === id); if (!x) return; document.querySelectorAll('tbody tr').forEach(r => r.classList.toggle('selected', r.dataset.id === id)); document.getElementById('detailTitle').textContent = `${x.id}｜${x.customer}`; document.getElementById('detailMeta').textContent = `${x.note || '無備註'}；目前進度：${x.stage}`; const current = stages.indexOf(x.stage); document.getElementById('flow').innerHTML = stages.map((s, i) => `${i ? '<span class="arrow">→</span>' : ''}<div class="step ${i < current ? 'done' : i === current ? 'current' : ''}"><strong>${s}</strong><br><small>${i < current ? '已完成' : i === current ? '目前階段' : '尚未進行'}</small></div>`).join(''); detail.classList.add('open'); detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) }
-        function openModal() { document.getElementById('salesForm').reset(); document.getElementById('date').value = new Date().toISOString().slice(0, 10); modal.classList.add('open'); document.getElementById('customer').focus() } function closeModal() { modal.classList.remove('open') } function notify(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200) }
-        rows.addEventListener('click', e => { const row = e.target.closest('tr[data-id]'); if (row) showDetail(row.dataset.id) }); document.getElementById('addBtn').addEventListener('click', openModal); document.getElementById('filterBtn').addEventListener('click', () => { filter = 'pending'; render() }); document.getElementById('resetBtn').addEventListener('click', () => { filter = 'all'; render() }); modal.addEventListener('click', e => { if (e.target === modal || e.target.closest('.close,.close-action')) closeModal() }); document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal() }); document.getElementById('salesForm').addEventListener('submit', e => { e.preventDefault(); const stamp = Date.now().toString().slice(-6); const record = { id: `SA-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${stamp}`, customer: document.getElementById('customer').value.trim(), date: document.getElementById('date').value, amount: Number(document.getElementById('amount').value), stage: document.getElementById('stage').value, note: document.getElementById('note').value.trim() }; custom.unshift(record); localStorage.setItem(storageKey, JSON.stringify(custom)); filter = 'all'; render(); closeModal(); showDetail(record.id); notify(`已新增 ${record.id}`) }); render();
-    </script>
+  </div>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <form class="modal-box" id="form"><button type="button" class="close" aria-label="關閉">×</button><span
+        class="eyebrow">LOCAL SIMULATION</span>
+      <h2 id="formTitle">建立托育收費檢核練習</h2>
+      <p class="hint">此資料只供園務人員演練，與正式資料庫完全隔離。</p>
+      <div class="form-grid"><label class="field">案件名稱<input name="name" maxlength="40" placeholder="例如：新學期收費設定"
+            required></label><label class="field">負責單位<input name="department" maxlength="30" placeholder="例如：財務部"
+            required></label><label class="field full">目前節點<select name="stage" id="stageSelect"
+            required></select></label></div>
+      <div class="actions"><button class="btn" type="submit">儲存練習案件</button><button class="btn light close-action"
+          type="button">取消</button></div>
+    </form>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script>
+    let stages = []; const storageKey = 'frobel-payment-practice';
+    const esc = value => { const node = document.createElement('div'); node.textContent = value; return node.innerHTML }; const number = value => new Intl.NumberFormat('zh-TW').format(value);
+    function renderProcess() { rows.innerHTML = stages.map(item => `<tr data-id="${item.id}" tabindex="0"><td><b>${esc(item.stage)}</b></td><td><code>${esc(item.table)}</code></td><td>${number(item.count)}</td><td>${esc(item.description)}</td></tr>`).join(''); stageSelect.innerHTML = stages.map(item => `<option value="${item.id}">${esc(item.stage)}</option>`).join('') }
+    function showStage(id) { const current = stages.find(item => item.id === id); if (!current) return; detailTitle.textContent = current.stage; detailMeta.textContent = `${current.table} · 目前 ${number(current.count)} 筆資料`; flow.innerHTML = stages.map(item => `<div class="flow-node ${item.id === id ? 'current' : ''}"><span>${item.id}</span><div><b>${esc(item.stage)}</b><small>${esc(item.description)}</small></div></div>`).join('') }
+    function practices() { try { return JSON.parse(localStorage.getItem(storageKey)) || [] } catch { return [] } }
+    function renderPractice() { const items = practices(); practice.innerHTML = items.length ? items.map(item => { const stage = stages.find(step => step.id === item.stage); return `<article class="card"><span class="tag">${esc(stage?.stage || '流程練習')}</span><h3>${esc(item.name)}</h3><p>${esc(item.department)} · ${esc(item.date)}</p></article>` }).join('') : '<div class="empty">尚未建立練習案件。</div>' }
+    fetch('/api/operations').then(r => { if (!r.ok) throw new Error(); return r.json() }).then(response => { stages = response.data; renderProcess(); renderPractice(); showStage(stages[0]?.id); apiState.textContent = 'SQL Server 即時資料'; apiState.classList.add('ok') }).catch(() => { rows.innerHTML = '<tr><td colspan="4">無法取得收費流程資料。</td></tr>'; apiState.textContent = '資料庫未連線' });
+    rows.addEventListener('click', event => { const row = event.target.closest('[data-id]'); if (row) showStage(row.dataset.id) }); rows.addEventListener('keydown', event => { if (event.key === 'Enter') event.target.click() });
+    addBtn.onclick = () => { if (!stages.length) return; form.reset(); modal.classList.add('open'); form.name.focus() }; document.addEventListener('click', event => { if (event.target === modal || event.target.closest('.close,.close-action')) modal.classList.remove('open') });
+    form.onsubmit = event => { event.preventDefault(); const item = Object.fromEntries(new FormData(form)); item.date = new Date().toLocaleDateString('zh-TW'); const items = practices(); items.unshift(item); localStorage.setItem(storageKey, JSON.stringify(items.slice(0, 12))); renderPractice(); modal.classList.remove('open'); toast.textContent = '練習案件已儲存在本機'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2200) };
+  </script>
 </body>
 
 </html>

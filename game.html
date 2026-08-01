@@ -1,274 +1,49 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>ERP 配對紓壓遊戲</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: "Microsoft JhengHei", Arial, sans-serif
-        }
-
-        body {
-            display: flex;
-            min-height: 100vh;
-            background: #f4f6f9;
-            color: #1e293b
-        }
-
-        .sidebar {
-            width: 240px;
-            background: #1e293b;
-            color: #fff;
-            flex-shrink: 0
-        }
-
-        .sidebar h2 {
-            padding: 20px;
-            text-align: center;
-            font-size: 18px;
-            background: #0f172a
-        }
-
-        .sidebar nav a {
-            display: block;
-            padding: 14px 20px;
-            color: #94a3b8;
-            text-decoration: none;
-            border-left: 4px solid transparent
-        }
-
-        .sidebar nav a:hover,
-        .sidebar nav a.active {
-            background: #334155;
-            color: #fff;
-            border-left-color: #ec4899
-        }
-
-        .main {
-            flex: 1;
-            min-width: 0
-        }
-
-        header {
-            background: #fff;
-            padding: 16px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px #0000000d
-        }
-
-        .container {
-            padding: 30px;
-            max-width: 950px;
-            margin: auto
-        }
-
-        .game-panel {
-            background: #fff;
-            border-radius: 12px;
-            padding: 28px;
-            box-shadow: 0 2px 8px #0000000d
-        }
-
-        .intro {
-            text-align: center;
-            margin-bottom: 22px
-        }
-
-        .intro h1 {
-            margin-bottom: 8px
-        }
-
-        .intro p {
-            color: #64748b
-        }
-
-        .statusbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin: 20px 0
-        }
-
-        .stats {
-            display: flex;
-            gap: 10px
-        }
-
-        .stat {
-            padding: 9px 13px;
-            background: #fdf2f8;
-            color: #9d174d;
-            border-radius: 18px
-        }
-
-        .btn {
-            padding: 10px 17px;
-            border: 0;
-            border-radius: 6px;
-            background: #ec4899;
-            color: #fff;
-            cursor: pointer;
-            font-weight: bold
-        }
-
-        .btn:hover {
-            background: #db2777
-        }
-
-        .board {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            perspective: 900px
-        }
-
-        .card {
-            height: 115px;
-            border: 0;
-            background: transparent;
-            cursor: pointer;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform .45s
-        }
-
-        .card.flipped,
-        .card.matched {
-            transform: rotateY(180deg)
-        }
-
-        .face {
-            position: absolute;
-            inset: 0;
-            display: grid;
-            place-items: center;
-            padding: 9px;
-            border-radius: 9px;
-            backface-visibility: hidden;
-            box-shadow: 0 2px 7px #0000001a
-        }
-
-        .front {
-            background: linear-gradient(135deg, #ec4899, #8b5cf6);
-            color: #fff;
-            font-size: 30px
-        }
-
-        .back {
-            background: #fff;
-            border: 2px solid #f9a8d4;
-            transform: rotateY(180deg);
-            text-align: center;
-            font-weight: bold;
-            line-height: 1.4
-        }
-
-        .card.matched .back {
-            background: #dcfce7;
-            border-color: #22c55e;
-            color: #166534
-        }
-
-        .message {
-            text-align: center;
-            padding: 18px;
-            margin-top: 20px;
-            border-radius: 8px;
-            background: #fdf2f8;
-            color: #9d174d;
-            display: none
-        }
-
-        .message.show {
-            display: block
-        }
-
-        @media(max-width:760px) {
-            body {
-                display: block
-            }
-
-            .sidebar {
-                width: 100%
-            }
-
-            .sidebar nav {
-                display: flex;
-                overflow: auto
-            }
-
-            .sidebar nav a {
-                white-space: nowrap;
-                border-left: 0;
-                border-bottom: 3px solid transparent
-            }
-
-            .container {
-                padding: 16px
-            }
-
-            header {
-                padding: 14px 18px
-            }
-
-            .game-panel {
-                padding: 17px
-            }
-
-            .board {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 8px
-            }
-
-            .card {
-                height: 100px
-            }
-
-            .back {
-                font-size: 13px
-            }
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>資料名詞配對｜福祿貝爾營運中心</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <aside class="sidebar">
-        <h2>ERP 知識學習中心</h2>
-        <nav><a href="home.html">🏠 知識百科</a><a href="sales.html">📊 銷貨流程</a><a href="mis.html">⚙️ 權限知識庫</a><a
-                href="exam.html">📝 模擬考試</a><a href="game.html" class="active">🎮 紓壓遊戲</a></nav>
-    </aside>
-    <main class="main">
-        <header>
-            <h2>ERP 名詞配對紓壓遊戲</h2><span id="best">最佳紀錄：尚無</span>
-        </header>
-        <div class="container">
-            <section class="game-panel">
-                <div class="intro">
-                    <h1>翻牌找出相符的名詞與解釋</h1>
-                    <p>每組由一張 ERP 名詞卡與一張用途說明卡組成，放慢步調，也順便複習。</p>
+    <div class="app">
+        <aside class="sidebar"><a class="brand" href="index.html"><img class="brand-logo" src="static/0-3-08.png" alt="福祿貝爾標誌"><span>福祿貝爾<small>園務營運中心</small></span></a>
+            <nav class="nav"><a href="index.html">園務總覽</a><a href="home.html">資料查閱</a><a href="sales.html">托育收費</a><a
+                    href="mis.html">人事權限</a><a href="exam.html">園務研習</a><a class="active" href="game.html">團隊小憩</a>
+            </nav>
+        </aside>
+        <main class="main">
+            <header class="topbar">
+                <h1>幼稚園園務名詞配對</h1><span class="api-state ok" id="apiState">遊戲就緒</span>
+            </header>
+            <div class="container">
+                <section class="section-head">
+                    <div><span class="eyebrow">MEMORY BREAK</span>
+                        <h2>翻開卡片，找出四組流程搭檔</h2>
+                        <p>沒有倒數、沒有壓力，讓腦袋換個節奏。</p>
+                    </div><button class="btn light" id="restart">重新洗牌</button>
+                </section>
+                <div class="split">
+                    <section class="panel">
+                        <div class="game-board" id="board"></div>
+                    </section>
+                    <section class="panel"><span class="eyebrow">YOUR RUN</span>
+                        <h2><span id="moves">0</span> 次翻牌</h2>
+                        <p class="hint">已完成 <span id="pairs">0</span> / 4 組</p>
+                        <div class="progress" style="margin:18px 0"><span id="bar" style="width:0"></span></div>
+                        <p id="message">先從任何一張卡片開始。</p>
+                        <div class="panel"><b>配對提示</b>
+                            <p class="hint">每組由「流程名詞」與「功能說明」組成。</p>
+                        </div>
+                    </section>
                 </div>
-                <div class="statusbar">
-                    <div class="stats"><span class="stat" id="moves">翻牌：0 次</span><span class="stat" id="time">時間：0
-                            秒</span><span class="stat" id="pairs">配對：0 / 6</span></div><button class="btn"
-                        id="restart">重新洗牌</button>
-                </div>
-                <div class="board" id="board"></div>
-                <div class="message" id="message"></div>
-            </section>
-        </div>
-    </main>
-    <script>
-        const pairs = [['銷貨單', '記錄銷售並影響庫存與應收'], ['訂單', '客戶確認購買後的備貨依據'], ['可用量', '帳面量扣除已配置數量'], ['月底結轉', '彙整當期交易並銜接下期'], ['最小權限', '只開放完成職務所需功能'], ['操作日誌', '記錄誰在何時做了什麼']]; let deck = [], first = null, second = null, locked = false, moves = 0, matched = 0, seconds = 0, timer = null, started = false; const board = document.getElementById('board'); function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]] } return a } function reset() { clearInterval(timer); timer = null; started = false; seconds = 0; moves = 0; matched = 0; first = second = null; locked = false; deck = shuffle(pairs.flatMap((p, id) => [{ id, text: p[0], kind: '名詞' }, { id, text: p[1], kind: '說明' }])); board.innerHTML = deck.map((c, i) => `<button class="card" data-index="${i}" aria-label="未翻開的卡片"><span class="face front">?</span><span class="face back">${c.text}</span></button>`).join(''); document.getElementById('message').classList.remove('show'); update() } function update() { document.getElementById('moves').textContent = `翻牌：${moves} 次`; document.getElementById('time').textContent = `時間：${seconds} 秒`; document.getElementById('pairs').textContent = `配對：${matched} / ${pairs.length}` } function beginTimer() { if (started) return; started = true; timer = setInterval(() => { seconds++; update() }, 1000) } function flip(card) { if (locked || card === first || card.classList.contains('matched')) return; beginTimer(); card.classList.add('flipped'); card.setAttribute('aria-label', `卡片內容：${deck[card.dataset.index].text}`); if (!first) { first = card; return } second = card; moves++; locked = true; const a = deck[first.dataset.index], b = deck[second.dataset.index]; if (a.id === b.id && a.kind !== b.kind) { first.classList.add('matched'); second.classList.add('matched'); matched++; first = second = null; locked = false; update(); if (matched === pairs.length) finish() } else { setTimeout(() => { first.classList.remove('flipped'); second.classList.remove('flipped'); first = second = null; locked = false }, 750); update() } } function finish() { clearInterval(timer); const record = JSON.parse(localStorage.getItem('erpGameBest') || 'null'), current = { moves, seconds }; if (!record || moves < record.moves || (moves === record.moves && seconds < record.seconds)) localStorage.setItem('erpGameBest', JSON.stringify(current)); const msg = document.getElementById('message'); msg.textContent = `完成配對！共翻牌 ${moves} 次，花費 ${seconds} 秒。`; msg.classList.add('show'); showBest() } function showBest() { const r = JSON.parse(localStorage.getItem('erpGameBest') || 'null'); document.getElementById('best').textContent = r ? `最佳紀錄：${r.moves} 次／${r.seconds} 秒` : '最佳紀錄：尚無' } board.addEventListener('click', e => { const card = e.target.closest('.card'); if (card) flip(card) }); document.getElementById('restart').addEventListener('click', reset); showBest(); reset();
-    </script>
+            </div>
+        </main>
+    </div>
+    <script>const source = [['幼兒學籍', '入園與班級'], ['學籍異動', '保留歷程'], ['繳費記錄', '托育收費'], ['接送資料', '安全聯絡']]; let deck = [], open = [], matched = 0, count = 0, busy = false; function start() { deck = source.flatMap((p, i) => p.map(text => ({ pair: i, text }))).sort(() => Math.random() - .5); open = []; matched = 0; count = 0; busy = false; moves.textContent = 0; pairs.textContent = 0; bar.style.width = '0'; message.textContent = '先從任何一張卡片開始。'; board.innerHTML = deck.map((x, i) => `<button class="game-card" data-index="${i}" aria-label="未翻開卡片">${x.text}</button>`).join('') } board.onclick = e => { const b = e.target.closest('[data-index]'); if (!b || busy || b.classList.contains('open') || b.classList.contains('matched')) return; b.classList.add('open'); open.push({ b, item: deck[Number(b.dataset.index)] }); if (open.length < 2) return; count++; moves.textContent = count; const [a, c] = open; if (a.item.pair === c.item.pair) { a.b.classList.add('matched'); c.b.classList.add('matched'); open = []; matched++; pairs.textContent = matched; bar.style.width = `${matched / 4 * 100}%`; message.textContent = matched === 4 ? '全數配對完成，做得好！' : '找到一組，再接再厲。' } else { busy = true; message.textContent = '不是這組，記住位置再試一次。'; setTimeout(() => { a.b.classList.remove('open'); c.b.classList.remove('open'); open = []; busy = false }, 700) } }; restart.onclick = start; start()</script>
 </body>
 
 </html>

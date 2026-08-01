@@ -1,12 +1,36 @@
 # Agent
 【總體要求】
-1. 必須是純靜態網頁（不依賴任何後端 API 與資料庫），所有互動邏輯皆由純 JavaScript（Vanilla JS）完成。
-2. 頁面間的導覽連結與樣式架構保持一致，不要破壞現有的 CSS UI 佈局。
-3. 移除所有原本的 `notDeveloped()` 彈出視窗（alert），改為實際的前端互動功能。
+1. 前端是動態網頁（串接後端 API 與資料庫），搭配後端（app.py）處理資料。
+2. 頁面間的導覽連結與樣式架構保持一致，將[CSS UI](e:/資料、文檔/0.文件/Github/erp_site/style.css)建立起來，使用`static\`資料夾內涵的圖片進行發揮。
+3. 移除所有原本的內嵌資料，但仍有實際的前端互動功能，改成空架構顯示、或是接入資料庫測試探測資料。
+4. 資料庫密碼已經放在.env裡面，至於細節基於下方已經建好的架構進行補足。
+```text
+erp_site/
+├── static/     #圖片素材庫
+├── templates/  #專案資料夾
+│       └── cookiecutter.json
+├── data/       #存放較大的檔案資料夾
+├── .env        #存放機密性資料用的
+├── .gitignore  #Github排除檔案專用
+├── app.py      #後端：網頁後端的核心控制
+├── data.py     #後端：控制資料庫的串接
+├── input.py    #後端：接收來自前端的輸入
+├── database.md #針對資料庫設定的說明
+├── site.md     #針對網頁設定的說明
+├── agent.md    #主要大方向（這個檔案）
+├── style.css   #網頁CSS布局設定
+├── script.js   #javascript控制項
+├── index.html  #前端：主要網頁首頁
+│       ├── home.html   #ERP知識百科
+│       ├── sales.html  #銷貨模組百科
+│       ├── mis.html    #MIS知識百科
+│       ├── exam.html   #互動式網頁：模擬考練習
+│       └── game.html   #互動式網頁：輕鬆向的放鬆遊戲
+└── Readme.md   # 專案說明
+```
 
 【各頁面具體修改指示】
-
-1. [ERP 知識百科首頁](e:/資料、文檔/0.文件/Github/erp_site/home.html)（）：
+1. [ERP 知識百科首頁](e:/資料、文檔/0.文件/Github/erp_site/home.html)：
 - 將儀表板卡片改為「熱門知識條目」與「快速檢索入口」。
 - 新增一個動態搜尋框（Search Bar）：使用者輸入關鍵字時，能即時過濾並顯示相關的 ERP 專有名詞（例如：什麼是銷貨單、MIS 權限等級定義、月底結轉流程）。
 - 點擊搜尋結果或卡片時，使用 Modal（彈出分層視窗）或展開式面板（Accordion）直接在畫面上顯示該條目的詳細百科說明。
@@ -25,3 +49,8 @@
 【程式碼品質規範】
 - 程式碼必須乾淨且包含適當註解。
 - 所有 JavaScript 請直接內嵌在各自 HTML 檔案的 <script> 標籤中，保持單一檔案可直接用瀏覽器開啟（Standalone）。
+
+## 已修正問題
+- 404 狀態列改用標準英文 `Not Found`，中文說明放在 UTF-8 回應本文，已排除 `UnicodeEncodeError`。
+- 資料庫改為讀取專案 `.env`，透過 `pyodbc` 實際唯讀連線 SQL Server。
+- 專案定位已調整為「福祿貝爾營運中心」，整合幼兒學籍、班級、收費、接送與園務人事。
