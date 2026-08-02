@@ -1,9 +1,10 @@
 # 福祿貝爾營運中心
 
-福祿貝爾營運中心是一套前後端分離的幼稚園官方網站與內部園務平台。公開網站呈現教育理念、園務規模、學習日常與教職團隊；員工入口整合出勤、園務填報、教育訓練與內部資訊；MIS 管理中心則提供受控的網站設定、唯讀資料查閱及待審佇列。
+這是一套前後端分離的幼稚園官方網站與內部園務平台。公開網站呈現教育理念、園務規模、學習日常與教職團隊；員工入口整合出勤、園務填報、教育訓練與內部資訊；MIS 管理中心則提供受控的網站設定、唯讀資料查閱及待審佇列。
 
 後端使用 Python 與 `pyodbc` 實際連接 SQL Server。既有園務資料表維持唯讀，網站寫入只發生在 `dbo.Frobel_*` 專用資料表及員工照片資料夾，`.env` 不會由程式建立或修改。
 
+特別感謝小助手Codex、ChatGPT、Grok給予協助。
 ## 主要功能
 
 ### 公開官方網站
@@ -49,39 +50,6 @@
 - 待審佇列左側按員工編號顯示員工，右側顯示其建立的申請事件；可點選員工、事件或事件類別進行篩選。
 - MIS 不再提供員工編輯或停用控制，並保留前往 `staff.html` 的「查看出缺勤」入口。
 
-## 頁面與角色
-
-| 頁面 | 用途 |
-| --- | --- |
-| `index.html` | 公開官方網站與部門化教職團隊 |
-| `employee-login.html` | 員工編號驗證、上班打卡或不打卡進入 |
-| `home.html` | 員工工作台、打卡狀態、補打卡、下班及離開系統 |
-| `sales.html` | 園務彙總日報填報 |
-| `exam.html` | 教育文件與題庫 |
-| `game.html` | YouTube 網址驗證與播放器 |
-| `staff.html` | 員工主檔、照片與出缺勤管理 |
-| `mis.html` | 網站設定、唯讀資料查閱與待審佇列 |
-
-所有網站圖檔都使用 `static` 資料夾內的檔案。
-
-## 資料來源與正規化資料表
-
-`data.py` 讀取既有 `.env` 連線 SQL Server。公開及員工功能會使用園區、班級、學籍、接送、收費與教職員等既有資料表的彙總；MIS 可查閱其他使用者資料表，但不能從前端送入任意 SQL。
-
-網站使用以下專用資料表：
-
-| 資料表 | 用途 |
-| --- | --- |
-| `dbo.Frobel_WebSettings` | 官方網站主題與文字設定 |
-| `dbo.Frobel_Staff` | 員工主檔 |
-| `dbo.Frobel_Attendance` | 上下班打卡紀錄 |
-| `dbo.Frobel_OperationCategory` | 園務填報分類 |
-| `dbo.Frobel_OperationSubmission` | 待審園務紀錄與建立員工 |
-| `dbo.Frobel_TrainingDocument` | 教育文件主檔 |
-| `dbo.Frobel_TrainingSection` | 教育文件段落 |
-| `dbo.Frobel_TrainingQuestion` | 教育訓練題庫 |
-| `dbo.Frobel_ImportState` | `staff.csv` 匯入狀態 |
-
 ## 員工 CSV 與照片
 
 - `data.py` 在員工查閱、驗證與維護前掃描 `data/staff.csv`。
@@ -98,31 +66,22 @@
 - 打卡使用 SQL Server 的同一筆 `SYSDATETIMEOFFSET()` 完成寫入與回傳，避免資料庫與瀏覽器時間不一致。
 - 敏感欄位分類與遮罩在後端完成，前端不取得未遮罩內容。
 
-## API 摘要
+## 前端頁面色
 
-| 路徑 | 權限 | 說明 |
-| --- | --- | --- |
-| `GET /api/public` | 公開 | 官方網站設定與彙總 |
-| `GET /api/staff/departments` | 公開 | 公開教職團隊的部門選單 |
-| `GET /api/staff/public?department=...` | 公開 | 依部門取得公開教職資料 |
-| `POST /api/employee/login` | 公開 | 以 `CLOCK_IN` 或 `ACCESS_ONLY` 驗證並進入 |
-| `GET /api/employee/session` | 公開 | 查詢員工工作階段及當日打卡狀態 |
-| `POST /api/employee/logout` | 員工 | 結束工作階段，不異動打卡 |
-| `GET /api/time` | 員工 | 取得 SQL Server 帶時區時間 |
-| `POST /api/attendance/clock` | 員工 | 補上班或打卡下班 |
-| `POST /api/operations/submit` | 員工 | 新增附帶建立員工的待審事項 |
-| `GET /api/training` | 員工 | 教育文件目錄 |
-| `GET /api/training/document?id=...` | 員工 | 教育文件段落 |
-| `POST /api/admin/login` | 已驗證員工 | 建立 MIS 管理工作階段 |
-| `GET /api/admin/catalog` | 管理員 | 取得唯讀資料表目錄 |
-| `GET /api/admin/table?name=...` | 管理員 | 取得遮罩後的分頁資料 |
-| `GET/POST /api/admin/settings` | 管理員 | 讀取或儲存官方網站設定 |
-| `GET /api/admin/submissions` | 管理員 | 取得附帶建立員工的待審佇列 |
-| `GET/POST/DELETE /api/admin/staff` | 管理員 | 員工主檔查閱、維護與停用，供 `staff.html` 使用 |
-| `GET /api/admin/attendance` | 管理員 | 依日期或員工查閱出缺勤 |
-| `POST /api/admin/training/sync` | 管理員 | 重新同步教育 Word 文件 |
+| 頁面 | 用途 |
+| --- | --- |
+| `index.html` | 公開官方網站與部門化教職團隊 |
+| `employee-login.html` | 員工編號驗證、上班打卡或不打卡進入 |
+| `home.html` | 員工工作台、打卡狀態、補打卡、下班及離開系統 |
+| `sales.html` | 園務彙總日報填報 |
+| `exam.html` | 教育文件與題庫 |
+| `game.html` | YouTube 網址驗證與播放器 |
+| `staff.html` | 員工主檔、照片與出缺勤管理 |
+| `mis.html` | 網站設定、唯讀資料查閱與待審佇列 |
 
-## 專案結構
+所有網站圖檔都使用 `static` 資料夾內的檔案。
+
+## 後端頁面
 
 | 檔案 | 用途 |
 | --- | --- |
@@ -166,3 +125,47 @@ pip install -r requirements.txt
 - 建議將唯讀查詢與網站專用寫入拆成不同的最小權限資料庫帳號。
 - 多程序或多主機部署時，記憶體工作階段應改為集中式儲存。
 - 上線前應由園方覆核打卡時段、補打卡判定、資料遮罩、待審流程與存取稽核規則。
+
+## 補充資料
+
+### 資料來源與正規化資料表
+
+`data.py` 讀取既有 `.env` 連線 SQL Server。公開及員工功能會使用園區、班級、學籍、接送、收費與教職員等既有資料表的彙總；MIS 可查閱其他使用者資料表，但不能從前端送入任意 SQL。
+
+網站使用以下專用資料表：
+
+| 資料表 | 用途 |
+| --- | --- |
+| `dbo.Frobel_WebSettings` | 官方網站主題與文字設定 |
+| `dbo.Frobel_Staff` | 員工主檔 |
+| `dbo.Frobel_Attendance` | 上下班打卡紀錄 |
+| `dbo.Frobel_OperationCategory` | 園務填報分類 |
+| `dbo.Frobel_OperationSubmission` | 待審園務紀錄與建立員工 |
+| `dbo.Frobel_TrainingDocument` | 教育文件主檔 |
+| `dbo.Frobel_TrainingSection` | 教育文件段落 |
+| `dbo.Frobel_TrainingQuestion` | 教育訓練題庫 |
+| `dbo.Frobel_ImportState` | `staff.csv` 匯入狀態 |
+
+### API 摘要
+
+| 路徑 | 權限 | 說明 |
+| --- | --- | --- |
+| `GET /api/public` | 公開 | 官方網站設定與彙總 |
+| `GET /api/staff/departments` | 公開 | 公開教職團隊的部門選單 |
+| `GET /api/staff/public?department=...` | 公開 | 依部門取得公開教職資料 |
+| `POST /api/employee/login` | 公開 | 以 `CLOCK_IN` 或 `ACCESS_ONLY` 驗證並進入 |
+| `GET /api/employee/session` | 公開 | 查詢員工工作階段及當日打卡狀態 |
+| `POST /api/employee/logout` | 員工 | 結束工作階段，不異動打卡 |
+| `GET /api/time` | 員工 | 取得 SQL Server 帶時區時間 |
+| `POST /api/attendance/clock` | 員工 | 補上班或打卡下班 |
+| `POST /api/operations/submit` | 員工 | 新增附帶建立員工的待審事項 |
+| `GET /api/training` | 員工 | 教育文件目錄 |
+| `GET /api/training/document?id=...` | 員工 | 教育文件段落 |
+| `POST /api/admin/login` | 已驗證員工 | 建立 MIS 管理工作階段 |
+| `GET /api/admin/catalog` | 管理員 | 取得唯讀資料表目錄 |
+| `GET /api/admin/table?name=...` | 管理員 | 取得遮罩後的分頁資料 |
+| `GET/POST /api/admin/settings` | 管理員 | 讀取或儲存官方網站設定 |
+| `GET /api/admin/submissions` | 管理員 | 取得附帶建立員工的待審佇列 |
+| `GET/POST/DELETE /api/admin/staff` | 管理員 | 員工主檔查閱、維護與停用，供 `staff.html` 使用 |
+| `GET /api/admin/attendance` | 管理員 | 依日期或員工查閱出缺勤 |
+| `POST /api/admin/training/sync` | 管理員 | 重新同步教育 Word 文件 |
