@@ -8,7 +8,7 @@
 - 員工工作台：集中顯示園務指標、班級概況、內部公告、知識搜尋及即時打卡。
 - 營運資料蒐集：提供出勤、班級、接送、收費、設備與餐點等日常紀錄表單。
 - 教育訓練：提供職掌、SOP、教師手冊查閱與園務安全互動題庫。
-- YouTube 直播休息站：可貼上 YouTube 一般影片、直播、Shorts、分享或嵌入網址並轉換播放。
+- YouTube 直播休息站：網址由後端驗證並取得真實影片標題後播放，支援一般影片、直播、Shorts、分享或嵌入網址。
 - MIS 管理中心：提供受保護的官網設定、資料表查閱及待處理紀錄介面。
 
 ## 目前新增功能
@@ -34,7 +34,7 @@
 | `sales.html` | 員工營運蒐集，受理出勤、班級、接送、收費、設備及餐點紀錄 |
 | `exam.html` | 員工教育訓練，題庫由後端提供 |
 | `game.html` | YouTube 直播休息站與網址轉換播放器 |
-| `staff.html` | MIS 專用出缺勤查閱，使用管理帳密登入 |
+| `staff.html` | MIS 員工主檔、照片上傳與出缺勤查閱，使用管理帳密登入 |
 | `mis.html` | MIS 管理中心，登入後管理官網內容、唯讀查閱資料表與檢視待處理紀錄 |
 
 所有頁面共用一致的導覽與視覺語言，圖檔只使用 `static` 資料夾內的資源。官方網站支援海洋、晨光與森林三種主題，管理員儲存後即可由資料庫設定套用。
@@ -90,16 +90,16 @@ pip install -r requirements.txt
 
 ### Windows Port 80
 
-執行 `start_windows_80.bat`，再開啟 `http://127.0.0.1`。若 Port 80 已被其他服務占用，需先停止該服務或改用開發模式。
+執行 `start_windows_80.bat`，本機可開啟 `http://127.0.0.1`；同一內網裝置可使用啟動時列出的內網 IP。若 Port 80 已被其他服務占用，需先停止該服務。
 
 ### Ritwick Dey Live Server Port 5500
 
 1. 在 VS Code 安裝 [Live Server（ritwickdey.LiveServer）](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)。
 2. 執行 `start_windows_80.bat`，保持 Python API 的 Port 80 運作。
 3. 在 VS Code 點擊狀態列的「Go Live」，或對 `index.html` 選擇「Open with Live Server」。
-4. 開啟 `http://127.0.0.1:5500`。
+4. 開啟 `http://localhost:5500`。
 
-專案的 `.vscode/settings.json` 已將 Live Server 固定於 Port 5500，並透過擴充功能內建的 Proxy 將 `/api` 轉送至 `http://127.0.0.1:80`。前端只使用同來源的 `/api` 路徑，MIS 登入 Cookie 不需依賴跨來源 CORS 設定。
+專案的 `.vscode/settings.json` 已將 Live Server 固定於 Port 5500，並透過擴充功能內建的 Proxy 將 `/api` 轉送至 `http://localhost:80`。前端只使用同來源的 `/api` 路徑，MIS 登入 Cookie 不需依賴跨來源 CORS 設定。
 
 ## API 摘要
 
@@ -133,3 +133,18 @@ pip install -r requirements.txt
 ## 專案現況
 
 目前網站已形成符合幼稚園實務的分眾平台：對外官網聚焦教育品牌與招生資訊，員工端支援日常園務，MIS 端提供登入保護、受控資料查閱與官網內容管理。後端保留 SQL Server 真實資料串接，同時以白名單寫入、敏感資料遮罩及待查核佇列降低誤改正式資料的風險。
+
+## 對話更新歷程
+
+- 完成「福祿貝爾營運中心」前後端分離架構，前端頁面以 API 讀取資料，並實際串接既有 SQL Server。
+- 既有園務資料表維持唯讀；網站寫入功能僅使用 `dbo.Frobel_*` 專用資料表，包含官網設定、員工主檔、出缺勤、營運待審及教育訓練資料。
+- 建立 MIS 登入、HttpOnly Cookie、CSRF 驗證、登入頻率限制、資料表白名單與敏感欄位遮罩。
+- 新增園務官網、員工工作台、營運蒐集、教育訓練、YouTube 休息站、員工與出缺勤、MIS 管理等分眾頁面。
+- 從 `data/staff.csv` 匯入員工主檔，官網只公開姓名、部門、職位、特質與照片；年齡與背景資料僅供 MIS 維護。
+- 員工工作台已串接員工名冊與即時打卡；第一筆必須上班打卡，後續上、下班需交替，並使用資料庫交易鎖避免連續打卡。
+- `staff.html` 已整合 MIS 員工主檔、照片預覽、照片上傳及出缺勤查閱。照片僅接受 JPEG、PNG、WebP，最大 5 MB，並以不可變更的員工編號自動命名。
+- 教育訓練已支援舊版 Word 文件轉換、段落擷取、分類搜尋與展開閱讀；目前已同步 23 份文件與 565 個整理後段落。
+- `doc.py` 已強化 LibreOffice／Word 備援、逾時、損壞文件、長內容分段及同步鎖定處理。
+- YouTube 休息站改為由 `input.py` 驗證網址，再由後端取得真實影片標題與嵌入資訊；前端不再顯示影片代碼，並提供逾時處理。
+- 啟動方式統一保留 `start_windows_80.bat`；服務可監聽內網介面，啟動時會列出可供同一內網使用的 IPv4 位址。VS Code Live Server 可透過 Proxy 轉送 API。
+- 專案 Python 虛擬環境已修正，並安裝 `pyodbc`、`python-docx`；VS Code 已設定使用專案直譯器與工作區模組路徑。

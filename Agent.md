@@ -64,7 +64,7 @@ erp_site/
 ## 第 73 行起需求的實作紀錄
 - 已加入 `start_windows_80.bat`，由 Python 後端直接以 Port 80 提供網站與 API。
 - 專案只保留 `start_windows_80.bat` 啟動網站與 API；Port 5500 與即時重載由 Ritwick Dey 的 VS Code Live Server 擴充功能負責。
-- `.vscode/settings.json` 使用 `liveServer.settings.proxy` 將 `/api` 轉送到 `http://127.0.0.1:80`；前端維持同來源請求，MIS 登入 Cookie 不需依賴跨來源 CORS。
+- `.vscode/settings.json` 使用 `liveServer.settings.proxy` 將 `/api` 轉送到 `http://localhost:80`；前端維持同來源請求，MIS 登入 Cookie 不需依賴跨來源 CORS。
 - 已建立 8 張 `dbo.Frobel_*` 網站應用資料表；既有園務資料表仍維持唯讀。
 - `input.py` 只負責驗證員工、打卡、營運及官網設定輸入，通過後由 `app.py` 交由 `data.py` 寫入 SQL Server。
 - `doc.py` 優先使用 LibreOffice 無介面轉換舊 `.doc`，再用 `python-docx` 讀取；Microsoft Word COM 僅作為備援。
@@ -79,3 +79,14 @@ erp_site/
 - 已重建原先指向不存在 Python 3.10 的 `.venv`，改用 Python 3.12 並安裝 `requirements.txt`；VS Code 固定使用專案直譯器與工作區模組路徑，修正 `app.py` 匯入 `doc.py` 及 `doc.py` 匯入 `python-docx` 的解析問題。
 - 員工打卡改為第一筆必須上班、後續上下班交替，並以資料庫交易鎖避免同一員工同時送出造成連續打卡。
 - `game.html` 已改為 YouTube 直播休息站，只接受可辨識的 YouTube 網址並轉換為嵌入播放器。
+
+## 依現況迫切需要修復的功能
+-   在[game.html](/game.html)中，Youtube影片撥放必須加以優化，容易卡讀取到最後失敗，要加到[input.py](/input.py)去處理，實現前後端分離，但下方顯示不該是網址後方的`YoutubeCode`，而是實際擷取到的影片標題。
+-   [staff.html](/staff.html)的內容，雖然可以利用[staff.csv](/data/staff.csv)更新去做到，目前前提是要能夠精準的對上[該資料夾](/static/staff/)的圖片檔名的員工編號。但實務上必須是[staff.html](/staff.html)輸入，透過[input.py](/input.py)處理，讓[app.py](/app.py)與資料庫對接。文字型態遵循正規化存入資料庫中，圖片則存放於[該資料夾](/static/staff/)，檔名跟隨員工編號（預設為主鍵，新增後不能再變更，後台網站輸入框需要特別用顏色標記），個人圖片需要做到可上傳，上傳後檔名自動變換成員工編號。
+-   目前是使用`127.0.0.1`，要改成方便內網IP就能存取，這樣我後面會比較好處理
+
+## 第 83 行起需求的實作紀錄
+- `game.html` 改由 `input.py` 驗證 YouTube 網址，`app.py` 透過固定的 YouTube oEmbed 端點取得真實影片標題後才回傳嵌入網址；前端不再顯示影片代碼，並設有十秒逾時。
+- `staff.html` 已整合 MIS 員工主檔維護、照片預覽及上傳；文字寫入 `dbo.Frobel_Staff`，圖片限制為 JPEG、PNG、WebP 與 5 MB，檔名由不可變更的員工編號自動產生。
+- 員工編號進入編輯狀態後會鎖定並以警示色標記；後端沒有變更既有主鍵的操作。
+- `app.py` 與 `start_windows_80.bat` 改為監聽 `0.0.0.0`，啟動時列出可供同一內網使用的 IPv4 位址；Live Server 亦改用內網模式。

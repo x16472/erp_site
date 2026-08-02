@@ -6,13 +6,17 @@ SQL Server，避免驗證、HTTP 與資料存取責任混在一起。
 
 from __future__ import annotations
 
+import base64
+import binascii
 import re
 from datetime import date
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 ALLOWED_CATEGORIES = {"出勤", "班級", "接送", "收費", "設備", "餐點", "其他"}
 ALLOWED_THEMES = {"ocean", "sunrise", "forest"}
 ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
+MAX_STAFF_PHOTO_BYTES = 5 * 1024 * 1024
 
 
 class InputError(ValueError):
@@ -87,6 +91,63 @@ def validate_staff(payload: dict[str, Any]) -> dict[str, Any]:
         "position": _text(payload.get("position"), "職位", 50),
         "traits": _text(payload.get("traits"), "個性特質", 200, required=False),
         "biography": _text(payload.get("biography"), "背景簡述", 1000, required=False),
+    }
+
+
+def validate_staff_photo(value: Any) -> dict[str, Any] | None:
+    """驗證前端上傳的員工照片，並依實際檔案特徵決定副檔名。"""
+    if value in (None, ""):
+        return None
+    if not isinstance(value, dict):
+        raise InputError("員工照片格式不正確")
+    encoded = str(value.get("data", ""))
+    match = re.fullmatch(r"data:image/(jpeg|png|webp);base64,([A-Za-z0-9+/=\r\n]+)", encoded)
+    if not match:
+        raise InputError("員工照片只接受 JPEG、PNG 或 WebP")
+    try:
+        content = base64.b64decode(match.group(2), validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise InputError("員工照片內容無法解析") from exc
+    if len(content) < 128 or len(content) > MAX_STAFF_PHOTO_BYTES:
+        raise InputError("員工照片大小必須介於 128 Bytes 到 5 MB")
+    signatures = {
+        "jpg": content.startswith(b"\xff\xd8\xff"),
+        "png": content.startswith(b"\x89PNG\r\n\x1a\n"),
+        "webp": content.startswith(b"RIFF") and content[8:12] == b"WEBP",
+    }
+    extension = next((name for name, valid in signatures.items() if valid), "")
+    expected = {"jpeg": "jpg", "png": "png", "webp": "webp"}[match.group(1)]
+    if not extension or extension != expected:
+        raise InputError("員工照片的格式與內容不一致")
+    return {"content": content, "extension": extension}
+
+
+def validate_youtube(payload: dict[str, Any]) -> dict[str, str]:
+    """只接受 YouTube 網址，並轉成固定、安全的影片網址。"""
+    raw_url = _text(payload.get("url"), "YouTube 網址", 500)
+    try:
+        parsed = urlparse(raw_url)
+    except ValueError as exc:
+        raise InputError("YouTube 網址格式不正確") from exc
+    if parsed.scheme not in {"http", "https"}:
+        raise InputError("YouTube 網址必須使用 http 或 https")
+    host = (parsed.hostname or "").lower().removeprefix("www.")
+    video_id = ""
+    if host == "youtu.be":
+        video_id = parsed.path.strip("/").split("/", 1)[0]
+    elif host in {"youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com"}:
+        parts = [part for part in parsed.path.split("/") if part]
+        if parsed.path == "/watch":
+            video_id = parse_qs(parsed.query).get("v", [""])[0]
+        elif len(parts) >= 2 and parts[0] in {"embed", "live", "shorts"}:
+            video_id = parts[1]
+    if not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+        raise InputError("無法從網址辨識有效的 YouTube 影片")
+    watch_url = f"https://www.youtube.com/watch?v={video_id}"
+    return {
+        "video_id": video_id,
+        "watch_url": watch_url,
+        "embed_url": f"https://www.youtube.com/embed/{video_id}",
     }
 
 

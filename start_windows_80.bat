@@ -23,9 +23,9 @@ if /I "%~1"=="--check" (
   exit /b 0
 )
 
-echo Starting Frobel Operations Center at http://127.0.0.1
+echo Starting Frobel Operations Center on port 80 for local network access.
 echo Run this file as administrator if Windows denies port 80 access.
-"%FROBEL_PYTHON%" app.py --host 127.0.0.1 --port 80
+"%FROBEL_PYTHON%" app.py --host 0.0.0.0 --port 80
 
 if errorlevel 1 (
   echo.

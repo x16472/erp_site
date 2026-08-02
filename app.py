@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import hmac
 import json
 import mimetypes
@@ -11,11 +12,14 @@ import re
 import secrets
 import threading
 import time
+import socket
 from datetime import date
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.request import Request, urlopen
 from typing import Any
 
 import data
@@ -33,6 +37,60 @@ SESSION_TTL = 8 * 60 * 60
 SESSIONS: dict[str, dict] = {}
 LOGIN_ATTEMPTS: dict[str, list[float]] = {}
 SESSION_LOCK = threading.Lock()
+YOUTUBE_CACHE: dict[str, dict[str, str]] = {}
+YOUTUBE_CACHE_LOCK = threading.Lock()
+MAX_STAFF_REQUEST_SIZE = 7 * 1024 * 1024
+
+
+class ExternalServiceUnavailable(RuntimeError):
+    """外部服務暫時無法回應。"""
+
+
+def youtube_metadata(item: dict[str, str]) -> dict[str, str]:
+    video_id = item["video_id"]
+    with YOUTUBE_CACHE_LOCK:
+        cached = YOUTUBE_CACHE.get(video_id)
+    if cached:
+        return cached
+    endpoint = "https://www.youtube.com/oembed?" + urlencode({"url": item["watch_url"], "format": "json"})
+    request = Request(endpoint, headers={"User-Agent": "FrobelOperations/1.0"})
+    try:
+        with urlopen(request, timeout=6) as response:
+            payload = json.loads(response.read(65536).decode("utf-8"))
+    except HTTPError as exc:
+        if exc.code in {400, 401, 403, 404}:
+            raise user_input.InputError("找不到影片，或影片不允許嵌入播放") from exc
+        raise ExternalServiceUnavailable("YouTube 目前無法回應，請稍後再試") from exc
+    except (URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+        raise ExternalServiceUnavailable("YouTube 連線逾時，請稍後再試") from exc
+    title = html.unescape(str(payload.get("title", "")).strip())
+    if not title:
+        raise ExternalServiceUnavailable("YouTube 未回傳影片標題")
+    result = {**item, "title": title}
+    with YOUTUBE_CACHE_LOCK:
+        YOUTUBE_CACHE[video_id] = result
+    return result
+
+
+def save_staff_photo(employee_id: str, photo: dict[str, Any]) -> str:
+    staff_root = STATIC_ROOT / "staff"
+    staff_root.mkdir(parents=True, exist_ok=True)
+    file_name = f"{employee_id}.{photo['extension']}"
+    target = (staff_root / file_name).resolve()
+    if staff_root not in target.parents:
+        raise user_input.InputError("員工照片路徑不正確")
+    temporary = staff_root / f".{employee_id}.{secrets.token_hex(6)}.tmp"
+    try:
+        temporary.write_bytes(photo["content"])
+        os.replace(temporary, target)
+        for extension in ("jpg", "png", "webp"):
+            old = staff_root / f"{employee_id}.{extension}"
+            if old != target and old.is_file():
+                old.unlink()
+    except OSError as exc:
+        temporary.unlink(missing_ok=True)
+        raise user_input.InputError("員工照片儲存失敗") from exc
+    return file_name
 
 
 class ApplicationServer(ThreadingHTTPServer):
@@ -67,12 +125,12 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def read_json(self) -> dict:
+    def read_json(self, maximum_size: int = 32768) -> dict:
         try:
             size = int(self.headers.get("Content-Length", "0"))
         except ValueError as exc:
             raise user_input.InputError("請求內容大小不正確") from exc
-        if size < 1 or size > 32768:
+        if size < 1 or size > maximum_size:
             raise user_input.InputError("請求內容大小不正確")
         try:
             payload = json.loads(self.rfile.read(size))
@@ -184,6 +242,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         try:
+            if parsed.path == "/api/youtube/resolve":
+                item = user_input.validate_youtube(self.read_json())
+                return self.send_json({"data": youtube_metadata(item)})
             if parsed.path == "/api/operations/submit":
                 item = user_input.validate_operation(self.read_json())
                 return self.send_json({"data": data.add_operation(item)}, 201)
@@ -202,8 +263,11 @@ class Handler(BaseHTTPRequestHandler):
                     settings = user_input.validate_site_settings(self.read_json())
                     return self.send_json({"data": data.save_site_settings(settings, session["username"])})
                 if parsed.path == "/api/admin/staff":
-                    staff = user_input.validate_staff(self.read_json())
-                    return self.send_json({"data": data.save_staff(staff, session["username"])})
+                    payload = self.read_json(MAX_STAFF_REQUEST_SIZE)
+                    staff = user_input.validate_staff(payload)
+                    photo = user_input.validate_staff_photo(payload.get("photo"))
+                    photo_file = save_staff_photo(staff["employee_id"], photo) if photo else None
+                    return self.send_json({"data": data.save_staff(staff, session["username"], photo_file)})
                 if parsed.path == "/api/admin/training/sync":
                     documents = training_documents.sync_training_library(ensure_schema=False)
                     return self.send_json({"data": {"documents": documents}})
@@ -213,6 +277,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
         except (data.DatabaseUnavailable, training_documents.DocumentImportError) as exc:
             return self.send_json({"error": str(exc), "code": "SERVICE_UNAVAILABLE"}, 503)
+        except ExternalServiceUnavailable as exc:
+            return self.send_json({"error": str(exc), "code": "EXTERNAL_SERVICE_UNAVAILABLE"}, 503)
         self.send_json({"error": "此路徑不接受寫入。"}, 405)
 
     def do_DELETE(self) -> None:
@@ -297,7 +363,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="啟動福祿貝爾營運中心")
-    parser.add_argument("--host", default=os.environ.get("FROBEL_HOST", "127.0.0.1"))
+    parser.add_argument("--host", default=os.environ.get("FROBEL_HOST", "0.0.0.0"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("FROBEL_PORT", "8000")))
     parser.add_argument("--skip-doc-sync", action="store_true", help="略過啟動時的教育文件同步")
     args = parser.parse_args()
@@ -310,6 +376,14 @@ def main() -> None:
             print(f"教育訓練文件暫時無法同步：{exc}")
     server = ApplicationServer((args.host, args.port), Handler)
     print(f"福祿貝爾營運中心：http://{args.host}:{args.port}")
+    if args.host == "0.0.0.0":
+        try:
+            addresses = sorted({item[4][0] for item in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)})
+        except OSError:
+            addresses = []
+        for address in addresses:
+            if not address.startswith("127."):
+                print(f"內網存取：http://{address}:{args.port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

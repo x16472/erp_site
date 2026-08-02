@@ -597,11 +597,16 @@ def staff_records() -> list[dict[str, Any]]:
     """)
 
 
-def save_staff(item: dict[str, Any], actor: str) -> dict[str, Any]:
-    photo = f"{item['employee_id']}.jpg" if (ROOT / "static" / "staff" / f"{item['employee_id']}.jpg").is_file() else None
+def save_staff(item: dict[str, Any], actor: str, photo_file: str | None = None) -> dict[str, Any]:
     try:
         with connect(read_only=False) as db:
-            db.cursor().execute("""
+            cursor = db.cursor()
+            existing = cursor.execute(
+                "SELECT photo_file FROM dbo.Frobel_Staff WHERE employee_id=?",
+                item["employee_id"],
+            ).fetchone()
+            photo = photo_file if photo_file is not None else (existing[0] if existing else None)
+            cursor.execute("""
                 MERGE dbo.Frobel_Staff AS target
                 USING (SELECT ? AS employee_id) AS source ON target.employee_id=source.employee_id
                 WHEN MATCHED THEN UPDATE SET display_name=?,gender=?,age=?,department=?,position=?,traits=?,biography=?,photo_file=?,is_active=1,updated_by=?,updated_at=SYSDATETIME()

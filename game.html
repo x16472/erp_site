@@ -11,79 +11,90 @@
 <body>
     <div class="portal-shell">
         <aside class="portal-sidebar">
-            <a class="portal-brand" href="home.html"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
-            <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a class="active" href="game.html">YouTube 直播</a><a href="staff.html">員工出缺勤</a><a href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav>
+            <a class="portal-brand" href="home.html"><img src="static/0-3-08.png"
+                    alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
+            <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
+                    href="exam.html">教育訓練</a><a class="active" href="game.html">YouTube 直播</a><a
+                    href="staff.html">員工出缺勤</a><a href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <div><span class="top-kicker">YOUTUBE LIVE LOUNGE</span><h1>YouTube 直播休息站</h1></div>
+                <div><span class="top-kicker">YOUTUBE LIVE LOUNGE</span>
+                    <h1>YouTube 直播休息站</h1>
+                </div>
                 <span class="api-state ok" id="playerState">播放器就緒</span>
             </header>
             <div class="portal-content">
                 <section class="portal-card youtube-control">
                     <div class="card-head">
-                        <div><span class="eyebrow">VIDEO SOURCE</span><h2>貼上 YouTube 網址</h2><p>支援一般影片、直播、Shorts、分享短網址及嵌入網址。</p></div>
+                        <div><span class="eyebrow">VIDEO SOURCE</span>
+                            <h2>貼上 YouTube 網址</h2>
+                            <p>支援一般影片、直播、Shorts、分享短網址及嵌入網址。</p>
+                        </div>
                     </div>
                     <form id="youtubeForm" class="youtube-form">
-                        <label class="field" for="youtubeUrl"><span>YouTube 網址</span><input id="youtubeUrl" name="url" type="url" inputmode="url" autocomplete="url" value="https://www.youtube.com/watch?v=fxnjjVyMd7g" placeholder="https://www.youtube.com/watch?v=..." required></label>
+                        <label class="field" for="youtubeUrl"><span>YouTube 網址</span><input id="youtubeUrl" name="url"
+                                type="url" inputmode="url" autocomplete="url"
+                                value="https://www.youtube.com/watch?v=fxnjjVyMd7g"
+                                placeholder="https://www.youtube.com/watch?v=..." required></label>
                         <button class="btn" type="submit">轉換並播放</button>
                     </form>
-                    <p class="hint" id="youtubeStatus" aria-live="polite">目前播放測試影片。若影片擁有者禁止嵌入，請更換其他 YouTube 網址。</p>
+                    <p class="hint" id="youtubeStatus" aria-live="polite">正在由後端確認測試影片並取得標題…</p>
                 </section>
 
                 <section class="portal-card youtube-stage">
-                    <div class="youtube-player">
-                        <iframe id="youtubePlayer" src="https://www.youtube.com/embed/fxnjjVyMd7g" title="YouTube 直播播放器" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    <div class="youtube-player"> <iframe id="youtubePlayer"
+                            title="YouTube 直播播放器" frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> </div>
+                    <div class="youtube-meta">
+                        <div><span class="eyebrow">NOW PLAYING</span>
+                            <h2 id="videoTitle">正在取得影片資訊…</h2>
+                        </div><a class="btn secondary" id="openYoutube"
+                            href="https://www.youtube.com/watch?v=fxnjjVyMd7g" target="_blank"
+                            rel="noopener noreferrer">在 YouTube 開啟</a>
                     </div>
-                    <div class="youtube-meta"><div><span class="eyebrow">NOW PLAYING</span><h2 id="videoCode">fxnjjVyMd7g</h2></div><a class="btn secondary" id="openYoutube" href="https://www.youtube.com/watch?v=fxnjjVyMd7g" target="_blank" rel="noopener noreferrer">在 YouTube 開啟</a></div>
                 </section>
             </div>
         </main>
     </div>
 
     <script>
-        const DEFAULT_VIDEO_ID = 'fxnjjVyMd7g';
-        const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoCode = document.querySelector('#videoCode'), openYoutube = document.querySelector('#openYoutube');
+        const DEFAULT_URL = 'https://www.youtube.com/watch?v=fxnjjVyMd7g';
+        const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoTitle = document.querySelector('#videoTitle'), openYoutube = document.querySelector('#openYoutube'), submitButton = youtubeForm.querySelector('button[type="submit"]');
 
-        function youtubeVideoId(value) {
-            const input = value.trim();
-            if (/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
-            let url;
-            try { url = new URL(input) } catch { throw new Error('請輸入完整的 YouTube 網址。') }
-            const host = url.hostname.toLowerCase().replace(/^www\./, '');
-            let id = '';
-            if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || '';
-            if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
-                if (url.pathname === '/watch') id = url.searchParams.get('v') || '';
-                else if (/^\/(embed|live|shorts)\//.test(url.pathname)) id = url.pathname.split('/')[2] || '';
-            }
-            if (!/^[A-Za-z0-9_-]{11}$/.test(id)) throw new Error('無法辨識影片代碼，請確認網址來自 YouTube。');
-            return id;
-        }
-
-        function playVideo(id) {
-            const watchUrl = `https://www.youtube.com/watch?v=${id}`;
-            youtubePlayer.src = `https://www.youtube.com/embed/${id}`;
-            videoCode.textContent = id;
-            openYoutube.href = watchUrl;
-            youtubeUrl.value = watchUrl;
-            youtubeStatus.className = 'hint success-note';
-            youtubeStatus.textContent = '網址已安全轉換並載入播放器。';
-            playerState.textContent = '播放來源已更新';
-            localStorage.setItem('frobelYoutubeVideo', watchUrl);
+        async function resolveVideo(url, remember = true) {
+            const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
+            submitButton.disabled = true;
+            playerState.textContent = '後端驗證中';
+            youtubeStatus.className = 'hint';
+            youtubeStatus.textContent = '正在確認影片並取得標題…';
+            try {
+                const response = await fetch('/api/youtube/resolve', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }), signal: controller.signal });
+                const body = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(body.error || '影片資訊取得失敗');
+                const video = body.data;
+                youtubePlayer.src = video.embed_url;
+                videoTitle.textContent = video.title;
+                openYoutube.href = video.watch_url;
+                youtubeUrl.value = video.watch_url;
+                if (remember) localStorage.setItem('frobelYoutubeVideo', video.watch_url);
+                youtubeStatus.className = 'hint success-note';
+                youtubeStatus.textContent = '後端已驗證網址並取得 YouTube 影片標題。';
+                playerState.textContent = '播放器已更新';
+            } catch (error) {
+                const message = error.name === 'AbortError' ? '影片資訊讀取逾時，請稍後重試。' : error.message;
+                youtubeStatus.className = 'error-note';youtubeStatus.textContent = message;playerState.textContent = '影片載入失敗';
+            } finally { clearTimeout(timer);submitButton.disabled = false }
         }
 
         youtubeForm.addEventListener('submit', event => {
             event.preventDefault();
-            try { playVideo(youtubeVideoId(youtubeUrl.value)) }
-            catch (error) { youtubeStatus.className = 'error-note'; youtubeStatus.textContent = error.message; playerState.textContent = '網址格式錯誤' }
+            resolveVideo(youtubeUrl.value);
         });
 
         const savedUrl = localStorage.getItem('frobelYoutubeVideo');
-        if (savedUrl) {
-            try { playVideo(youtubeVideoId(savedUrl)) }
-            catch { localStorage.removeItem('frobelYoutubeVideo'); playVideo(DEFAULT_VIDEO_ID) }
-        }
+        resolveVideo(savedUrl || DEFAULT_URL, false);
     </script>
 </body>
 
