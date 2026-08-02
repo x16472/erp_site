@@ -5,7 +5,7 @@
 ## 功能概覽
 
 - 對外官網：介紹教育理念、幼兒學習日常、園務規模、教職團隊與參觀資訊。
-- 員工工作台：集中顯示園務指標、班級概況、內部公告、知識搜尋及即時打卡。
+- 員工工作台：員工先以編號完成上班或下班打卡，再進入園務指標、班級概況、內部公告及知識搜尋。
 - 營運資料蒐集：提供出勤、班級、接送、收費、設備與餐點等日常紀錄表單。
 - 教育訓練：提供職掌、SOP、教師手冊查閱與園務安全互動題庫。
 - YouTube 直播休息站：網址由後端驗證並取得真實影片標題後播放，支援一般影片、直播、Shorts、分享或嵌入網址。
@@ -20,6 +20,9 @@
 - 新增 SQL Server 資料表目錄、分頁查閱及後端敏感欄位遮罩。
 - 新增園務資料輸入驗證、待查核佇列及 MIS 待審紀錄列表。
 - 新增正規化員工名冊、官網教職團隊、員工即時打卡及受保護的出缺勤查閱。
+- 新增員工編號打卡入口；打卡成功才建立 8 小時 HttpOnly 工作階段，所有內部與 MIS API 都會向 SQL Server 複驗在職狀態。
+- 打卡時間統一取自 SQL Server 的帶時區時間；資料庫寫入與 API 回傳使用同一時間值，前端時鐘再依該值校準。
+- `data/staff.csv` 改為異動式同步；員工名冊預設依員工編號排序，管理頁可切換為部門排序。
 - 新增舊版 Word 教育文件轉換、資料庫段落索引、分類搜尋及展開閱讀介面。
 - 只保留 Windows Port 80 批次啟動；Ritwick Dey Live Server 使用 Port 5500，並將 `/api` 代理至後端 Port 80。
 - 新增資料表白名單、任意 SQL 防護及靜態檔案路徑限制。
@@ -30,6 +33,7 @@
 | 頁面 | 對象與用途 |
 | --- | --- |
 | `index.html` | 對外官方網站，呈現教育理念、園區規模與參觀資訊 |
+| `employee-login.html` | 員工編號驗證、上／下班打卡與內部網站入口 |
 | `home.html` | 全體員工入口，提供園務摘要、公告、快速功能與知識搜尋 |
 | `sales.html` | 員工營運蒐集，受理出勤、班級、接送、收費、設備及餐點紀錄 |
 | `exam.html` | 員工教育訓練，題庫由後端提供 |
@@ -54,9 +58,9 @@ MIS 管理中心可查閱其他使用者資料表。後端會先比對 SQL Serve
 
 ## 管理端與寫入範圍
 
-管理端帳號由 `.env` 的 `BackendWebAdminUser` 與 `BackendWebAdminPassword` 提供，密碼只在伺服器端比對，不會傳送到前端。登入工作階段有效時間為 8 小時，並具有 HttpOnly、SameSite Cookie、CSRF 驗證及登入失敗頻率限制。
+進入內部網站前，員工需輸入員工編號並選擇上班或下班；後端會查詢 `dbo.Frobel_Staff` 的啟用狀態，完成不重複的打卡後才建立 8 小時 HttpOnly 工作階段。MIS 仍保留第二層管理員驗證，帳號由 `.env` 的 `BackendWebAdminUser` 與 `BackendWebAdminPassword` 提供，密碼只在伺服器端比對。兩層工作階段皆使用 SameSite Cookie、頻率限制，寫入操作另有 CSRF 驗證。
 
-資料寫入嚴格限制為兩類：
+資料寫入嚴格限制為四類：
 
 1. 官網版型與文字設定只會寫入專案專用的 `dbo.Frobel_WebSettings`。此資料表會在管理員第一次儲存設定時建立，其他既有資料表仍為唯讀。
 2. 員工營運蒐集寫入 `dbo.Frobel_OperationSubmission`，搭配分類資料表進行正規化，供 MIS 查核。
@@ -67,8 +71,8 @@ MIS 管理中心可查閱其他使用者資料表。後端會先比對 SQL Serve
 
 | 檔案 | 用途 |
 | --- | --- |
-| `app.py` | HTTP 服務、路由、管理端工作階段與 JSON API |
-| `data.py` | SQL Server 連線、唯讀查詢、資料遮罩與官網設定寫入 |
+| `app.py` | HTTP 服務、路由、員工／管理端工作階段、權限驗證與 JSON API |
+| `data.py` | SQL Server 連線、CSV 同步、員工排序、資料庫對時、唯讀查詢與受控寫入 |
 | `input.py` | 員工、打卡、營運與官網設定的輸入驗證 |
 | `doc.py` | 舊 Word 文件轉換、`python-docx` 擷取與教育資料同步 |
 | `style.css` | 官方網站、員工入口及管理中心共用樣式 |
@@ -106,6 +110,10 @@ pip install -r requirements.txt
 | 路徑 | 權限 | 說明 |
 | --- | --- | --- |
 | `GET /api/public` | 公開 | 官網文字、主題與公開彙總 |
+| `POST /api/employee/login` | 公開 | 驗證員工編號、完成上／下班打卡並建立員工工作階段 |
+| `GET /api/employee/session` | 公開 | 查詢目前員工工作階段；有效工作階段會重新查核在職狀態 |
+| `POST /api/employee/logout` | 員工入口 | 結束員工工作階段並返回打卡入口 |
+| `GET /api/time` | 員工入口 | 取得 SQL Server 帶時區時間供前端校準 |
 | `GET /api/dashboard` | 員工入口 | 園務彙總與班級摘要 |
 | `GET /api/knowledge` | 員工入口 | 園務知識內容 |
 | `GET /api/staff/public` | 公開 | 適合官網展示的教職員基本資料 |
@@ -114,12 +122,12 @@ pip install -r requirements.txt
 | `GET /api/operations` | 員工入口 | 營運流程說明 |
 | `POST /api/operations/submit` | 員工入口 | 新增待 MIS 查核的營運紀錄 |
 | `POST /api/attendance/clock` | 員工入口 | 寫入上班或下班打卡並回傳本次時間 |
-| `POST /api/admin/login` | 公開 | 建立 MIS 管理工作階段 |
+| `POST /api/admin/login` | 已打卡員工 | 建立第二層 MIS 管理工作階段 |
 | `GET /api/admin/catalog` | 管理員 | 取得資料表目錄 |
 | `GET /api/admin/table?name=...` | 管理員 | 取得遮罩後的分頁資料 |
 | `GET/POST /api/admin/settings` | 管理員 | 讀取或儲存官網設定 |
 | `GET /api/admin/submissions` | 管理員 | 檢視待查核營運紀錄 |
-| `GET/POST/DELETE /api/admin/staff` | 管理員 | 查閱、維護或停用員工資料 |
+| `GET/POST/DELETE /api/admin/staff?sort=employee_id|department` | 管理員 | 依員工編號或部門查閱、維護或停用員工資料 |
 | `GET /api/admin/attendance` | 管理員 | 依日期或員工查閱出缺勤 |
 | `POST /api/admin/training/sync` | 管理員 | 重新轉換並同步教育 Word 文件 |
 
@@ -142,6 +150,9 @@ pip install -r requirements.txt
 - 新增園務官網、員工工作台、營運蒐集、教育訓練、YouTube 休息站、員工與出缺勤、MIS 管理等分眾頁面。
 - 從 `data/staff.csv` 匯入員工主檔，官網只公開姓名、部門、職位、特質與照片；年齡與背景資料僅供 MIS 維護。
 - 員工工作台已串接員工名冊與即時打卡；第一筆必須上班打卡，後續上、下班需交替，並使用資料庫交易鎖避免連續打卡。
+- 後台入口已整合員工編號驗證與打卡；只有資料庫驗證及打卡交易成功才建立工作階段，內部頁面、MIS 登入與各 API 皆會再次查核員工在職狀態。
+- 打卡改用 SQL Server 同一筆帶時區時間完成寫入與回傳，工作台時鐘透過 `/api/time` 校準，修正資料庫與瀏覽器時間無法對時的問題。
+- `data.py` 會在員工查閱與維護前掃描 `data/staff.csv`，只有檔案異動時才合併；前端預設依員工編號排序，並提供部門排序選項。
 - `staff.html` 已整合 MIS 員工主檔、照片預覽、照片上傳及出缺勤查閱。照片僅接受 JPEG、PNG、WebP，最大 5 MB，並以不可變更的員工編號自動命名。
 - 教育訓練已支援舊版 Word 文件轉換、段落擷取、分類搜尋與展開閱讀；目前已同步 23 份文件與 565 個整理後段落。
 - `doc.py` 已強化 LibreOffice／Word 備援、逾時、損壞文件、長內容分段及同步鎖定處理。

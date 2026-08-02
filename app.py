@@ -32,10 +32,13 @@ PAGES = {
     "/": "index.html", "/index.html": "index.html", "/home.html": "home.html",
     "/sales.html": "sales.html", "/mis.html": "mis.html", "/exam.html": "exam.html",
     "/game.html": "game.html", "/staff.html": "staff.html", "/style.css": "style.css",
+    "/employee-login.html": "employee-login.html",
 }
 SESSION_TTL = 8 * 60 * 60
 SESSIONS: dict[str, dict] = {}
+EMPLOYEE_SESSIONS: dict[str, dict] = {}
 LOGIN_ATTEMPTS: dict[str, list[float]] = {}
+EMPLOYEE_LOGIN_ATTEMPTS: dict[str, list[float]] = {}
 SESSION_LOCK = threading.Lock()
 YOUTUBE_CACHE: dict[str, dict[str, str]] = {}
 YOUTUBE_CACHE_LOCK = threading.Lock()
@@ -154,10 +157,38 @@ class Handler(BaseHTTPRequestHandler):
             session["expires"] = now + SESSION_TTL
             return session
 
-    def require_admin(self) -> dict | None:
+    def employee_session(self) -> dict | None:
+        cookie = SimpleCookie(self.headers.get("Cookie", ""))
+        token = cookie.get("frobel_employee")
+        if not token:
+            return None
+        now = time.time()
+        with SESSION_LOCK:
+            session = EMPLOYEE_SESSIONS.get(token.value)
+            if not session or session["expires"] <= now:
+                EMPLOYEE_SESSIONS.pop(token.value, None)
+                return None
+            session["expires"] = now + SESSION_TTL
+            return session
+
+    def require_admin(self, employee_session: dict | None = None) -> dict | None:
         session = self.session()
-        if not session:
+        if not session or (employee_session and session.get("employee_id") != employee_session["employee_id"]):
             self.send_json({"error": "請先登入 MIS 管理區。", "code": "AUTH_REQUIRED"}, 401)
+            return None
+        return session
+
+    def require_employee(self) -> dict | None:
+        session = self.employee_session()
+        if not session:
+            self.send_json({"error": "請先輸入有效的員工編號。", "code": "EMPLOYEE_AUTH_REQUIRED"}, 401)
+            return None
+        try:
+            session["employee"] = data.employee_identity(session["employee_id"])
+        except ValueError:
+            with SESSION_LOCK:
+                EMPLOYEE_SESSIONS.pop(session["token"], None)
+            self.send_json({"error": "員工編號不存在或已停用，請重新登入。", "code": "EMPLOYEE_AUTH_REQUIRED"}, 401)
             return None
         return session
 
@@ -173,16 +204,7 @@ class Handler(BaseHTTPRequestHandler):
         public_routes = {
             "/api/health": data.health,
             "/api/public": data.public_overview,
-            "/api/dashboard": data.dashboard,
-            "/api/knowledge": data.knowledge,
-            "/api/operations": data.operations_process,
-            "/api/departments": data.departments,
-            "/api/branches": data.branches,
-            "/api/roles": data.permission_profiles,
-            "/api/questions": data.questions,
             "/api/staff/public": data.public_staff,
-            "/api/staff/attendance-options": data.attendance_staff_options,
-            "/api/training": data.training_catalog,
         }
         if parsed.path in public_routes:
             try:
@@ -190,8 +212,46 @@ class Handler(BaseHTTPRequestHandler):
             except data.DatabaseUnavailable as exc:
                 return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
+        if parsed.path == "/api/employee/session":
+            session = self.employee_session()
+            if not session:
+                return self.send_json({"data": {"authenticated": False, "employee": None, "csrf": None}})
+            try:
+                session["employee"] = data.employee_identity(session["employee_id"])
+                return self.send_json({"data": {"authenticated": True, "employee": session["employee"], "attendance": session.get("attendance"), "csrf": session["csrf"]}})
+            except ValueError:
+                with SESSION_LOCK:
+                    EMPLOYEE_SESSIONS.pop(session["token"], None)
+                return self.send_json({"data": {"authenticated": False, "employee": None, "csrf": None}})
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+
+        employee_routes = {
+            "/api/dashboard": data.dashboard,
+            "/api/knowledge": data.knowledge,
+            "/api/operations": data.operations_process,
+            "/api/departments": data.departments,
+            "/api/branches": data.branches,
+            "/api/roles": data.permission_profiles,
+            "/api/questions": data.questions,
+            "/api/staff/attendance-options": data.attendance_staff_options,
+            "/api/training": data.training_catalog,
+            "/api/time": data.server_time,
+        }
+        if parsed.path in employee_routes:
+            try:
+                if not self.require_employee():
+                    return
+                return self.send_json({"data": employee_routes[parsed.path]()})
+            except ValueError as exc:
+                return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+
         if parsed.path == "/api/training/document":
             try:
+                if not self.require_employee():
+                    return
                 document_id = int(parse_qs(parsed.query).get("id", ["0"])[0])
                 return self.send_json({"data": data.training_document(document_id)})
             except ValueError as exc:
@@ -200,14 +260,25 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
         if parsed.path == "/api/admin/session":
-            session = self.session()
-            return self.send_json({"data": {"authenticated": bool(session), "username": session["username"] if session else None, "csrf": session["csrf"] if session else None}})
+            try:
+                employee_session = self.require_employee()
+                if not employee_session:
+                    return
+                session = self.session()
+                if session and session.get("employee_id") != employee_session["employee_id"]:
+                    session = None
+                return self.send_json({"data": {"authenticated": bool(session), "username": session["username"] if session else None, "csrf": session["csrf"] if session else None}})
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
         if parsed.path.startswith("/api/admin/"):
-            session = self.require_admin()
-            if not session:
-                return
             try:
+                employee_session = self.require_employee()
+                if not employee_session:
+                    return
+                session = self.require_admin(employee_session)
+                if not session:
+                    return
                 query = parse_qs(parsed.query)
                 if parsed.path == "/api/admin/catalog":
                     return self.send_json({"data": data.table_catalog()})
@@ -219,7 +290,7 @@ class Handler(BaseHTTPRequestHandler):
                 if parsed.path == "/api/admin/submissions":
                     return self.send_json({"data": data.operation_submissions()})
                 if parsed.path == "/api/admin/staff":
-                    return self.send_json({"data": data.staff_records()})
+                    return self.send_json({"data": data.staff_records(query.get("sort", ["employee_id"])[0])})
                 if parsed.path == "/api/admin/attendance":
                     day = query.get("date", [""])[0]
                     if day:
@@ -242,21 +313,43 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         try:
+            if parsed.path == "/api/employee/login":
+                return self.employee_login()
+            if parsed.path == "/api/employee/logout":
+                return self.employee_logout()
             if parsed.path == "/api/youtube/resolve":
+                if not self.require_employee():
+                    return
                 item = user_input.validate_youtube(self.read_json())
                 return self.send_json({"data": youtube_metadata(item)})
             if parsed.path == "/api/operations/submit":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
                 item = user_input.validate_operation(self.read_json())
                 return self.send_json({"data": data.add_operation(item)}, 201)
             if parsed.path == "/api/attendance/clock":
-                item = user_input.validate_attendance(self.read_json())
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                payload = self.read_json()
+                payload["employee_id"] = session["employee_id"]
+                item = user_input.validate_attendance(payload)
                 return self.send_json({"data": data.clock_attendance(item, self.client_address[0])}, 201)
             if parsed.path == "/api/admin/login":
-                return self.admin_login()
+                employee_session = self.require_employee()
+                if not employee_session:
+                    return
+                return self.admin_login(employee_session)
             if parsed.path == "/api/admin/logout":
+                if not self.require_employee():
+                    return
                 return self.admin_logout()
             if parsed.path.startswith("/api/admin/"):
-                session = self.require_admin()
+                employee_session = self.require_employee()
+                if not employee_session:
+                    return
+                session = self.require_admin(employee_session)
                 if not session or not self.require_csrf(session):
                     return
                 if parsed.path == "/api/admin/settings":
@@ -285,7 +378,13 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path != "/api/admin/staff":
             return self.send_json({"error": "此路徑不接受刪除。"}, 405)
-        session = self.require_admin()
+        try:
+            employee_session = self.require_employee()
+            if not employee_session:
+                return
+        except data.DatabaseUnavailable as exc:
+            return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+        session = self.require_admin(employee_session)
         if not session or not self.require_csrf(session):
             return
         try:
@@ -301,7 +400,7 @@ class Handler(BaseHTTPRequestHandler):
         except data.DatabaseUnavailable as exc:
             return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
-    def admin_login(self) -> None:
+    def admin_login(self, employee_session: dict) -> None:
         now = time.time()
         client = self.client_address[0]
         with SESSION_LOCK:
@@ -321,9 +420,53 @@ class Handler(BaseHTTPRequestHandler):
         csrf = secrets.token_urlsafe(24)
         with SESSION_LOCK:
             LOGIN_ATTEMPTS.pop(client, None)
-            SESSIONS[token] = {"username": username, "csrf": csrf, "expires": now + SESSION_TTL}
+            SESSIONS[token] = {"username": username, "employee_id": employee_session["employee_id"], "csrf": csrf, "expires": now + SESSION_TTL}
         cookie = f"frobel_admin={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={SESSION_TTL}"
         return self.send_json({"data": {"authenticated": True, "username": username, "csrf": csrf}}, headers={"Set-Cookie": cookie})
+
+    def employee_login(self) -> None:
+        now = time.time()
+        client = self.client_address[0]
+        with SESSION_LOCK:
+            attempts = [stamp for stamp in EMPLOYEE_LOGIN_ATTEMPTS.get(client, []) if now - stamp < 300]
+        if len(attempts) >= 10:
+            return self.send_json({"error": "驗證失敗次數過多，請五分鐘後再試。", "code": "RATE_LIMITED"}, 429)
+        payload = self.read_json()
+        item = user_input.validate_attendance(payload)
+        try:
+            employee = data.employee_identity(item["employee_id"])
+        except ValueError:
+            with SESSION_LOCK:
+                attempts.append(now)
+                EMPLOYEE_LOGIN_ATTEMPTS[client] = attempts
+            return self.send_json({"error": "員工編號不存在或已停用。", "code": "INVALID_EMPLOYEE"}, 401)
+        attendance = data.clock_attendance(item, self.client_address[0])
+        token = secrets.token_urlsafe(32)
+        csrf = secrets.token_urlsafe(24)
+        session = {
+            "token": token,
+            "employee_id": employee["employee_id"],
+            "employee": employee,
+            "attendance": attendance,
+            "csrf": csrf,
+            "expires": now + SESSION_TTL,
+        }
+        with SESSION_LOCK:
+            EMPLOYEE_LOGIN_ATTEMPTS.pop(client, None)
+            EMPLOYEE_SESSIONS[token] = session
+        cookie = f"frobel_employee={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={SESSION_TTL}"
+        return self.send_json({"data": {"authenticated": True, "employee": employee, "attendance": attendance, "csrf": csrf}}, headers={"Set-Cookie": cookie})
+
+    def employee_logout(self) -> None:
+        cookie = SimpleCookie(self.headers.get("Cookie", ""))
+        token = cookie.get("frobel_employee")
+        admin_token = cookie.get("frobel_admin")
+        if token:
+            with SESSION_LOCK:
+                EMPLOYEE_SESSIONS.pop(token.value, None)
+                if admin_token:
+                    SESSIONS.pop(admin_token.value, None)
+        return self.send_json({"data": {"authenticated": False}}, headers={"Set-Cookie": "frobel_employee=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"})
 
     def admin_logout(self) -> None:
         cookie = SimpleCookie(self.headers.get("Cookie", ""))

@@ -13,8 +13,8 @@
         <aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/0-3-08.png"
                     alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>MIS 管理區</small></span></a>
             <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
-                    href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="staff.html">員工出缺勤</a><a class="active" href="mis.html">MIS 管理</a><a
-                    href="index.html">官方網站</a></nav>
+                    href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="staff.html">員工出缺勤</a><a class="active"
+                    href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav>
             <p class="portal-foot">ADMIN ONLY · 需管理員登入</p>
         </aside>
         <main class="portal-main">
@@ -44,7 +44,8 @@
                     </div>
                     <nav class="admin-tabs" id="adminTabs"><button class="active"
                             data-panel="settingsPanel">官方網站設定</button><button
-                            data-panel="dataPanel">資料表查閱</button><button data-panel="staffPanel">員工資料</button><button data-panel="queuePanel">營運待審</button></nav>
+                            data-panel="dataPanel">資料表查閱</button><button data-panel="staffPanel">員工資料</button><button
+                            data-panel="queuePanel">營運待審</button></nav>
                     <section class="admin-panel active" id="settingsPanel">
                         <div class="portal-grid">
                             <form class="portal-card wide" id="settingsForm">
@@ -79,7 +80,13 @@
                                 </div>
                             </aside>
                         </div>
-                        <div class="portal-card full admin-tool-row"><div><span class="eyebrow">TRAINING IMPORT</span><h3>教育文件同步</h3><p>將 `data/exam` 內的 Word 文件重新整理至教育訓練資料表。</p></div><button class="btn secondary" id="syncTraining" type="button">同步教育文件</button><p id="syncStatus" aria-live="polite"></p></div>
+                        <div class="portal-card full admin-tool-row">
+                            <div><span class="eyebrow">TRAINING IMPORT</span>
+                                <h3>教育文件同步</h3>
+                                <p>將 `data/exam` 內的 Word 文件重新整理至教育訓練資料表。</p>
+                            </div><button class="btn secondary" id="syncTraining" type="button">同步教育文件</button>
+                            <p id="syncStatus" aria-live="polite"></p>
+                        </div>
                     </section>
                     <section class="admin-panel" id="dataPanel">
                         <div class="admin-data-layout">
@@ -116,11 +123,42 @@
                     <section class="admin-panel" id="staffPanel">
                         <div class="portal-grid">
                             <form class="portal-card narrow" id="staffForm">
-                                <div class="card-head"><div><span class="eyebrow">STAFF DIRECTORY</span><h2>員工資料維護</h2><p>新增或更新官網與打卡使用的員工資料。</p></div></div>
-                                <div class="form-grid"><label class="field"><span>員工編號</span><input name="employee_id" maxlength="20" required></label><label class="field"><span>姓名</span><input name="display_name" maxlength="50" required></label><label class="field"><span>性別</span><input name="gender" maxlength="10"></label><label class="field"><span>年齡</span><input name="age" type="number" min="16" max="100"></label><label class="field"><span>部門</span><input name="department" maxlength="50" required></label><label class="field"><span>職位</span><input name="position" maxlength="50" required></label><label class="field full"><span>個性特質</span><textarea name="traits" maxlength="200"></textarea></label><label class="field full"><span>背景簡述</span><textarea name="biography" maxlength="1000"></textarea></label></div>
-                                <div class="actions"><button class="btn" type="submit">儲存員工資料</button><button class="btn secondary" id="resetStaff" type="button">清除表單</button></div><p id="staffStatus" aria-live="polite"></p>
+                                <div class="card-head">
+                                    <div><span class="eyebrow">STAFF DIRECTORY</span>
+                                        <h2>員工資料維護</h2>
+                                        <p>新增或更新官網與打卡使用的員工資料。</p>
+                                    </div>
+                                </div>
+                                <div class="form-grid"><label class="field"><span>員工編號</span><input name="employee_id"
+                                            maxlength="20" required></label><label class="field"><span>姓名</span><input
+                                            name="display_name" maxlength="50" required></label><label
+                                        class="field"><span>性別</span><input name="gender" maxlength="10"></label><label
+                                        class="field"><span>年齡</span><input name="age" type="number" min="16"
+                                            max="100"></label><label class="field"><span>部門</span><input
+                                            name="department" maxlength="50" required></label><label
+                                        class="field"><span>職位</span><input name="position" maxlength="50"
+                                            required></label><label class="field full"><span>個性特質</span><textarea
+                                            name="traits" maxlength="200"></textarea></label><label
+                                        class="field full"><span>背景簡述</span><textarea name="biography"
+                                            maxlength="1000"></textarea></label></div>
+                                <div class="actions"><button class="btn" type="submit">儲存員工資料</button><button
+                                        class="btn secondary" id="resetStaff" type="button">清除表單</button></div>
+                                <p id="staffStatus" aria-live="polite"></p>
                             </form>
-                            <section class="portal-card wide"><div class="card-head"><div><span class="eyebrow">ACTIVE STAFF</span><h2>員工名冊</h2><p>照片檔名須與員工編號相同並放在 `static/staff`。</p></div><a class="btn secondary" href="staff.html">查看出缺勤</a></div><div class="staff-admin-list" id="staffList"><div class="empty">載入中…</div></div></section>
+                            <section class="portal-card wide">
+                                <div class="card-head">
+                                    <div><span class="eyebrow">ACTIVE STAFF</span>
+                                        <h2>員工名冊</h2>
+                                        <p>預設依員工編號排列，也可切換為部門排序。</p>
+                                    </div><label class="field compact-field"><span>排序</span><select id="staffSort">
+                                            <option value="employee_id">員工編號</option>
+                                            <option value="department">部門</option>
+                                        </select></label><a class="btn secondary" href="staff.html">查看出缺勤</a>
+                                </div>
+                                <div class="staff-admin-list" id="staffList">
+                                    <div class="empty">載入中…</div>
+                                </div>
+                            </section>
                         </div>
                     </section>
                     <section class="admin-panel" id="queuePanel">
@@ -142,10 +180,10 @@
     </div>
     <div class="toast" id="toast" role="status"></div>
     <script>
-        let csrf = '', tables = [], staffItems = [], selectedTable = '', currentPage = 1, totalRows = 0, pageSize = 20; const loginShell = document.querySelector('#loginShell'), adminConsole = document.querySelector('#adminConsole'), apiState = document.querySelector('#apiState'), adminName = document.querySelector('#adminName'), settingsForm = document.querySelector('#settingsForm'), settingsPreview = document.querySelector('#settingsPreview'), toast = document.querySelector('#toast'), loginForm = document.querySelector('#loginForm'), loginStatus = document.querySelector('#loginStatus'), logoutButton = document.querySelector('#logoutButton'), adminTabs = document.querySelector('#adminTabs'), previewTitle = document.querySelector('#previewTitle'), previewSubtitle = document.querySelector('#previewSubtitle'), settingsStatus = document.querySelector('#settingsStatus'), catalogSearch = document.querySelector('#catalogSearch'), catalog = document.querySelector('#catalog'), dataTitle = document.querySelector('#dataTitle'), dataBody = document.querySelector('#dataBody'), dataMeta = document.querySelector('#dataMeta'), dataHead = document.querySelector('#dataHead'), pageInfo = document.querySelector('#pageInfo'), prevPage = document.querySelector('#prevPage'), nextPage = document.querySelector('#nextPage'), submissionList = document.querySelector('#submissionList'), staffForm = document.querySelector('#staffForm'), staffList = document.querySelector('#staffList'), staffStatus = document.querySelector('#staffStatus'), resetStaff = document.querySelector('#resetStaff'), syncTraining = document.querySelector('#syncTraining'), syncStatus = document.querySelector('#syncStatus'); const esc = value => { const n = document.createElement('div'); n.textContent = value ?? ''; return n.innerHTML }; const number = value => new Intl.NumberFormat('zh-TW').format(value);
-        async function request(url, options = {}) { const response = await fetch(url, { credentials: 'include', ...options }), body = await response.json(); if (!response.ok) throw new Error(body.error || '操作失敗'); return body.data }
+        const employeeLoginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`; let csrf = '', tables = [], staffItems = [], selectedTable = '', currentPage = 1, totalRows = 0, pageSize = 20; const loginShell = document.querySelector('#loginShell'), adminConsole = document.querySelector('#adminConsole'), apiState = document.querySelector('#apiState'), adminName = document.querySelector('#adminName'), settingsForm = document.querySelector('#settingsForm'), settingsPreview = document.querySelector('#settingsPreview'), toast = document.querySelector('#toast'), loginForm = document.querySelector('#loginForm'), loginStatus = document.querySelector('#loginStatus'), logoutButton = document.querySelector('#logoutButton'), adminTabs = document.querySelector('#adminTabs'), previewTitle = document.querySelector('#previewTitle'), previewSubtitle = document.querySelector('#previewSubtitle'), settingsStatus = document.querySelector('#settingsStatus'), catalogSearch = document.querySelector('#catalogSearch'), catalog = document.querySelector('#catalog'), dataTitle = document.querySelector('#dataTitle'), dataBody = document.querySelector('#dataBody'), dataMeta = document.querySelector('#dataMeta'), dataHead = document.querySelector('#dataHead'), pageInfo = document.querySelector('#pageInfo'), prevPage = document.querySelector('#prevPage'), nextPage = document.querySelector('#nextPage'), submissionList = document.querySelector('#submissionList'), staffForm = document.querySelector('#staffForm'), staffList = document.querySelector('#staffList'), staffSort = document.querySelector('#staffSort'), staffStatus = document.querySelector('#staffStatus'), resetStaff = document.querySelector('#resetStaff'), syncTraining = document.querySelector('#syncTraining'), syncStatus = document.querySelector('#syncStatus'); const esc = value => { const n = document.createElement('div'); n.textContent = value ?? ''; return n.innerHTML }; const number = value => new Intl.NumberFormat('zh-TW').format(value);
+        async function request(url, options = {}) { const response = await fetch(url, { credentials: 'include', ...options }), body = await response.json().catch(() => ({})); if (response.status === 401 && body.code === 'EMPLOYEE_AUTH_REQUIRED') location.replace(employeeLoginUrl); if (!response.ok) throw new Error(body.error || '操作失敗'); return body.data }
         function showLogin() { loginShell.hidden = false; adminConsole.hidden = true; apiState.textContent = '需要管理員登入' } function showAdmin(session) { loginShell.hidden = true; adminConsole.hidden = false; adminName.textContent = session.username; csrf = session.csrf; apiState.textContent = '管理員已登入'; apiState.classList.add('ok'); loadAdmin() }
-        async function loadAdmin() { try { const [settings, catalogData, submissions, staff] = await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'), request('/api/admin/submissions'), request('/api/admin/staff')]); settingsForm.theme.value = settings.theme; settingsForm.hero_title.value = settings.hero_title; settingsForm.hero_subtitle.value = settings.hero_subtitle; settingsForm.announcement.value = settings.announcement || ''; updatePreview(); tables = catalogData; staffItems = staff; renderCatalog(); renderSubmissions(submissions); renderStaff() } catch (error) { toast.textContent = error.message; toast.classList.add('show') } }
+        async function loadAdmin() { try { const [settings, catalogData, submissions, staff] = await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'), request('/api/admin/submissions'), request(`/api/admin/staff?sort=${encodeURIComponent(staffSort.value)}`)]); settingsForm.theme.value = settings.theme; settingsForm.hero_title.value = settings.hero_title; settingsForm.hero_subtitle.value = settings.hero_subtitle; settingsForm.announcement.value = settings.announcement || ''; updatePreview(); tables = catalogData; staffItems = staff; renderCatalog(); renderSubmissions(submissions); renderStaff() } catch (error) { toast.textContent = error.message; toast.classList.add('show') } }
         loginForm.onsubmit = async event => { event.preventDefault(); loginStatus.className = ''; loginStatus.textContent = '驗證中…'; try { const session = await request('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm))) }); loginForm.reset(); loginStatus.textContent = ''; showAdmin(session) } catch (error) { loginStatus.className = 'error-note'; loginStatus.textContent = error.message } };
         logoutButton.onclick = async () => { await request('/api/admin/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); csrf = ''; showLogin() };
         adminTabs.onclick = event => { const button = event.target.closest('[data-panel]'); if (!button) return; adminTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button)); document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel)) };
@@ -158,7 +196,7 @@
         resetStaff.onclick = () => { staffForm.reset(); staffForm.elements.employee_id.readOnly = false; staffStatus.textContent = ''; staffStatus.className = '' };
         staffForm.onsubmit = async event => { event.preventDefault(); staffStatus.textContent = '儲存中…'; staffStatus.className = ''; try { await request('/api/admin/staff', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(Object.fromEntries(new FormData(staffForm))) }); staffItems = await request('/api/admin/staff'); renderStaff(); resetStaff.click(); staffStatus.className = 'success-note'; staffStatus.textContent = '員工資料已儲存。' } catch (error) { staffStatus.className = 'error-note'; staffStatus.textContent = error.message } };
         syncTraining.onclick = async () => { syncTraining.disabled = true; syncStatus.textContent = '正在轉換並同步 Word 文件…'; try { const result = await request('/api/admin/training/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}' }); syncStatus.className = 'success-note'; syncStatus.textContent = `已同步 ${result.documents} 份教育文件。` } catch (error) { syncStatus.className = 'error-note'; syncStatus.textContent = error.message } finally { syncTraining.disabled = false } };
-        request('/api/admin/session').then(session => session.authenticated ? showAdmin(session) : showLogin()).catch(showLogin);
+        staffSort.onchange = async () => { staffItems = await request(`/api/admin/staff?sort=${encodeURIComponent(staffSort.value)}`); renderStaff() }; request('/api/employee/session').then(session => { if (!session.authenticated) { location.replace(employeeLoginUrl); return null } return request('/api/admin/session') }).then(session => session && (session.authenticated ? showAdmin(session) : showLogin())).catch(showLogin);
     </script>
 </body>
 

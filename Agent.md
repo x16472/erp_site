@@ -34,7 +34,7 @@ erp_site/
 
 【程式碼品質規範】
 - 程式碼必須乾淨且包含適當註解。
-- 所有 JavaScript 請直接內嵌在各自 HTML 檔案的 <script> 標籤中，保持單一檔案可直接用瀏覽器開啟（Standalone）。
+- 所有 JavaScript 請直接內嵌在各自 HTML 檔案的`<script>標籤中，保持單一檔案可直接用瀏覽器開啟`（Standalone）。
 
 ## 已修正問題
 - 404 狀態列改用標準英文 `Not Found`，中文說明放在 UTF-8 回應本文，已排除 `UnicodeEncodeError`。
@@ -90,3 +90,6 @@ erp_site/
 - `staff.html` 已整合 MIS 員工主檔維護、照片預覽及上傳；文字寫入 `dbo.Frobel_Staff`，圖片限制為 JPEG、PNG、WebP 與 5 MB，檔名由不可變更的員工編號自動產生。
 - 員工編號進入編輯狀態後會鎖定並以警示色標記；後端沒有變更既有主鍵的操作。
 - `app.py` 與 `start_windows_80.bat` 改為監聽 `0.0.0.0`，啟動時列出可供同一內網使用的 IPv4 位址；Live Server 亦改用內網模式。
+
+## 打卡功能
+-   該項功能目前做的不錯，有點公司網站的雛形。

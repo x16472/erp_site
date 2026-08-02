@@ -62,6 +62,8 @@
     <script>
         const DEFAULT_URL = 'https://www.youtube.com/watch?v=fxnjjVyMd7g';
         const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoTitle = document.querySelector('#videoTitle'), openYoutube = document.querySelector('#openYoutube'), submitButton = youtubeForm.querySelector('button[type="submit"]');
+        const loginUrl=`employee-login.html?next=${encodeURIComponent(location.pathname)}`;
+        const employeeAccess=fetch('/api/employee/session',{credentials:'include'}).then(r=>r.json()).then(body=>{if(!body.data?.authenticated){location.replace(loginUrl);throw new Error('需要員工驗證')}return body.data});
 
         async function resolveVideo(url, remember = true) {
             const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
@@ -70,8 +72,10 @@
             youtubeStatus.className = 'hint';
             youtubeStatus.textContent = '正在確認影片並取得標題…';
             try {
+                await employeeAccess;
                 const response = await fetch('/api/youtube/resolve', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }), signal: controller.signal });
                 const body = await response.json().catch(() => ({}));
+                if(response.status===401)location.replace(loginUrl);
                 if (!response.ok) throw new Error(body.error || '影片資訊取得失敗');
                 const video = body.data;
                 youtubePlayer.src = video.embed_url;

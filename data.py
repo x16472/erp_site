@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import json
 import sys
+import threading
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
@@ -15,6 +16,8 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).parent.resolve()
+STAFF_CSV = ROOT / "data" / "staff.csv"
+STAFF_SYNC_LOCK = threading.Lock()
 
 # 本機驗證環境可將依賴放在 .deps；正式環境請使用 requirements.txt。
 LOCAL_DEPS = ROOT / ".deps"
@@ -427,6 +430,7 @@ APPLICATION_TABLES = (
     "Frobel_WebSettings", "Frobel_Staff", "Frobel_Attendance",
     "Frobel_OperationCategory", "Frobel_OperationSubmission",
     "Frobel_TrainingDocument", "Frobel_TrainingSection", "Frobel_TrainingQuestion",
+    "Frobel_ImportState",
 )
 
 
@@ -521,6 +525,14 @@ def ensure_application_schema() -> dict[str, Any]:
             CONSTRAINT FK_Frobel_TrainingQuestion_Document FOREIGN KEY (document_id) REFERENCES dbo.Frobel_TrainingDocument(document_id),
             CONSTRAINT CK_Frobel_TrainingQuestion_Answer CHECK (correct_index BETWEEN 0 AND 9)
         )""",
+        """IF OBJECT_ID(N'dbo.Frobel_ImportState', N'U') IS NULL
+        CREATE TABLE dbo.Frobel_ImportState (
+            source_key nvarchar(100) NOT NULL PRIMARY KEY,
+            source_modified bigint NOT NULL,
+            source_size bigint NOT NULL,
+            imported_rows int NOT NULL,
+            imported_at datetime2 NOT NULL DEFAULT SYSDATETIME()
+        )""",
     ]
     try:
         with connect(read_only=False, autocommit=False) as db:
@@ -540,64 +552,137 @@ def ensure_application_schema() -> dict[str, Any]:
                         (category,question,options_json,correct_index,explanation)
                         VALUES (?,?,?,?,?)
                     """, item["category"], item["question"], json.dumps(item["options"], ensure_ascii=False), item["answer"], item["explanation"])
-            staff_count = cursor.execute("SELECT COUNT(*) FROM dbo.Frobel_Staff").fetchone()[0]
-            if not staff_count:
-                _seed_staff_csv(cursor)
+            _sync_staff_csv_cursor(cursor)
             db.commit()
         return {"tables": list(APPLICATION_TABLES), "status": "ready"}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("網站應用資料表建立失敗，請確認資料庫帳號具備建表權限。") from exc
 
 
-def _seed_staff_csv(cursor) -> int:
-    source = ROOT / "data" / "staff.csv"
-    if not source.is_file():
+def _staff_photo_file(employee_id: str) -> str | None:
+    for extension in ("jpg", "png", "webp"):
+        candidate = ROOT / "static" / "staff" / f"{employee_id}.{extension}"
+        if candidate.is_file():
+            return candidate.name
+    return None
+
+
+def _sync_staff_csv_cursor(cursor) -> int:
+    """CSV 有異動時才合併員工主檔；未列於 CSV 的資料不會被停用。"""
+    if not STAFF_CSV.is_file():
         return 0
-    inserted = 0
-    with source.open("r", encoding="utf-8-sig", newline="") as stream:
+    state = STAFF_CSV.stat()
+    previous = cursor.execute(
+        "SELECT source_modified,source_size FROM dbo.Frobel_ImportState WHERE source_key=N'staff.csv'"
+    ).fetchone()
+    if previous and previous[0] == state.st_mtime_ns and previous[1] == state.st_size:
+        return 0
+
+    imported = 0
+    with STAFF_CSV.open("r", encoding="utf-8-sig", newline="") as stream:
         for row in csv.DictReader(stream):
             employee_id = str(row.get("員工編號", "")).strip().upper()
             if not employee_id:
                 continue
             age_text = str(row.get("年齡", "")).strip()
             age = int(age_text) if age_text.isdigit() else None
-            photo = f"{employee_id}.jpg" if (ROOT / "static" / "staff" / f"{employee_id}.jpg").is_file() else None
+            photo = _staff_photo_file(employee_id)
             cursor.execute("""
-                INSERT dbo.Frobel_Staff
-                (employee_id,display_name,gender,age,department,position,traits,biography,photo_file,updated_by)
-                VALUES (?,?,?,?,?,?,?,?,?,N'csv-import')
-            """, employee_id, row.get("姓名", ""), row.get("性別", ""), age, row.get("部門", ""),
-                 row.get("職位", ""), row.get("個性特質", ""), row.get("生平背景簡述", ""), photo)
-            inserted += 1
-    return inserted
+                MERGE dbo.Frobel_Staff AS target
+                USING (SELECT ? AS employee_id) AS source ON target.employee_id=source.employee_id
+                WHEN MATCHED THEN UPDATE SET
+                    display_name=?,gender=?,age=?,department=?,position=?,traits=?,biography=?,
+                    photo_file=COALESCE(target.photo_file,?),is_active=1,
+                    updated_by=N'csv-import',updated_at=SYSDATETIME()
+                WHEN NOT MATCHED THEN INSERT
+                    (employee_id,display_name,gender,age,department,position,traits,biography,photo_file,updated_by)
+                    VALUES (?,?,?,?,?,?,?,?,?,N'csv-import');
+            """, employee_id, row.get("姓名", ""), row.get("性別", ""), age,
+                 row.get("部門", ""), row.get("職位", ""), row.get("個性特質", ""),
+                 row.get("生平背景簡述", ""), photo, employee_id, row.get("姓名", ""),
+                 row.get("性別", ""), age, row.get("部門", ""), row.get("職位", ""),
+                 row.get("個性特質", ""), row.get("生平背景簡述", ""), photo)
+            imported += 1
+    cursor.execute("""
+        MERGE dbo.Frobel_ImportState AS target
+        USING (SELECT N'staff.csv' AS source_key) AS source ON target.source_key=source.source_key
+        WHEN MATCHED THEN UPDATE SET source_modified=?,source_size=?,imported_rows=?,imported_at=SYSDATETIME()
+        WHEN NOT MATCHED THEN INSERT (source_key,source_modified,source_size,imported_rows)
+        VALUES (N'staff.csv',?,?,?);
+    """, state.st_mtime_ns, state.st_size, imported, state.st_mtime_ns, state.st_size, imported)
+    return imported
 
 
-def public_staff() -> list[dict[str, Any]]:
+def sync_staff_csv() -> int:
+    """掃描 data/staff.csv，並在檔案內容更新後同步 SQL Server。"""
+    with STAFF_SYNC_LOCK:
+        try:
+            with connect(read_only=False, autocommit=False) as db:
+                imported = _sync_staff_csv_cursor(db.cursor())
+                db.commit()
+                return imported
+        except OSError as exc:
+            raise DatabaseUnavailable("員工 CSV 無法讀取。") from exc
+        except pyodbc.Error as exc:
+            raise DatabaseUnavailable("員工 CSV 同步失敗。") from exc
+
+
+def _staff_order(sort_by: str) -> str:
+    if sort_by == "department":
+        return "department, employee_id"
+    if sort_by in {"", "employee_id"}:
+        return "employee_id"
+    raise ValueError("員工排序方式不正確")
+
+
+def public_staff(sort_by: str = "employee_id") -> list[dict[str, Any]]:
     """僅回傳適合官網公開的員工基本介紹。"""
-    return _fetch("""
+    sync_staff_csv()
+    return _fetch(f"""
         SELECT display_name, department, position, traits, photo_file
-        FROM dbo.Frobel_Staff WHERE is_active=1 ORDER BY department, employee_id
+        FROM dbo.Frobel_Staff WHERE is_active=1 ORDER BY {_staff_order(sort_by)}
     """)
 
 
-def attendance_staff_options() -> list[dict[str, Any]]:
+def attendance_staff_options(sort_by: str = "employee_id") -> list[dict[str, Any]]:
     """提供員工工作台打卡選單；不包含年齡、背景等管理欄位。"""
-    return _fetch("""
+    sync_staff_csv()
+    return _fetch(f"""
         SELECT employee_id, display_name, department, position
         FROM dbo.Frobel_Staff
         WHERE is_active=1
-        ORDER BY department, employee_id
+        ORDER BY {_staff_order(sort_by)}
     """)
 
 
-def staff_records() -> list[dict[str, Any]]:
-    return _fetch("""
+def staff_records(sort_by: str = "employee_id") -> list[dict[str, Any]]:
+    sync_staff_csv()
+    return _fetch(f"""
         SELECT employee_id,display_name,gender,age,department,position,traits,biography,photo_file,is_active,updated_by,updated_at
-        FROM dbo.Frobel_Staff ORDER BY is_active DESC, department, employee_id
+        FROM dbo.Frobel_Staff ORDER BY is_active DESC, {_staff_order(sort_by)}
     """)
+
+
+def employee_identity(employee_id: str) -> dict[str, Any]:
+    """以 SQL Server 員工主檔驗證工作台登入身分。"""
+    sync_staff_csv()
+    rows = _fetch("""
+        SELECT employee_id,display_name,department,position
+        FROM dbo.Frobel_Staff WHERE employee_id=? AND is_active=1
+    """, (employee_id,))
+    if not rows:
+        raise ValueError("員工編號不存在或已停用")
+    return rows[0]
+
+
+def server_time() -> dict[str, str]:
+    """回傳 SQL Server 帶時區時間，供前端校準顯示與打卡。"""
+    row = _fetch("SELECT CONVERT(nvarchar(40),SYSDATETIMEOFFSET(),127) AS [current_time]")[0]
+    return {"current_time": row["current_time"]}
 
 
 def save_staff(item: dict[str, Any], actor: str, photo_file: str | None = None) -> dict[str, Any]:
+    sync_staff_csv()
     try:
         with connect(read_only=False) as db:
             cursor = db.cursor()
@@ -658,20 +743,24 @@ def clock_attendance(item: dict[str, str], source_ip: str) -> dict[str, Any]:
                 ORDER BY clocked_at DESC, attendance_id DESC
             """, item["employee_id"]).fetchone()
             _validate_attendance_sequence(previous[0] if previous else None, item["action"])
-            row = cursor.execute("""
-                INSERT dbo.Frobel_Attendance (employee_id,action,source_ip)
-                OUTPUT inserted.action, inserted.clocked_at
-                VALUES (?,?,?)
-            """, item["employee_id"], item["action"], source_ip).fetchone()
+            occurred = cursor.execute("""
+                DECLARE @occurred datetimeoffset=SYSDATETIMEOFFSET();
+                SELECT CONVERT(nvarchar(40),@occurred,127),CONVERT(datetime2,@occurred)
+            """).fetchone()
+            cursor.execute("""
+                INSERT dbo.Frobel_Attendance (employee_id,action,clocked_at,source_ip)
+                VALUES (?,?,?,?)
+            """, item["employee_id"], item["action"], occurred[1], source_ip)
             db.commit()
-        return {"employee_id": item["employee_id"], "action": row[0], "clocked_at": _json_value(row[1])}
+        return {"employee_id": item["employee_id"], "action": item["action"], "clocked_at": occurred[0]}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("打卡寫入失敗。") from exc
 
 
 def attendance_records(day: str = "", employee_id: str = "") -> list[dict[str, Any]]:
     return _fetch("""
-        SELECT a.attendance_id,a.employee_id,s.display_name,s.department,s.position,a.action,a.clocked_at
+        SELECT a.attendance_id,a.employee_id,s.display_name,s.department,s.position,a.action,
+               CONVERT(nvarchar(40),TODATETIMEOFFSET(a.clocked_at,DATEPART(TZOFFSET,SYSDATETIMEOFFSET())),127) AS clocked_at
         FROM dbo.Frobel_Attendance a
         JOIN dbo.Frobel_Staff s ON s.employee_id=a.employee_id
         WHERE (?=N'' OR CONVERT(date,a.clocked_at)=CONVERT(date,?))
