@@ -2,7 +2,7 @@
 __pycache__/
 *.pyc
 data/*.db
-data/operation_submissions.json
+data/exam/.converted/
 .agents/
 .deps/
 .venv/

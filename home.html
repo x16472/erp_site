@@ -1,14 +1,106 @@
 <!doctype html>
-<html lang="zh-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>員工入口｜福祿貝爾營運中心</title><link rel="stylesheet" href="style.css"></head>
-<body><div class="portal-shell"><aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a><nav class="portal-nav"><a class="active" href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav><p class="portal-foot">EMPLOYEE PORTAL · 內部使用</p></aside><main class="portal-main"><header class="portal-topbar"><div><span class="top-kicker">EMPLOYEE PORTAL</span><h1>員工工作台</h1></div><span class="api-state" id="apiState">正在同步園務資料</span></header><div class="portal-content">
-<section class="portal-welcome"><div><span class="eyebrow" style="color:#8edcff">TODAY AT FROEBEL</span><h2>早安，一起照顧好今天。</h2><p id="announcement">讀取園務公告中…</p></div><img src="static/0-3-08.png" alt="福祿貝爾識別"></section>
-<section class="metric-grid" id="metrics"><article class="metric-card"><p>載入園務指標…</p></article></section>
-<div class="portal-grid"><section class="portal-card wide"><div class="card-head"><div><span class="eyebrow">QUICK ACCESS</span><h2>常用工作入口</h2></div></div><div class="quick-links"><a class="quick-link" href="sales.html"><b>園務資料蒐集</b><small>填寫出勤、班級、接送與設備日報</small></a><a class="quick-link" href="exam.html"><b>教育訓練</b><small>兒少資料與園務安全研習</small></a><a class="quick-link" href="game.html"><b>休閒專區</b><small>在工作空檔放鬆一下</small></a></div></section><section class="portal-card narrow"><div class="card-head"><div><span class="eyebrow">CLASSROOMS</span><h2>班級概況</h2></div></div><div class="class-list" id="classes"></div></section>
-<section class="portal-card full"><div class="card-head"><div><span class="eyebrow">KNOWLEDGE SEARCH</span><h2>園務知識快速檢索</h2><p>搜尋學籍、班級、收費、接送與資料保護說明。</p></div></div><div class="search-box"><label class="sr-only" for="search">搜尋知識</label><input id="search" type="search" placeholder="例如：學籍異動、接送資料、托育收費…"><span>⌕</span></div><div class="knowledge-grid" id="knowledge"><div class="empty">正在載入知識條目…</div></div></section></div>
-</div></main></div><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-box"><button class="close" aria-label="關閉">×</button><span class="tag" id="modalCategory"></span><h2 id="modalTitle"></h2><p class="hint" id="modalSummary"></p><p id="modalDetail"></p><div class="success-note" id="modalRelated"></div></div></div>
-<script>
-let entries=[];const search=document.querySelector('#search'),knowledge=document.querySelector('#knowledge'),announcement=document.querySelector('#announcement'),metrics=document.querySelector('#metrics'),classes=document.querySelector('#classes'),apiState=document.querySelector('#apiState'),modal=document.querySelector('#modal'),modalCategory=document.querySelector('#modalCategory'),modalTitle=document.querySelector('#modalTitle'),modalSummary=document.querySelector('#modalSummary'),modalDetail=document.querySelector('#modalDetail'),modalRelated=document.querySelector('#modalRelated');const esc=value=>{const n=document.createElement('div');n.textContent=value??'';return n.innerHTML};const number=value=>new Intl.NumberFormat('zh-TW').format(value);
-function renderKnowledge(){const q=search.value.trim().toLowerCase(),items=q?entries.filter(item=>Object.values(item).join(' ').toLowerCase().includes(q)):entries;knowledge.innerHTML=items.length?items.map(item=>`<button class="knowledge-card" data-id="${item.id}"><span class="tag">${esc(item.category)}</span><h3>${esc(item.title)}</h3><p>${esc(item.summary)}</p></button>`).join(''):'<div class="empty">找不到相關條目。</div>'}
-Promise.all([fetch('/api/dashboard').then(r=>r.json()),fetch('/api/knowledge').then(r=>r.json()),fetch('/api/public').then(r=>r.json())]).then(([dashboardResponse,knowledgeResponse,publicResponse])=>{const dashboard=dashboardResponse.data;entries=knowledgeResponse.data;announcement.textContent=publicResponse.data.settings.announcement||'今天也請留意幼兒安全與交接紀錄。';metrics.innerHTML=dashboard.metrics.map((item,index)=>`<article class="metric-card"><span>0${index+1}</span><p>${esc(item.label)}</p><strong>${number(item.value)}</strong> ${esc(item.unit)}</article>`).join('');classes.innerHTML=dashboard.classes.map(item=>`<div class="class-row"><span>${esc(item.code)}</span><div><b>${esc(item.name)}</b><small>${esc(item.campus)} 園區</small></div></div>`).join('');renderKnowledge();apiState.textContent='園務資料已同步';apiState.classList.add('ok')}).catch(()=>{apiState.textContent='資料服務未連線';knowledge.innerHTML='<div class="error-note">無法讀取園務資料。</div>'});
-search.addEventListener('input',renderKnowledge);knowledge.onclick=event=>{const button=event.target.closest('[data-id]');if(!button)return;const item=entries.find(entry=>entry.id===button.dataset.id);if(!item)return;modalCategory.textContent=item.category;modalTitle.textContent=item.title;modalSummary.textContent=item.summary;modalDetail.textContent=item.detail;modalRelated.textContent=item.related;modal.classList.add('open')};document.addEventListener('click',event=>{if(event.target===modal||event.target.closest('.close'))modal.classList.remove('open')});document.addEventListener('keydown',event=>{if(event.key==='Escape')modal.classList.remove('open')});
-</script></body></html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>員工入口｜福祿貝爾營運中心</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="portal-shell">
+        <aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/0-3-08.png"
+                    alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
+            <nav class="portal-nav"><a class="active" href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
+                    href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="staff.html">員工出缺勤</a><a href="mis.html">MIS 管理</a><a
+                    href="index.html">官方網站</a></nav>
+            <p class="portal-foot">EMPLOYEE PORTAL · 內部使用</p>
+        </aside>
+        <main class="portal-main">
+            <header class="portal-topbar">
+                <div><span class="top-kicker">EMPLOYEE PORTAL</span>
+                    <h1>員工工作台</h1>
+                </div><span class="api-state" id="apiState">正在同步園務資料</span>
+            </header>
+            <div class="portal-content">
+                <section class="portal-welcome">
+                    <div><span class="eyebrow" style="color:#8edcff">TODAY AT FROEBEL</span>
+                        <h2>早安，一起照顧好今天。</h2>
+                        <p id="announcement">讀取園務公告中…</p>
+                    </div><img src="static/0-3-08.png" alt="福祿貝爾識別">
+                </section>
+                <section class="clock-panel">
+                    <div><span class="eyebrow">ATTENDANCE CLOCK</span><h2>員工打卡</h2><p>從資料庫員工名冊選擇本人後打卡；畫面只顯示本次打卡時間。</p></div>
+                    <div class="live-clock"><small>目前時間</small><strong id="currentClock">--:--:--</strong></div>
+                    <form id="clockForm" class="clock-form">
+                        <label class="field"><span>員工</span><select name="employee_id" id="clockEmployee" required><option value="">正在載入員工名冊…</option></select></label>
+                        <div class="clock-actions"><button class="btn" name="action" value="CLOCK_IN" type="submit">上班打卡</button><button class="btn secondary" name="action" value="CLOCK_OUT" type="submit">下班打卡</button></div>
+                    </form>
+                    <div class="clock-result" id="clockResult" aria-live="polite">尚未打卡</div>
+                </section>
+                <section class="metric-grid" id="metrics">
+                    <article class="metric-card">
+                        <p>載入園務指標…</p>
+                    </article>
+                </section>
+                <div class="portal-grid">
+                    <section class="portal-card wide">
+                        <div class="card-head">
+                            <div><span class="eyebrow">QUICK ACCESS</span>
+                                <h2>常用工作入口</h2>
+                            </div>
+                        </div>
+                        <div class="quick-links"><a class="quick-link"
+                                href="sales.html"><b>園務資料蒐集</b><small>填寫出勤、班級、接送與設備日報</small></a><a class="quick-link"
+                                href="exam.html"><b>教育訓練</b><small>兒少資料與園務安全研習</small></a><a class="quick-link"
+                                href="game.html"><b>休閒專區</b><small>在工作空檔放鬆一下</small></a></div>
+                    </section>
+                    <section class="portal-card narrow">
+                        <div class="card-head">
+                            <div><span class="eyebrow">CLASSROOMS</span>
+                                <h2>班級概況</h2>
+                            </div>
+                        </div>
+                        <div class="class-list" id="classes"></div>
+                    </section>
+                    <section class="portal-card full">
+                        <div class="card-head">
+                            <div><span class="eyebrow">KNOWLEDGE SEARCH</span>
+                                <h2>園務知識快速檢索</h2>
+                                <p>搜尋學籍、班級、收費、接送與資料保護說明。</p>
+                            </div>
+                        </div>
+                        <div class="search-box"><label class="sr-only" for="search">搜尋知識</label><input id="search"
+                                type="search" placeholder="例如：學籍異動、接送資料、托育收費…"><span>⌕</span></div>
+                        <div class="knowledge-grid" id="knowledge">
+                            <div class="empty">正在載入知識條目…</div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-box"><button class="close" aria-label="關閉">×</button><span class="tag"
+                id="modalCategory"></span>
+            <h2 id="modalTitle"></h2>
+            <p class="hint" id="modalSummary"></p>
+            <p id="modalDetail"></p>
+            <div class="success-note" id="modalRelated"></div>
+        </div>
+    </div>
+    <script>
+        const apiFetch = (path, options = {}) => fetch(path, { credentials: 'include', ...options });
+        const apiData = async (path, options = {}) => { const response = await apiFetch(path, options); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用'); return body.data };
+        let entries = []; const search = document.querySelector('#search'), knowledge = document.querySelector('#knowledge'), announcement = document.querySelector('#announcement'), metrics = document.querySelector('#metrics'), classes = document.querySelector('#classes'), apiState = document.querySelector('#apiState'), modal = document.querySelector('#modal'), modalCategory = document.querySelector('#modalCategory'), modalTitle = document.querySelector('#modalTitle'), modalSummary = document.querySelector('#modalSummary'), modalDetail = document.querySelector('#modalDetail'), modalRelated = document.querySelector('#modalRelated'), currentClock = document.querySelector('#currentClock'), clockForm = document.querySelector('#clockForm'), clockEmployee = document.querySelector('#clockEmployee'), clockButtons = [...clockForm.querySelectorAll('button[type="submit"]')], clockResult = document.querySelector('#clockResult'); const esc = value => { const n = document.createElement('div'); n.textContent = value ?? ''; return n.innerHTML }; const number = value => new Intl.NumberFormat('zh-TW').format(value);
+        function renderKnowledge() { const q = search.value.trim().toLowerCase(), items = q ? entries.filter(item => Object.values(item).join(' ').toLowerCase().includes(q)) : entries; knowledge.innerHTML = items.length ? items.map(item => `<button class="knowledge-card" data-id="${item.id}"><span class="tag">${esc(item.category)}</span><h3>${esc(item.title)}</h3><p>${esc(item.summary)}</p></button>`).join('') : '<div class="empty">找不到相關條目。</div>' }
+        Promise.all([apiData('/api/dashboard'), apiData('/api/knowledge'), apiData('/api/public')]).then(([dashboard, knowledgeItems, publicData]) => { entries = knowledgeItems; announcement.textContent = publicData.settings.announcement || '今天也請留意幼兒安全與交接紀錄。'; metrics.innerHTML = dashboard.metrics.map((item, index) => `<article class="metric-card"><span>0${index + 1}</span><p>${esc(item.label)}</p><strong>${number(item.value)}</strong> ${esc(item.unit)}</article>`).join(''); classes.innerHTML = dashboard.classes.map(item => `<div class="class-row"><span>${esc(item.code)}</span><div><b>${esc(item.name)}</b><small>${esc(item.campus)} 園區</small></div></div>`).join(''); renderKnowledge(); apiState.textContent = '園務資料已同步'; apiState.classList.add('ok') }).catch(error => { apiState.textContent = '資料服務未連線'; knowledge.innerHTML = `<div class="error-note">${esc(error.message)}</div>` });
+        apiData('/api/staff/attendance-options').then(staff => { clockEmployee.innerHTML = '<option value="">請選擇本人</option>' + staff.map(item => `<option value="${esc(item.employee_id)}">${esc(item.employee_id)}｜${esc(item.display_name)}｜${esc(item.department)}</option>`).join(''); clockEmployee.disabled = !staff.length }).catch(error => { clockEmployee.innerHTML = `<option value="">${esc(error.message)}</option>`; clockEmployee.disabled = true });
+        const updateClock = () => currentClock.textContent = new Intl.DateTimeFormat('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date()); updateClock(); setInterval(updateClock, 1000);
+        clockForm.addEventListener('submit', async event => { event.preventDefault(); const button = event.submitter, employeeId = new FormData(clockForm).get('employee_id'); if (!button || !employeeId) return; clockButtons.forEach(item => item.disabled = true); clockResult.className = 'clock-result'; clockResult.textContent = '正在記錄…'; try { const response = await apiFetch('/api/attendance/clock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employee_id: employeeId, action: button.value }) }), body = await response.json(); if (!response.ok) throw new Error(body.error || '打卡失敗'); const label = body.data.action === 'CLOCK_IN' ? '上班打卡' : '下班打卡'; clockResult.className = 'clock-result success-note'; clockResult.textContent = `${label}成功｜${new Date(body.data.clocked_at).toLocaleString('zh-TW')}` } catch (error) { clockResult.className = 'clock-result error-note'; clockResult.textContent = error.message } finally { clockButtons.forEach(item => item.disabled = false) } });
+        search.addEventListener('input', renderKnowledge); knowledge.onclick = event => { const button = event.target.closest('[data-id]'); if (!button) return; const item = entries.find(entry => entry.id === button.dataset.id); if (!item) return; modalCategory.textContent = item.category; modalTitle.textContent = item.title; modalSummary.textContent = item.summary; modalDetail.textContent = item.detail; modalRelated.textContent = item.related; modal.classList.add('open') }; document.addEventListener('click', event => { if (event.target === modal || event.target.closest('.close')) modal.classList.remove('open') }); document.addEventListener('keydown', event => { if (event.key === 'Escape') modal.classList.remove('open') });
+    </script>
+</body>
+
+</html>

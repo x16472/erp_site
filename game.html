@@ -1,3 +1,90 @@
-<!doctype html><html lang="zh-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>休閒專區｜福祿貝爾營運中心</title><link rel="stylesheet" href="style.css"></head><body><div class="portal-shell"><aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a><nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a class="active" href="game.html">休閒專區</a><a href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav></aside><main class="portal-main"><header class="portal-topbar"><div><span class="top-kicker">TAKE A BREAK</span><h1>翻牌小憩</h1></div><span class="api-state ok">遊戲就緒</span></header><div class="portal-content"><div class="card-head"><div><span class="eyebrow">MEMORY GAME</span><h2>放鬆一下，找出四組生活搭檔</h2><p>沒有倒數、沒有排名，讓腦袋換個節奏。</p></div><button class="btn secondary" id="restart">重新洗牌</button></div><div class="portal-grid"><section class="portal-card wide"><div class="game-board" id="board"></div></section><aside class="portal-card narrow"><span class="eyebrow">YOUR RUN</span><h2><span id="moves">0</span> 次翻牌</h2><p class="hint">已完成 <span id="pairs">0</span> / 4 組</p><div class="progress" style="margin:18px 0"><span id="bar" style="width:0"></span></div><p id="message">先從任何一張卡片開始。</p></aside></div></div></main></div><script>
-const board=document.querySelector('#board'),moves=document.querySelector('#moves'),pairs=document.querySelector('#pairs'),bar=document.querySelector('#bar'),message=document.querySelector('#message'),restart=document.querySelector('#restart');const source=[['咖啡','休息片刻'],['音樂','放鬆心情'],['散步','舒展身體'],['微笑','分享溫暖']];let deck=[],open=[],matched=0,count=0,busy=false;function start(){deck=source.flatMap((pair,id)=>pair.map(text=>({id,text}))).sort(()=>Math.random()-.5);open=[];matched=0;count=0;busy=false;moves.textContent=0;pairs.textContent=0;bar.style.width='0';message.textContent='先從任何一張卡片開始。';board.innerHTML=deck.map((item,index)=>`<button class="game-card" data-index="${index}" aria-label="未翻開卡片">${item.text}</button>`).join('')}board.onclick=e=>{const button=e.target.closest('[data-index]');if(!button||busy||button.classList.contains('open')||button.classList.contains('matched'))return;button.classList.add('open');open.push({button,item:deck[Number(button.dataset.index)]});if(open.length<2)return;count++;moves.textContent=count;const[a,b]=open;if(a.item.id===b.item.id){a.button.classList.add('matched');b.button.classList.add('matched');open=[];matched++;pairs.textContent=matched;bar.style.width=`${matched/4*100}%`;message.textContent=matched===4?'全部完成，帶著輕鬆心情回到工作吧！':'找到一組，再接再厲。'}else{busy=true;message.textContent='不是這組，記住位置再試一次。';setTimeout(()=>{a.button.classList.remove('open');b.button.classList.remove('open');open=[];busy=false},700)}};restart.onclick=start;start();
-</script></body></html>
+<!doctype html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>YouTube 直播｜福祿貝爾營運中心</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="portal-shell">
+        <aside class="portal-sidebar">
+            <a class="portal-brand" href="home.html"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
+            <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a class="active" href="game.html">YouTube 直播</a><a href="staff.html">員工出缺勤</a><a href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav>
+        </aside>
+        <main class="portal-main">
+            <header class="portal-topbar">
+                <div><span class="top-kicker">YOUTUBE LIVE LOUNGE</span><h1>YouTube 直播休息站</h1></div>
+                <span class="api-state ok" id="playerState">播放器就緒</span>
+            </header>
+            <div class="portal-content">
+                <section class="portal-card youtube-control">
+                    <div class="card-head">
+                        <div><span class="eyebrow">VIDEO SOURCE</span><h2>貼上 YouTube 網址</h2><p>支援一般影片、直播、Shorts、分享短網址及嵌入網址。</p></div>
+                    </div>
+                    <form id="youtubeForm" class="youtube-form">
+                        <label class="field" for="youtubeUrl"><span>YouTube 網址</span><input id="youtubeUrl" name="url" type="url" inputmode="url" autocomplete="url" value="https://www.youtube.com/watch?v=fxnjjVyMd7g" placeholder="https://www.youtube.com/watch?v=..." required></label>
+                        <button class="btn" type="submit">轉換並播放</button>
+                    </form>
+                    <p class="hint" id="youtubeStatus" aria-live="polite">目前播放測試影片。若影片擁有者禁止嵌入，請更換其他 YouTube 網址。</p>
+                </section>
+
+                <section class="portal-card youtube-stage">
+                    <div class="youtube-player">
+                        <iframe id="youtubePlayer" src="https://www.youtube.com/embed/fxnjjVyMd7g" title="YouTube 直播播放器" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="youtube-meta"><div><span class="eyebrow">NOW PLAYING</span><h2 id="videoCode">fxnjjVyMd7g</h2></div><a class="btn secondary" id="openYoutube" href="https://www.youtube.com/watch?v=fxnjjVyMd7g" target="_blank" rel="noopener noreferrer">在 YouTube 開啟</a></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const DEFAULT_VIDEO_ID = 'fxnjjVyMd7g';
+        const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoCode = document.querySelector('#videoCode'), openYoutube = document.querySelector('#openYoutube');
+
+        function youtubeVideoId(value) {
+            const input = value.trim();
+            if (/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
+            let url;
+            try { url = new URL(input) } catch { throw new Error('請輸入完整的 YouTube 網址。') }
+            const host = url.hostname.toLowerCase().replace(/^www\./, '');
+            let id = '';
+            if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || '';
+            if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+                if (url.pathname === '/watch') id = url.searchParams.get('v') || '';
+                else if (/^\/(embed|live|shorts)\//.test(url.pathname)) id = url.pathname.split('/')[2] || '';
+            }
+            if (!/^[A-Za-z0-9_-]{11}$/.test(id)) throw new Error('無法辨識影片代碼，請確認網址來自 YouTube。');
+            return id;
+        }
+
+        function playVideo(id) {
+            const watchUrl = `https://www.youtube.com/watch?v=${id}`;
+            youtubePlayer.src = `https://www.youtube.com/embed/${id}`;
+            videoCode.textContent = id;
+            openYoutube.href = watchUrl;
+            youtubeUrl.value = watchUrl;
+            youtubeStatus.className = 'hint success-note';
+            youtubeStatus.textContent = '網址已安全轉換並載入播放器。';
+            playerState.textContent = '播放來源已更新';
+            localStorage.setItem('frobelYoutubeVideo', watchUrl);
+        }
+
+        youtubeForm.addEventListener('submit', event => {
+            event.preventDefault();
+            try { playVideo(youtubeVideoId(youtubeUrl.value)) }
+            catch (error) { youtubeStatus.className = 'error-note'; youtubeStatus.textContent = error.message; playerState.textContent = '網址格式錯誤' }
+        });
+
+        const savedUrl = localStorage.getItem('frobelYoutubeVideo');
+        if (savedUrl) {
+            try { playVideo(youtubeVideoId(savedUrl)) }
+            catch { localStorage.removeItem('frobelYoutubeVideo'); playVideo(DEFAULT_VIDEO_ID) }
+        }
+    </script>
+</body>
+
+</html>

@@ -14,7 +14,8 @@ erp_site/
 ├── .gitignore  #Github排除檔案專用
 ├── app.py      #後端：網頁後端的核心控制
 ├── data.py     #後端：主要處理資料庫的串接
-├── input.py    #後端：接收來自前端的輸入，將資料餵給app.py
+├── input.py    #後端：接收來自前端的輸入，彙整後將需要的資料餵給app.py
+├── doc.py      #後端：接收來自data/exam的資料，彙整後將需要的資料餵給app.py
 ├── database.md #針對資料庫設定的說明
 ├── site.md     #針對網頁設定的說明
 ├── agent.md    #主要大方向（這個檔案）
@@ -30,23 +31,6 @@ erp_site/
 ```
 ## 管理員帳號密碼
 設定在`.env`裡面，帳號：`BackendWebAdminUser`、密碼：`BackendWebAdminPassword`，進入[mis.html](/mis.html)必須輸入密碼登錄，且只有這個區塊在前端有較高的權限，可以控管網頁版面，及寫入資料表。
-
-【各頁面具體修改指示】
-1. [ERP 知識百科首頁](e:/資料、文檔/0.文件/Github/erp_site/home.html)：
-- 將儀表板卡片改為「熱門知識條目」與「快速檢索入口」。
-- 新增一個動態搜尋框（Search Bar）：使用者輸入關鍵字時，能即時過濾並顯示相關的 ERP 專有名詞（例如：什麼是銷貨單、MIS 權限等級定義、月底結轉流程）。
-- 點擊搜尋結果或卡片時，使用 Modal（彈出分層視窗）或展開式面板（Accordion）直接在畫面上顯示該條目的詳細百科說明。
-
-2. [銷貨模組百科與模擬器](e:/資料、文檔/0.文件/Github/erp_site/sales.html)：
-- 將原有的銷貨單據列表，改為「銷貨流程互動說明表」。
-- 點擊列表中的每一筆單據（例如 SA-2026030101），會在側邊或下方展開該單據在 ERP 系統中的「生命週期圖解與名詞解釋」（例如：報價 -> 訂單 -> 出貨 -> 請款）。
-- 工具列的「新增銷貨單」按鈕：點擊後彈出互動模擬表單，讓使用者輸入測試資料，送出後能動態新增一筆資料到前端表格中（資料暫存在 LocalStorage，重新整理頁面不會消失）。
-
-3. [資訊管理與權限知識庫](e:/資料、文檔/0.文件/Github/erp_site/mis.html)：
-- 將「新增系統使用者」區塊改為「角色權限矩陣模擬器（Permission Matrix）」。選取不同的角色（如：業務、會計、系統管理員）時，下方會即時切換顯示該角色在 ERP 系統中所擁有的閱讀與操作權限說明。
-- 右側的現有帳號列表，點擊「權限設定」按鈕時，跳出 Modal 展示該角色的詳細權限清單與資安注意事項。
-
-4.  在[首頁](/index.html)已加入[模擬考試](e:/資料、文檔/0.文件/Github/erp_site/exam.html)、[紓壓遊戲](e:/資料、文檔/0.文件/Github/erp_site/game.html)的按鈕，請幫我豐富化你面的內容，做成靜態互動式的網頁。
 
 【程式碼品質規範】
 - 程式碼必須乾淨且包含適當註解。
@@ -64,8 +48,34 @@ erp_site/
 - 前台需大幅翻修為符合幼稚園實際營運的網站，並允許配合需求微調後端程式。
 - 對外首頁、員工工作台、營運蒐集、教育訓練、休閒專區及 MIS 管理中心應維持清楚的角色分流。
 - MIS 登入使用 `.env` 內的管理帳密；帳密只在後端比對，不得回傳前端或寫入公開文件。
-- 管理端只允許寫入網站專用的 `dbo.Frobel_WebSettings`，其他 SQL Server 園務資料維持唯讀。
-- 員工營運輸入先寫入 `data/operation_submissions.json` 待查核，不直接回寫正式資料庫。
+- 管理端與員工輸入只允許寫入網站專用的 `dbo.Frobel_*` 應用資料表，其他 SQL Server 園務資料維持唯讀。
+- 員工營運輸入寫入正規化的 `dbo.Frobel_OperationSubmission` 待查核，不直接回寫既有園務資料表。
 - 已以實際資料庫完成唯讀驗證：可讀取 43 張資料表，管理端未登入會被拒絕，登入後可查閱遮罩資料。
 - 驗證過程不執行官網設定寫入，也不建立測試營運紀錄，以避免測試資料進入正式環境。
 - 公開的 `Readme.md` 只保留專案用途、功能、安裝方式及安全設計；協作要求與內部決策集中記錄於本節。
+## 維護功能
+- 目前使用app.py執行，然後以8000 Port開啟，改為兩種開啟方式，一種是在`Windows`環境下用`*.bat`執行，以80 Port運作，另一種是用Vscode的`LiveServer`插件，開啟5500 Port運行，皆需要再[app.py](/app.py)內進行調整。
+- 修正用.env內含的MIS帳號、密碼錯誤無法登入的問題。
+- 所有需要輸入的功能，先建立好資料表，並遵循正規化原則，詳細依照[database.md](/database.md)就好。輸入的時候以[input.py](/input.py)來處理，最後回傳給[app.py](/app.py)再去做其他輸出。
+## 新增功能
+- `data/exam`內有`*.doc`的非結構化資料，需要用`python-docx`插件來做處理，主要為後台網頁[教育訓練](/exam.html)請求專用的資料，為求方便可以在資料庫建立相對應資料表。讓[doc.py](/doc.py)方便進行讀取，然後把內容回傳到[教育訓練](/exam.html)上，網頁的改動不只有題庫建立（伴隨資料庫），還需要作出容易查閱的資料
+- 另外我已建立幼稚園員工的[員工資料](/data/staff.csv)，圖片放在這個[資料夾](/static/staff)，圖片檔名就是員工編號，根據目前設定的職掌，只有MIS才能做維護，[前台網頁](/index.html)只要呈現出員工的基本資料，[後台網頁](/home.html)要建置簡易的打卡功能（先建立起資料庫，後續用`inpuy.py`操作輸入），要有員工的打卡板塊，員工只能看到當下打卡時間，打卡狀況要用[員工出缺勤](/staff.html)檢視，同時需要用`.env`的`BackendWebAdminUser`、`BackendWebAdminPassword`進行登入
+
+## 第 73 行起需求的實作紀錄
+- 已加入 `start_windows_80.bat`，由 Python 後端直接以 Port 80 提供網站與 API。
+- 專案只保留 `start_windows_80.bat` 啟動網站與 API；Port 5500 與即時重載由 Ritwick Dey 的 VS Code Live Server 擴充功能負責。
+- `.vscode/settings.json` 使用 `liveServer.settings.proxy` 將 `/api` 轉送到 `http://127.0.0.1:80`；前端維持同來源請求，MIS 登入 Cookie 不需依賴跨來源 CORS。
+- 已建立 8 張 `dbo.Frobel_*` 網站應用資料表；既有園務資料表仍維持唯讀。
+- `input.py` 只負責驗證員工、打卡、營運及官網設定輸入，通過後由 `app.py` 交由 `data.py` 寫入 SQL Server。
+- `doc.py` 優先使用 LibreOffice 無介面轉換舊 `.doc`，再用 `python-docx` 讀取；Microsoft Word COM 僅作為備援。
+- 已匯入 23 份教育文件與 565 個整理後的查閱段落，題庫共 4 題並存放於資料庫。
+- 已從 `data/staff.csv` 初始化 7 位員工，官網只公開姓名、部門、職位與特質；年齡、性別與背景僅供 MIS 維護。
+- 員工工作台只回傳本次上班或下班打卡的伺服器時間；完整出缺勤明細需在 `staff.html` 使用 MIS 帳密登入後查閱。
+- 已驗證 Live Server Proxy 設定、MIS 登入、員工名冊、教育文件、出缺勤權限及 `.env` 靜態路徑封鎖。
+- 已修正 `app.py` 的請求型別、服務執行緒、教育同步例外處理及重複建表流程；教育同步失敗不再阻止其他網站功能啟動。
+- 已修正 `doc.py` 的轉檔程式偵測、逾時與損壞文件處理、標題切段、長內容分段、UTC 修改時間及同步鎖定。
+- 官網員工名冊改為獨立載入，不再受其他首頁 API 失敗連帶影響；員工工作台的打卡人員選單直接讀取 `dbo.Frobel_Staff` 啟用資料。
+- 已依 Phoenix 指示刪除 `start_api_8000.bat`，只保留 `start_windows_80.bat`；啟動前會檢查專案 `.venv`、`pyodbc` 與 `python-docx`，並支援 `--check` 自我檢查。
+- 已重建原先指向不存在 Python 3.10 的 `.venv`，改用 Python 3.12 並安裝 `requirements.txt`；VS Code 固定使用專案直譯器與工作區模組路徑，修正 `app.py` 匯入 `doc.py` 及 `doc.py` 匯入 `python-docx` 的解析問題。
+- 員工打卡改為第一筆必須上班、後續上下班交替，並以資料庫交易鎖避免同一員工同時送出造成連續打卡。
+- `game.html` 已改為 YouTube 直播休息站，只接受可辨識的 YouTube 網址並轉換為嵌入播放器。

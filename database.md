@@ -2,42 +2,60 @@
 
 ## 連線設定
 
-`data.py` 只讀取專案既有 `.env`，不會建立、覆寫或輸出其中的內容。使用的鍵值如下：
+`data.py` 只讀取專案既有 `.env`，不建立、覆寫或輸出其中內容。一般園務查詢使用唯讀連線意圖；只有網站專用資料表的維護功能會建立可寫入連線。
 
-- `DatabaseIP`
-- `DatabasePort`
-- `DatabaseName`
-- `DatabaseUser`
-- `DatabasePassword`
-- `DatabaseDriver`，未設定時使用 `ODBC Driver 17 for SQL Server`
-- `BackendWebAdminUser`
-- `BackendWebAdminPassword`
+## 資料範圍
 
-一般查詢連線帶有 `ApplicationIntent=ReadOnly`。只有管理員儲存官網設定時，才會建立可寫入連線。
+公開官網只取得園區、班級、學籍等彙總，以及經白名單篩選的教職員基本介紹。員工入口提供園務摘要、教育資料及打卡。完整資料表目錄、員工維護、出缺勤與待審紀錄只開放給已登入的 MIS 管理員。
 
-## 查閱模式
+既有園務資料表仍為唯讀。管理端資料查閱會先比對 SQL Server 中繼資料，限制分頁筆數，並遮罩兒少、聯絡、證件、銀行、薪資、保險及稅務欄位。前端無法提交任意 SQL。
 
-公開官網只取得班級、園區與接送服務等彙總數量，不回傳個人明細。員工入口顯示園務摘要、班級與知識內容。完整資料表目錄及分頁查閱僅提供給已登入的 MIS 管理員。
+## 網站專用正規化資料表
 
-管理端查閱流程：
+| 資料表 | 用途與關聯 |
+| --- | --- |
+| `dbo.Frobel_WebSettings` | 官網主題、標題、副標題與公告 |
+| `dbo.Frobel_Staff` | 員工主檔；員工編號為主鍵 |
+| `dbo.Frobel_Attendance` | 上下班打卡；以員工編號外鍵連接員工主檔 |
+| `dbo.Frobel_OperationCategory` | 營運資料分類主檔 |
+| `dbo.Frobel_OperationSubmission` | 營運待審紀錄；以分類代碼連接分類主檔 |
+| `dbo.Frobel_TrainingDocument` | 教育文件主檔、來源檔名與匯入狀態 |
+| `dbo.Frobel_TrainingSection` | 教育文件段落；以文件編號外鍵連接文件主檔 |
+| `dbo.Frobel_TrainingQuestion` | 教育訓練題庫，可選擇連接來源文件 |
 
-1. 從 `INFORMATION_SCHEMA` 取得實際資料表與欄位。
-2. 前端指定的資料表名稱必須與中繼資料完全一致。
-3. 後端自行組合識別字，不接受任意 SQL。
-4. 每次最多回傳 50 筆並進行敏感欄位遮罩。
+所有資料表由 `data.ensure_application_schema()` 以個別 SQL 敘述建立，並設有主鍵、外鍵、唯一限制及必要的數值檢查。應用資料表初始化後才接受前端輸入。
 
-證件、地址、電話、銀行、薪資、托育費用、津貼、保險、稅務，以及幼兒、家長、緊急聯絡人與接送人員等資料均受限制。薪資、銀行、健保、勞保、其他收入與異動金額相關資料表採整表限制。
+## 輸入流程
 
-## 寫入邊界
+```text
+HTML 表單
+  → app.py 接收 JSON
+  → input.py 清理與驗證
+  → data.py 使用參數化 SQL
+  → dbo.Frobel_* 應用資料表
+  → app.py 回傳必要結果
+```
 
-管理端不允許編輯既有園務資料表。唯一 SQL Server 寫入目標是 `dbo.Frobel_WebSettings`，其欄位為官網主題、主標、副標、公告及異動人員；資料表於管理員第一次儲存時建立。
+- 打卡只接受有效且啟用中的員工編號，以及 `CLOCK_IN`、`CLOCK_OUT` 兩種動作。
+- 第一筆必須是上班打卡，之後上、下班必須交替；後端以交易鎖定同一員工的請求，拒絕連續兩次相同類型的打卡。
+- 員工端只收到本次打卡動作與伺服器時間，不會取得個人出勤歷史。
+- 員工資料新增、更新與停用必須通過 MIS 工作階段及 CSRF 驗證。
+- 員工停用採狀態更新，既有打卡紀錄仍保留。
+- 營運輸入只接受既定分類、有效日期、園區代碼及限制範圍內的彙總數量。
 
-員工從 `sales.html` 送出的營運紀錄，經 `input.py` 驗證後寫入本機 `data/operation_submissions.json`，供 MIS 頁面查閱。紀錄不會自動同步或回寫 SQL Server。
+## 教育文件匯入
+
+`doc.py` 掃描 `data/exam`：
+
+1. 舊 `.doc` 優先由 LibreOffice 無介面轉成 `.docx` 快取；沒有 LibreOffice 時才使用 Microsoft Word COM 備援。
+2. `python-docx` 讀取段落及表格，依標題與內容長度整理成查閱區塊。
+3. 文件主檔、段落及題庫分開寫入正規化資料表。
+4. 原始 `.doc` 不會被覆寫；轉換快取位於 `data/exam/.converted` 並由 Git 排除。
 
 ## 正式環境建議
 
-1. 為查閱及官網設定分別建立最小權限帳號。
+1. 將既有園務唯讀查詢與 `dbo.Frobel_*` 寫入拆分為不同的最小權限帳號。
 2. 限制資料庫可連線的主機與來源 IP。
 3. 以 HTTPS 反向代理服務網站，並設定 Secure Cookie。
 4. 將工作階段與操作稽核移至可持久化的集中服務。
-5. 定期依園方兒少資料政策覆核遮罩與存取白名單。
+5. 定期依園方兒少及員工資料政策覆核公開欄位、遮罩與權限白名單。

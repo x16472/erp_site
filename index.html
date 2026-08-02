@@ -1,13 +1,141 @@
 <!doctype html>
-<html lang="zh-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>福祿貝爾幼稚園｜讓孩子在遊戲中成長</title><meta name="description" content="福祿貝爾幼稚園以遊戲、自然與生活經驗陪伴孩子主動探索。"><link rel="stylesheet" href="style.css"></head>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>福祿貝爾幼稚園｜讓孩子在遊戲中成長</title>
+    <meta name="description" content="福祿貝爾幼稚園以遊戲、自然與生活經驗陪伴孩子主動探索。">
+    <link rel="stylesheet" href="style.css">
+</head>
+
 <body class="public-body" data-theme="ocean">
-<header class="public-header"><a class="public-logo" href="/"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><span><b>福祿貝爾幼稚園</b><small>FROEBEL KINDERGARTEN</small></span></a><button class="mobile-menu" id="menuButton" aria-label="開啟選單">☰</button><nav class="public-nav" id="publicNav"><a href="#about">教育理念</a><a href="#day">學習日常</a><a href="#visit">預約參觀</a><a href="home.html">員工入口</a><a class="btn" href="#visit">招生諮詢</a></nav></header>
-<main><section class="public-hero"><div class="hero-copy-public"><div class="announcement" id="announcement">歡迎預約參觀，認識福祿貝爾的學習日常。</div><span class="eyebrow">PLAY · DISCOVER · GROW</span><h1 id="heroTitle">在愛與探索中，<br><span>陪孩子長成自己。</span></h1><p id="heroSubtitle">福祿貝爾以遊戲、自然與生活經驗為核心，讓每個孩子在安全而有溫度的環境裡主動學習。</p><div class="actions"><a class="btn red" href="#visit">預約參觀</a><a class="btn secondary" href="#about">認識我們</a></div></div><div class="hero-stage"><div class="hero-card"><img src="static/0-3-08.png" alt="福祿貝爾教育識別"></div><div class="floating-note one"><b>從遊戲出發</b><small>讓好奇心帶領每一天</small></div><div class="floating-note two"><b>安心陪伴</b><small>尊重每個孩子的步調</small></div></div></section>
-<section class="public-stats" id="campus"><div class="public-stat"><b>—</b><span>園務據點</span></div><div class="public-stat"><b>—</b><span>教學班級</span></div><div class="public-stat"><b>—</b><span>幼兒學籍</span></div></section>
-<section class="public-section" id="about"><div class="section-intro"><div><span class="eyebrow">OUR PHILOSOPHY</span><h2>孩子不是被填滿的容器，<br>而是一顆等待發芽的種子。</h2></div><p>我們相信幼兒透過操作、遊戲與真實生活建立理解。老師不是答案的提供者，而是觀察、提問與陪伴探索的人。</p></div><div class="philosophy-grid"><article class="philosophy-card"><span>01</span><h3>遊戲中學習</h3><p>從積木、角色扮演、音樂與肢體活動中，培養思考、表達與合作能力。</p></article><article class="philosophy-card"><span>02</span><h3>親近自然</h3><p>透過季節、植物與戶外觀察，讓孩子建立對環境的感受與責任。</p></article><article class="philosophy-card"><span>03</span><h3>生活即課程</h3><p>收拾、用餐、分享與解決衝突，都是練習獨立與關懷他人的重要時刻。</p></article></div></section>
-<section class="day-section" id="day"><div class="public-section"><div class="section-intro"><div><span class="eyebrow">A DAY AT FROEBEL</span><h2>有節奏，也有自由探索的每一天</h2></div><p>穩定的作息帶來安全感，開放的活動讓孩子保有選擇與想像。</p></div><div class="day-grid"><article class="day-item"><time>08:00</time><h3>溫暖入園</h3><p>老師接住每個孩子的情緒，從問候與自由遊戲開始。</p></article><article class="day-item"><time>09:30</time><h3>主題探索</h3><p>以問題、操作材料與小組討論展開跨領域學習。</p></article><article class="day-item"><time>11:30</time><h3>生活共作</h3><p>從用餐與整理練習自理、等待、分享與互相協助。</p></article><article class="day-item"><time>14:30</time><h3>戶外與創作</h3><p>在陽光、運動、音樂與藝術中舒展身體與想像。</p></article></div></div></section>
-<section class="public-section" id="visit"><div class="cta-banner"><div><span class="eyebrow" style="color:#8fdcff">COME AND SEE</span><h2>親自感受孩子學習的空間</h2><p>請洽各園區招生窗口，由園務團隊安排參觀與入園說明。</p></div><a class="btn red" href="#campus">查看園區資訊</a></div></section></main>
-<footer class="public-footer"><div><h3>福祿貝爾幼稚園</h3><p>讓孩子在遊戲、自然與關係中，建立終身學習的力量。</p></div><div><h3>快速連結</h3><a href="#about">教育理念</a><a href="#day">學習日常</a><a href="#visit">招生參觀</a></div><div><h3>內部系統</h3><a href="home.html">員工入口</a><a href="mis.html">MIS 管理區</a></div></footer>
-<script>
-const menuButton=document.querySelector('#menuButton'),publicNav=document.querySelector('#publicNav'),heroTitle=document.querySelector('#heroTitle'),heroSubtitle=document.querySelector('#heroSubtitle'),announcement=document.querySelector('#announcement'),publicStats=document.querySelector('#campus');menuButton.onclick=()=>publicNav.classList.toggle('open');fetch('/api/public').then(r=>{if(!r.ok)throw new Error();return r.json()}).then(({data})=>{const settings=data.settings;document.body.dataset.theme=settings.theme;heroTitle.textContent=settings.hero_title;heroSubtitle.textContent=settings.hero_subtitle;announcement.textContent=settings.announcement||'歡迎預約參觀，認識福祿貝爾的學習日常。';publicStats.innerHTML=data.stats.map(item=>`<div class="public-stat"><b>${new Intl.NumberFormat('zh-TW').format(item.value)}</b><span>${item.label}</span></div>`).join('')}).catch(()=>{});
-</script></body></html>
+    <header class="public-header"><a class="public-logo" href="/"><img src="static/0-3-08.png"
+                alt="福祿貝爾標誌"><span><b>福祿貝爾幼稚園</b><small>FROEBEL KINDERGARTEN</small></span></a><button
+            class="mobile-menu" id="menuButton" aria-label="開啟選單">☰</button>
+        <nav class="public-nav" id="publicNav"><a href="#about">教育理念</a><a href="#day">學習日常</a><a
+                href="#team">教職團隊</a><a href="#visit">預約參觀</a><a href="home.html">員工入口</a><a class="btn" href="#visit">招生諮詢</a></nav>
+    </header>
+    <main>
+        <section class="public-hero">
+            <div class="hero-copy-public">
+                <div class="announcement" id="announcement">歡迎預約參觀，認識福祿貝爾的學習日常。</div><span class="eyebrow">PLAY ·
+                    DISCOVER · GROW</span>
+                <h1 id="heroTitle">在愛與探索中，<br><span>陪孩子長成自己。</span></h1>
+                <p id="heroSubtitle">福祿貝爾以遊戲、自然與生活經驗為核心，讓每個孩子在安全而有溫度的環境裡主動學習。</p>
+                <div class="actions"><a class="btn red" href="#visit">預約參觀</a><a class="btn secondary"
+                        href="#about">認識我們</a></div>
+            </div>
+            <div class="hero-stage">
+                <div class="hero-card"><img src="static/0-3-08.png" alt="福祿貝爾教育識別"></div>
+                <div class="floating-note one"><b>從遊戲出發</b><small>讓好奇心帶領每一天</small></div>
+                <div class="floating-note two"><b>安心陪伴</b><small>尊重每個孩子的步調</small></div>
+            </div>
+        </section>
+        <section class="public-stats" id="campus">
+            <div class="public-stat"><b>—</b><span>園務據點</span></div>
+            <div class="public-stat"><b>—</b><span>教學班級</span></div>
+            <div class="public-stat"><b>—</b><span>幼兒學籍</span></div>
+        </section>
+        <section class="public-section" id="about">
+            <div class="section-intro">
+                <div><span class="eyebrow">OUR PHILOSOPHY</span>
+                    <h2>孩子不是被填滿的容器，<br>而是一顆等待發芽的種子。</h2>
+                </div>
+                <p>我們相信幼兒透過操作、遊戲與真實生活建立理解。老師不是答案的提供者，而是觀察、提問與陪伴探索的人。</p>
+            </div>
+            <div class="philosophy-grid">
+                <article class="philosophy-card"><span>01</span>
+                    <h3>遊戲中學習</h3>
+                    <p>從積木、角色扮演、音樂與肢體活動中，培養思考、表達與合作能力。</p>
+                </article>
+                <article class="philosophy-card"><span>02</span>
+                    <h3>親近自然</h3>
+                    <p>透過季節、植物與戶外觀察，讓孩子建立對環境的感受與責任。</p>
+                </article>
+                <article class="philosophy-card"><span>03</span>
+                    <h3>生活即課程</h3>
+                    <p>收拾、用餐、分享與解決衝突，都是練習獨立與關懷他人的重要時刻。</p>
+                </article>
+            </div>
+        </section>
+        <section class="day-section" id="day">
+            <div class="public-section">
+                <div class="section-intro">
+                    <div><span class="eyebrow">A DAY AT FROEBEL</span>
+                        <h2>有節奏，也有自由探索的每一天</h2>
+                    </div>
+                    <p>穩定的作息帶來安全感，開放的活動讓孩子保有選擇與想像。</p>
+                </div>
+                <div class="day-grid">
+                    <article class="day-item"><time>08:00</time>
+                        <h3>溫暖入園</h3>
+                        <p>老師接住每個孩子的情緒，從問候與自由遊戲開始。</p>
+                    </article>
+                    <article class="day-item"><time>09:30</time>
+                        <h3>主題探索</h3>
+                        <p>以問題、操作材料與小組討論展開跨領域學習。</p>
+                    </article>
+                    <article class="day-item"><time>11:30</time>
+                        <h3>生活共作</h3>
+                        <p>從用餐與整理練習自理、等待、分享與互相協助。</p>
+                    </article>
+                    <article class="day-item"><time>14:30</time>
+                        <h3>戶外與創作</h3>
+                        <p>在陽光、運動、音樂與藝術中舒展身體與想像。</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+        <section class="public-section" id="team">
+            <div class="section-intro">
+                <div><span class="eyebrow">MEET OUR TEAM</span>
+                    <h2>陪孩子探索，也陪家庭安心</h2>
+                </div>
+                <p>由教學、行政、保健與資訊夥伴共同照顧孩子的學習與園所日常。</p>
+            </div>
+            <div class="staff-grid" id="staffGrid"><div class="empty">正在載入教職團隊…</div></div>
+        </section>
+        <section class="public-section" id="visit">
+            <div class="cta-banner">
+                <div><span class="eyebrow" style="color:#8fdcff">COME AND SEE</span>
+                    <h2>親自感受孩子學習的空間</h2>
+                    <p>請洽各園區招生窗口，由園務團隊安排參觀與入園說明。</p>
+                </div><a class="btn red" href="#campus">查看園區資訊</a>
+            </div>
+        </section>
+    </main>
+    <footer class="public-footer">
+        <div>
+            <h3>福祿貝爾幼稚園</h3>
+            <p>讓孩子在遊戲、自然與關係中，建立終身學習的力量。</p>
+        </div>
+        <div>
+            <h3>快速連結</h3><a href="#about">教育理念</a><a href="#day">學習日常</a><a href="#visit">招生參觀</a>
+        </div>
+        <div>
+            <h3>內部系統</h3><a href="home.html">員工入口</a><a href="mis.html">MIS 管理區</a>
+        </div>
+    </footer>
+    <script>
+        const apiFetch = (path, options = {}) => fetch(path, { credentials: 'include', ...options });
+        const apiData = async (path, options = {}) => { const response = await apiFetch(path, options); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用'); return body.data };
+        const esc = value => { const node = document.createElement('div'); node.textContent = value ?? ''; return node.innerHTML };
+        const menuButton = document.querySelector('#menuButton'), publicNav = document.querySelector('#publicNav'), heroTitle = document.querySelector('#heroTitle'), heroSubtitle = document.querySelector('#heroSubtitle'), announcement = document.querySelector('#announcement'), publicStats = document.querySelector('#campus'), staffGrid = document.querySelector('#staffGrid');
+        menuButton.onclick = () => publicNav.classList.toggle('open');
+        apiData('/api/public').then(data => {
+            const settings = data.settings;
+            document.body.dataset.theme = settings.theme;
+            heroTitle.textContent = settings.hero_title;
+            heroSubtitle.textContent = settings.hero_subtitle;
+            announcement.textContent = settings.announcement || '歡迎預約參觀，認識福祿貝爾的學習日常。';
+            publicStats.innerHTML = data.stats.map(item => `<div class="public-stat"><b>${new Intl.NumberFormat('zh-TW').format(item.value)}</b><span>${esc(item.label)}</span></div>`).join('');
+        }).catch(error => { announcement.textContent = error.message; publicStats.innerHTML = '<div class="error-note">園務資料暫時無法載入。</div>' });
+        apiData('/api/staff/public').then(staff => {
+            staffGrid.innerHTML = staff.map(item => `<article class="staff-card"><img src="${item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/0-3-08.png'}" alt="${esc(item.display_name)}"><div><span>${esc(item.department)}</span><h3>${esc(item.display_name)}</h3><b>${esc(item.position)}</b><p>${esc(item.traits || '用心陪伴每個孩子')}</p></div></article>`).join('') || '<div class="empty">教職團隊資料準備中。</div>';
+            staffGrid.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/0-3-08.png' }, { once: true }));
+        }).catch(error => { staffGrid.innerHTML = `<div class="error-note">${esc(error.message)}</div>` });
+    </script>
+</body>
+
+</html>
