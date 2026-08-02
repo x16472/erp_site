@@ -11,7 +11,7 @@
 <body>
     <div class="portal-shell">
         <aside class="portal-sidebar">
-            <a class="portal-brand" href="home.html"><img src="static/0-3-08.png"
+            <a class="portal-brand" href="home.html"><img src="static/appicon.png"
                     alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
             <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
                     href="exam.html">教育訓練</a><a class="active" href="game.html">YouTube 直播</a><a
@@ -29,7 +29,7 @@
                     <div class="card-head">
                         <div><span class="eyebrow">VIDEO SOURCE</span>
                             <h2>貼上 YouTube 網址</h2>
-                            <p>支援一般影片、直播、Shorts、分享短網址及嵌入網址。</p>
+                            <p>支援一般影片、直播、Shorts、分享短網址及嵌入網址。<br>如果不能貼就是頻道主有擋嵌入影片</p>
                         </div>
                     </div>
                     <form id="youtubeForm" class="youtube-form">
@@ -43,8 +43,7 @@
                 </section>
 
                 <section class="portal-card youtube-stage">
-                    <div class="youtube-player"> <iframe id="youtubePlayer"
-                            title="YouTube 直播播放器" frameborder="0"
+                    <div class="youtube-player"> <iframe id="youtubePlayer" title="YouTube 直播播放器" frameborder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> </div>
                     <div class="youtube-meta">
@@ -62,8 +61,8 @@
     <script>
         const DEFAULT_URL = 'https://www.youtube.com/watch?v=fxnjjVyMd7g';
         const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoTitle = document.querySelector('#videoTitle'), openYoutube = document.querySelector('#openYoutube'), submitButton = youtubeForm.querySelector('button[type="submit"]');
-        const loginUrl=`employee-login.html?next=${encodeURIComponent(location.pathname)}`;
-        const employeeAccess=fetch('/api/employee/session',{credentials:'include'}).then(r=>r.json()).then(body=>{if(!body.data?.authenticated){location.replace(loginUrl);throw new Error('需要員工驗證')}return body.data});
+        const loginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`;
+        const employeeAccess = fetch('/api/employee/session', { credentials: 'include' }).then(r => r.json()).then(body => { if (!body.data?.authenticated) { location.replace(loginUrl); throw new Error('需要員工驗證') } return body.data });
 
         async function resolveVideo(url, remember = true) {
             const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
@@ -75,7 +74,7 @@
                 await employeeAccess;
                 const response = await fetch('/api/youtube/resolve', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }), signal: controller.signal });
                 const body = await response.json().catch(() => ({}));
-                if(response.status===401)location.replace(loginUrl);
+                if (response.status === 401) location.replace(loginUrl);
                 if (!response.ok) throw new Error(body.error || '影片資訊取得失敗');
                 const video = body.data;
                 youtubePlayer.src = video.embed_url;
@@ -88,8 +87,8 @@
                 playerState.textContent = '播放器已更新';
             } catch (error) {
                 const message = error.name === 'AbortError' ? '影片資訊讀取逾時，請稍後重試。' : error.message;
-                youtubeStatus.className = 'error-note';youtubeStatus.textContent = message;playerState.textContent = '影片載入失敗';
-            } finally { clearTimeout(timer);submitButton.disabled = false }
+                youtubeStatus.className = 'error-note'; youtubeStatus.textContent = message; playerState.textContent = '影片載入失敗';
+            } finally { clearTimeout(timer); submitButton.disabled = false }
         }
 
         youtubeForm.addEventListener('submit', event => {

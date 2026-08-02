@@ -1,4 +1,5 @@
 @echo off
+echo Starting Frobel Operations Center .
 setlocal
 cd /d "%~dp0"
 set "FROBEL_PYTHON=%~dp0.venv\Scripts\python.exe"

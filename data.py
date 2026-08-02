@@ -240,7 +240,7 @@ DEFAULT_SITE_SETTINGS = {
     "theme": "ocean",
     "hero_title": "在愛與探索中，陪孩子長成自己的模樣",
     "hero_subtitle": "福祿貝爾以遊戲、自然與生活經驗為核心，讓每個孩子在安全而有溫度的環境裡主動學習。",
-    "announcement": "歡迎預約參觀，認識福祿貝爾的學習日常。",
+    "announcement": "歡迎！這是福祿貝爾的日常。",
 }
 
 

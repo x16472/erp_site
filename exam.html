@@ -1,55 +1,88 @@
 <!doctype html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>教育訓練｜福祿貝爾營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<div class="portal-shell">
-    <aside class="portal-sidebar">
-        <a class="portal-brand" href="home.html"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
-        <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a class="active" href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="staff.html">員工出缺勤</a><a href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav>
-    </aside>
-    <main class="portal-main">
-        <header class="portal-topbar"><div><span class="top-kicker">EMPLOYEE TRAINING</span><h1>教育訓練中心</h1></div><span class="api-state" id="apiState">載入教育資料</span></header>
-        <div class="portal-content">
-            <section id="libraryView">
-                <div class="card-head"><div><span class="eyebrow">TRAINING LIBRARY</span><h2>職掌、SOP 與教師手冊</h2><p>從內部 Word 文件整理而成，可依職務分類或關鍵字快速查閱。</p></div></div>
-                <div class="training-toolbar"><label class="search-box"><span class="sr-only">搜尋教育文件</span><input id="documentSearch" type="search" placeholder="搜尋文件名稱或職務分類…"></label><label class="field"><span class="sr-only">文件分類</span><select id="categoryFilter"><option value="">全部分類</option></select></label></div>
-                <div class="training-grid" id="documentGrid"><div class="empty">正在整理教育文件…</div></div>
-            </section>
-            <section class="training-reader" id="readerView" hidden>
-                <button class="btn secondary" id="backToLibrary" type="button">返回文件列表</button>
-                <div class="card-head"><div><span class="eyebrow" id="readerCategory"></span><h2 id="readerTitle"></h2><p id="readerFile"></p></div></div>
-                <div class="training-sections" id="readerSections"></div>
-            </section>
-            <section class="portal-card full training-quiz">
-                <div class="card-head"><div><span class="eyebrow">QUICK CHECK</span><h2>園務安全知識檢核</h2><p>題庫存放於教育訓練資料表，完成後可立即查看解說。</p></div><button class="btn secondary" id="restart" type="button">重新作答</button></div>
-                <div class="progress"><span id="bar" style="width:0"></span></div>
-                <div id="quiz"><div class="empty">正在準備題目…</div></div>
-            </section>
-        </div>
-    </main>
-</div>
-<script>
-const apiFetch=(path,options={})=>fetch(path,{credentials:'include',...options});
-const loginUrl=`employee-login.html?next=${encodeURIComponent(location.pathname)}`;
-const request=async(path,options={})=>{const response=await apiFetch(path,options),body=await response.json().catch(()=>({}));if(response.status===401){location.replace(loginUrl);throw new Error('需要員工驗證')}if(!response.ok)throw new Error(body.error||'資料服務暫時無法使用');return body.data};
-const employeeAccess=request('/api/employee/session').then(session=>{if(!session.authenticated){location.replace(loginUrl);throw new Error('需要員工驗證')}return session});
-const esc=value=>{const node=document.createElement('div');node.textContent=value??'';return node.innerHTML};
-const apiState=document.querySelector('#apiState'),libraryView=document.querySelector('#libraryView'),readerView=document.querySelector('#readerView'),documentSearch=document.querySelector('#documentSearch'),categoryFilter=document.querySelector('#categoryFilter'),documentGrid=document.querySelector('#documentGrid'),backToLibrary=document.querySelector('#backToLibrary'),readerCategory=document.querySelector('#readerCategory'),readerTitle=document.querySelector('#readerTitle'),readerFile=document.querySelector('#readerFile'),readerSections=document.querySelector('#readerSections'),quiz=document.querySelector('#quiz'),bar=document.querySelector('#bar'),restart=document.querySelector('#restart');
-let documents=[],questions=[],at=0,score=0,locked=false;
+    <div class="portal-shell">
+        <aside class="portal-sidebar">
+            <a class="portal-brand" href="home.html"><img src="static/appicon.png"
+                    alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
+            <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a class="active"
+                    href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="staff.html">員工出缺勤</a><a
+                    href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav>
+        </aside>
+        <main class="portal-main">
+            <header class="portal-topbar">
+                <div><span class="top-kicker">EMPLOYEE TRAINING</span>
+                    <h1>教育訓練中心</h1>
+                </div><span class="api-state" id="apiState">載入教育資料</span>
+            </header>
+            <div class="portal-content">
+                <section id="libraryView">
+                    <div class="card-head">
+                        <div><span class="eyebrow">TRAINING LIBRARY</span>
+                            <h2>職掌、SOP 與教師手冊</h2>
+                            <p>從內部 Word 文件整理而成，可依職務分類或關鍵字快速查閱。</p>
+                        </div>
+                    </div>
+                    <div class="training-toolbar"><label class="search-box"><span class="sr-only">搜尋教育文件</span><input
+                                id="documentSearch" type="search" placeholder="搜尋文件名稱或職務分類…"></label><label
+                            class="field"><span class="sr-only">文件分類</span><select id="categoryFilter">
+                                <option value="">全部分類</option>
+                            </select></label></div>
+                    <div class="training-grid" id="documentGrid">
+                        <div class="empty">正在整理教育文件…</div>
+                    </div>
+                </section>
+                <section class="training-reader" id="readerView" hidden>
+                    <button class="btn secondary" id="backToLibrary" type="button">返回文件列表</button>
+                    <div class="card-head">
+                        <div><span class="eyebrow" id="readerCategory"></span>
+                            <h2 id="readerTitle"></h2>
+                            <p id="readerFile"></p>
+                        </div>
+                    </div>
+                    <div class="training-sections" id="readerSections"></div>
+                </section>
+                <section class="portal-card full training-quiz">
+                    <div class="card-head">
+                        <div><span class="eyebrow">QUICK CHECK</span>
+                            <h2>園務安全知識檢核</h2>
+                            <p>題庫存放於教育訓練資料表，完成後可立即查看解說。</p>
+                        </div><button class="btn secondary" id="restart" type="button">重新作答</button>
+                    </div>
+                    <div class="progress"><span id="bar" style="width:0"></span></div>
+                    <div id="quiz">
+                        <div class="empty">正在準備題目…</div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script>
+        const apiFetch = (path, options = {}) => fetch(path, { credentials: 'include', ...options });
+        const loginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`;
+        const request = async (path, options = {}) => { const response = await apiFetch(path, options), body = await response.json().catch(() => ({})); if (response.status === 401) { location.replace(loginUrl); throw new Error('需要員工驗證') } if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用'); return body.data };
+        const employeeAccess = request('/api/employee/session').then(session => { if (!session.authenticated) { location.replace(loginUrl); throw new Error('需要員工驗證') } return session });
+        const esc = value => { const node = document.createElement('div'); node.textContent = value ?? ''; return node.innerHTML };
+        const apiState = document.querySelector('#apiState'), libraryView = document.querySelector('#libraryView'), readerView = document.querySelector('#readerView'), documentSearch = document.querySelector('#documentSearch'), categoryFilter = document.querySelector('#categoryFilter'), documentGrid = document.querySelector('#documentGrid'), backToLibrary = document.querySelector('#backToLibrary'), readerCategory = document.querySelector('#readerCategory'), readerTitle = document.querySelector('#readerTitle'), readerFile = document.querySelector('#readerFile'), readerSections = document.querySelector('#readerSections'), quiz = document.querySelector('#quiz'), bar = document.querySelector('#bar'), restart = document.querySelector('#restart');
+        let documents = [], questions = [], at = 0, score = 0, locked = false;
 
-function renderDocuments(){const keyword=documentSearch.value.trim().toLowerCase(),category=categoryFilter.value;const items=documents.filter(item=>(!category||item.category===category)&&(!keyword||`${item.title} ${item.category} ${item.file_name}`.toLowerCase().includes(keyword)));documentGrid.innerHTML=items.length?items.map(item=>`<button class="training-card" data-document="${item.id}"><span class="tag">${esc(item.category)}</span><h3>${esc(item.title)}</h3><p>${item.section_count} 個查閱段落</p><small>${esc(item.file_name)}</small></button>`).join(''):'<div class="empty">找不到符合條件的教育文件。</div>'}
-async function openDocument(id){readerSections.innerHTML='<div class="empty">正在讀取文件內容…</div>';libraryView.hidden=true;readerView.hidden=false;try{await employeeAccess;const item=await request(`/api/training/document?id=${encodeURIComponent(id)}`);readerCategory.textContent=item.category;readerTitle.textContent=item.title;readerFile.textContent=item.file_name;readerSections.innerHTML=item.sections.map((section,index)=>`<details class="training-section" ${index===0?'open':''}><summary><span>${String(index+1).padStart(2,'0')}</span>${esc(section.heading)}</summary><div>${esc(section.content).replace(/\n/g,'<br>')}</div></details>`).join('')||'<div class="empty">此文件沒有可顯示的段落。</div>';window.scrollTo({top:0,behavior:'smooth'})}catch(error){readerSections.innerHTML=`<div class="error-note">${esc(error.message)}</div>`}}
-documentSearch.oninput=renderDocuments;categoryFilter.onchange=renderDocuments;documentGrid.onclick=event=>{const button=event.target.closest('[data-document]');if(button)openDocument(button.dataset.document)};backToLibrary.onclick=()=>{readerView.hidden=true;libraryView.hidden=false};
+        function renderDocuments() { const keyword = documentSearch.value.trim().toLowerCase(), category = categoryFilter.value; const items = documents.filter(item => (!category || item.category === category) && (!keyword || `${item.title} ${item.category} ${item.file_name}`.toLowerCase().includes(keyword))); documentGrid.innerHTML = items.length ? items.map(item => `<button class="training-card" data-document="${item.id}"><span class="tag">${esc(item.category)}</span><h3>${esc(item.title)}</h3><p>${item.section_count} 個查閱段落</p><small>${esc(item.file_name)}</small></button>`).join('') : '<div class="empty">找不到符合條件的教育文件。</div>' }
+        async function openDocument(id) { readerSections.innerHTML = '<div class="empty">正在讀取文件內容…</div>'; libraryView.hidden = true; readerView.hidden = false; try { await employeeAccess; const item = await request(`/api/training/document?id=${encodeURIComponent(id)}`); readerCategory.textContent = item.category; readerTitle.textContent = item.title; readerFile.textContent = item.file_name; readerSections.innerHTML = item.sections.map((section, index) => `<details class="training-section" ${index === 0 ? 'open' : ''}><summary><span>${String(index + 1).padStart(2, '0')}</span>${esc(section.heading)}</summary><div>${esc(section.content).replace(/\n/g, '<br>')}</div></details>`).join('') || '<div class="empty">此文件沒有可顯示的段落。</div>'; window.scrollTo({ top: 0, behavior: 'smooth' }) } catch (error) { readerSections.innerHTML = `<div class="error-note">${esc(error.message)}</div>` } }
+        documentSearch.oninput = renderDocuments; categoryFilter.onchange = renderDocuments; documentGrid.onclick = event => { const button = event.target.closest('[data-document]'); if (button) openDocument(button.dataset.document) }; backToLibrary.onclick = () => { readerView.hidden = true; libraryView.hidden = false };
 
-function resetQuiz(){at=0;score=0;renderQuiz()}function renderQuiz(){if(!questions.length){quiz.innerHTML='<div class="empty">目前沒有題目。</div>';return}if(at>=questions.length){quiz.innerHTML=`<span class="eyebrow">RESULT</span><h2>完成！答對 ${score} / ${questions.length} 題</h2><p class="hint">${score===questions.length?'觀念非常完整，謝謝你一起守護幼兒資料。':'建議回顧解說後再挑戰一次。'}</p><button class="btn" id="again">再考一次</button>`;bar.style.width='100%';quiz.querySelector('#again').onclick=resetQuiz;return}locked=false;const question=questions[at];bar.style.width=`${at/questions.length*100}%`;quiz.innerHTML=`<span class="tag">${esc(question.category)}</span><p class="hint">第 ${at+1} 題，共 ${questions.length} 題</p><h2>${esc(question.question)}</h2>${question.options.map((option,index)=>`<button class="quiz-option" data-index="${index}">${esc(option)}</button>`).join('')}<p id="feedback"></p><button class="btn" id="next" hidden>${at===questions.length-1?'查看結果':'下一題'}</button>`}
-quiz.onclick=event=>{const option=event.target.closest('[data-index]');if(option&&!locked){locked=true;const question=questions[at],chosen=Number(option.dataset.index);quiz.querySelectorAll('[data-index]').forEach((button,index)=>{if(index===question.answer)button.classList.add('correct');else if(index===chosen)button.classList.add('wrong');button.disabled=true});if(chosen===question.answer)score++;quiz.querySelector('#feedback').textContent=`${chosen===question.answer?'答對了。':'再想一下。'}${question.explanation}`;quiz.querySelector('#next').hidden=false}if(event.target.id==='next'){at++;renderQuiz()}};restart.onclick=resetQuiz;
+        function resetQuiz() { at = 0; score = 0; renderQuiz() } function renderQuiz() { if (!questions.length) { quiz.innerHTML = '<div class="empty">目前沒有題目。</div>'; return } if (at >= questions.length) { quiz.innerHTML = `<span class="eyebrow">RESULT</span><h2>完成！答對 ${score} / ${questions.length} 題</h2><p class="hint">${score === questions.length ? '觀念非常完整，謝謝你一起守護幼兒資料。' : '建議回顧解說後再挑戰一次。'}</p><button class="btn" id="again">再考一次</button>`; bar.style.width = '100%'; quiz.querySelector('#again').onclick = resetQuiz; return } locked = false; const question = questions[at]; bar.style.width = `${at / questions.length * 100}%`; quiz.innerHTML = `<span class="tag">${esc(question.category)}</span><p class="hint">第 ${at + 1} 題，共 ${questions.length} 題</p><h2>${esc(question.question)}</h2>${question.options.map((option, index) => `<button class="quiz-option" data-index="${index}">${esc(option)}</button>`).join('')}<p id="feedback"></p><button class="btn" id="next" hidden>${at === questions.length - 1 ? '查看結果' : '下一題'}</button>` }
+        quiz.onclick = event => { const option = event.target.closest('[data-index]'); if (option && !locked) { locked = true; const question = questions[at], chosen = Number(option.dataset.index); quiz.querySelectorAll('[data-index]').forEach((button, index) => { if (index === question.answer) button.classList.add('correct'); else if (index === chosen) button.classList.add('wrong'); button.disabled = true }); if (chosen === question.answer) score++; quiz.querySelector('#feedback').textContent = `${chosen === question.answer ? '答對了。' : '再想一下。'}${question.explanation}`; quiz.querySelector('#next').hidden = false } if (event.target.id === 'next') { at++; renderQuiz() } }; restart.onclick = resetQuiz;
 
-employeeAccess.then(()=>Promise.all([request('/api/training'),request('/api/questions')])).then(([documentItems,questionItems])=>{documents=documentItems;questions=questionItems;const categories=[...new Set(documents.map(item=>item.category))];categoryFilter.innerHTML='<option value="">全部分類</option>'+categories.map(category=>`<option value="${esc(category)}">${esc(category)}</option>`).join('');renderDocuments();renderQuiz();apiState.textContent=`已載入 ${documents.length} 份教育文件`;apiState.classList.add('ok')}).catch(()=>{apiState.textContent='教育資料服務未連線';documentGrid.innerHTML='<div class="error-note">無法讀取教育文件。</div>';quiz.innerHTML='<div class="error-note">題庫載入失敗。</div>'});
-</script>
+        employeeAccess.then(() => Promise.all([request('/api/training'), request('/api/questions')])).then(([documentItems, questionItems]) => { documents = documentItems; questions = questionItems; const categories = [...new Set(documents.map(item => item.category))]; categoryFilter.innerHTML = '<option value="">全部分類</option>' + categories.map(category => `<option value="${esc(category)}">${esc(category)}</option>`).join(''); renderDocuments(); renderQuiz(); apiState.textContent = `已載入 ${documents.length} 份教育文件`; apiState.classList.add('ok') }).catch(() => { apiState.textContent = '教育資料服務未連線'; documentGrid.innerHTML = '<div class="error-note">無法讀取教育文件。</div>'; quiz.innerHTML = '<div class="error-note">題庫載入失敗。</div>' });
+    </script>
 </body>
+
 </html>

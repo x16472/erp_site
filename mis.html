@@ -10,7 +10,7 @@
 
 <body>
     <div class="portal-shell">
-        <aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/0-3-08.png"
+        <aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/appicon.png"
                     alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>MIS 管理區</small></span></a>
             <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
                     href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="staff.html">員工出缺勤</a><a class="active"
@@ -24,7 +24,7 @@
                 </div><span class="api-state" id="apiState">檢查登入狀態</span>
             </header>
             <section class="login-shell" id="loginShell">
-                <form class="login-card" id="loginForm"><img src="static/0-3-08.png" alt="福祿貝爾標誌">
+                <form class="login-card" id="loginForm"><img src="static/appicon.png" alt="福祿貝爾標誌">
                     <h2>管理員登入</h2>
                     <p>網站設定、資料表查閱與待審資料僅供授權管理員使用。</p><label class="field"><span>管理員帳號</span><input name="username"
                             autocomplete="username" required></label><label class="field"
@@ -121,18 +121,29 @@
                     </section>
                     <section class="admin-panel" id="queuePanel">
                         <div class="queue-head">
-                            <div><span class="eyebrow">REVIEW &amp; TASKS</span><h2>待審佇列</h2><p>依建立員工或事件類別聚焦待審、代辦事項。</p></div>
+                            <div><span class="eyebrow">REVIEW &amp; TASKS</span>
+                                <h2>待審佇列</h2>
+                                <p>依建立員工或事件類別聚焦待審、代辦事項。</p>
+                            </div>
                             <a class="btn secondary" href="staff.html">查看出缺勤</a>
                         </div>
                         <div class="review-workspace">
                             <aside class="review-people">
                                 <div class="review-pane-title"><span>員工列表</span><small>依員工編號排列</small></div>
-                                <div class="review-person-list" id="staffList"><div class="empty">載入中…</div></div>
+                                <div class="review-person-list" id="staffList">
+                                    <div class="empty">載入中…</div>
+                                </div>
                             </aside>
                             <section class="review-events">
-                                <div class="review-event-head"><div><span class="eyebrow">EMPLOYEE REQUESTS</span><h3 id="queueTitle">全部申請事件</h3></div><span class="tag" id="queueCount">0 筆</span></div>
+                                <div class="review-event-head">
+                                    <div><span class="eyebrow">EMPLOYEE REQUESTS</span>
+                                        <h3 id="queueTitle">全部申請事件</h3>
+                                    </div><span class="tag" id="queueCount">0 筆</span>
+                                </div>
                                 <div class="queue-filters" id="queueFilters"></div>
-                                <div class="result-list" id="submissionList"><div class="empty">載入中…</div></div>
+                                <div class="result-list" id="submissionList">
+                                    <div class="empty">載入中…</div>
+                                </div>
                             </section>
                         </div>
                     </section>
@@ -152,7 +163,7 @@
         function updatePreview() { settingsPreview.className = `settings-preview ${settingsForm.theme.value}`; previewTitle.textContent = settingsForm.hero_title.value || '首頁標題'; previewSubtitle.textContent = settingsForm.hero_subtitle.value || '首頁說明' } settingsForm.addEventListener('input', updatePreview); settingsForm.onsubmit = async event => { event.preventDefault(); settingsStatus.className = ''; settingsStatus.textContent = '儲存中…'; try { await request('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(Object.fromEntries(new FormData(settingsForm))) }); settingsStatus.className = 'success-note'; settingsStatus.textContent = '設定已寫入 SQL Server 並發布。' } catch (error) { settingsStatus.className = 'error-note'; settingsStatus.textContent = error.message } };
         function renderCatalog() { const q = catalogSearch.value.trim().toLowerCase(), items = tables.filter(item => item.name.toLowerCase().includes(q)); catalog.innerHTML = items.map(item => `<button class="catalog-item ${item.name === selectedTable ? 'active' : ''}" data-table="${esc(item.name)}"><span>${esc(item.name)}</span><small>${number(item.row_count)} 筆</small></button>`).join('') || '<div class="empty">找不到資料表</div>' } catalogSearch.oninput = renderCatalog; catalog.onclick = event => { const button = event.target.closest('[data-table]'); if (button) loadTable(button.dataset.table, 1) };
         async function loadTable(name, page) { selectedTable = name; currentPage = page; renderCatalog(); dataTitle.textContent = name; dataBody.innerHTML = '<tr><td>查詢中…</td></tr>'; try { const result = await request(`/api/admin/table?name=${encodeURIComponent(name)}&page=${page}&page_size=${pageSize}`); totalRows = result.total; dataMeta.textContent = `${result.columns.length} 欄 · ${number(result.total)} 筆 · 唯讀遮罩`; dataHead.innerHTML = `<tr>${result.columns.map(column => `<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`; dataBody.innerHTML = result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column => `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`; const totalPages = Math.max(1, Math.ceil(result.total / result.page_size)); pageInfo.textContent = `第 ${page} / ${totalPages} 頁`; prevPage.disabled = page <= 1; nextPage.disabled = page >= totalPages } catch (error) { dataBody.innerHTML = `<tr><td>${esc(error.message)}</td></tr>` } } prevPage.onclick = () => currentPage > 1 && loadTable(selectedTable, currentPage - 1); nextPage.onclick = () => currentPage * pageSize < totalRows && loadTable(selectedTable, currentPage + 1);
-        function renderQueue() { const counts = new Map(); submissions.forEach(item => { if (item.submitted_by) counts.set(item.submitted_by, (counts.get(item.submitted_by) || 0) + 1) }); staffList.innerHTML = `<button class="review-person ${selectedEmployee === '' ? 'active' : ''}" data-employee=""><span class="review-avatar">ALL</span><div><b>全部員工</b><small>顯示所有待審事件</small></div><em>${number(submissions.length)}</em></button>` + staffItems.map(item => `<button class="review-person ${selectedEmployee === item.employee_id ? 'active' : ''}" data-employee="${esc(item.employee_id)}"><img src="${item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/0-3-08.png'}" alt=""><div><b>${esc(item.employee_id)}｜${esc(item.display_name)}</b><small>${esc(item.department)} · ${esc(item.position)}</small></div><em>${number(counts.get(item.employee_id) || 0)}</em></button>`).join(''); staffList.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/0-3-08.png' }, { once: true })); const categories = [...new Set(submissions.map(item => item.category))]; queueFilters.innerHTML = `<button class="${selectedCategory === '' ? 'active' : ''}" data-category="">全部事件</button>` + categories.map(category => `<button class="${selectedCategory === category ? 'active' : ''}" data-category="${esc(category)}">${esc(category)}</button>`).join(''); const employee = staffItems.find(item => item.employee_id === selectedEmployee); const items = submissions.filter(item => (!selectedEmployee || item.submitted_by === selectedEmployee) && (!selectedCategory || item.category === selectedCategory)); queueTitle.textContent = `${employee ? `${employee.display_name}的` : ''}${selectedCategory || '全部'}申請事件`; queueCount.textContent = `${number(items.length)} 筆`; submissionList.innerHTML = items.length ? items.map(item => `<button class="review-event-card submission-card" data-submission="${esc(item.id)}" data-employee="${esc(item.submitted_by || '')}" data-category="${esc(item.category)}"><header><b>${esc(item.category)} · ${esc(item.campus)}</b><span class="tag">${esc(item.status)}</span></header><p>${esc(item.date)} · ${number(item.count)} 筆 · ${esc(item.note || '無備註')}</p><footer><span>${esc(item.submitted_by || '未記錄')}｜${esc(item.submitted_by_name || '未記錄建立者')}</span><small>${esc(item.submitted_at)}</small></footer></button>`).join('') : '<div class="empty">目前沒有符合條件的待審事項。</div>' }
+        function renderQueue() { const counts = new Map(); submissions.forEach(item => { if (item.submitted_by) counts.set(item.submitted_by, (counts.get(item.submitted_by) || 0) + 1) }); staffList.innerHTML = `<button class="review-person ${selectedEmployee === '' ? 'active' : ''}" data-employee=""><span class="review-avatar">ALL</span><div><b>全部員工</b><small>顯示所有待審事件</small></div><em>${number(submissions.length)}</em></button>` + staffItems.map(item => `<button class="review-person ${selectedEmployee === item.employee_id ? 'active' : ''}" data-employee="${esc(item.employee_id)}"><img src="${item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/appicon.png'}" alt=""><div><b>${esc(item.employee_id)}｜${esc(item.display_name)}</b><small>${esc(item.department)} · ${esc(item.position)}</small></div><em>${number(counts.get(item.employee_id) || 0)}</em></button>`).join(''); staffList.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/appicon.png' }, { once: true })); const categories = [...new Set(submissions.map(item => item.category))]; queueFilters.innerHTML = `<button class="${selectedCategory === '' ? 'active' : ''}" data-category="">全部事件</button>` + categories.map(category => `<button class="${selectedCategory === category ? 'active' : ''}" data-category="${esc(category)}">${esc(category)}</button>`).join(''); const employee = staffItems.find(item => item.employee_id === selectedEmployee); const items = submissions.filter(item => (!selectedEmployee || item.submitted_by === selectedEmployee) && (!selectedCategory || item.category === selectedCategory)); queueTitle.textContent = `${employee ? `${employee.display_name}的` : ''}${selectedCategory || '全部'}申請事件`; queueCount.textContent = `${number(items.length)} 筆`; submissionList.innerHTML = items.length ? items.map(item => `<button class="review-event-card submission-card" data-submission="${esc(item.id)}" data-employee="${esc(item.submitted_by || '')}" data-category="${esc(item.category)}"><header><b>${esc(item.category)} · ${esc(item.campus)}</b><span class="tag">${esc(item.status)}</span></header><p>${esc(item.date)} · ${number(item.count)} 筆 · ${esc(item.note || '無備註')}</p><footer><span>${esc(item.submitted_by || '未記錄')}｜${esc(item.submitted_by_name || '未記錄建立者')}</span><small>${esc(item.submitted_at)}</small></footer></button>`).join('') : '<div class="empty">目前沒有符合條件的待審事項。</div>' }
         staffList.onclick = event => { const button = event.target.closest('[data-employee]'); if (!button) return; selectedEmployee = button.dataset.employee; selectedCategory = ''; renderQueue() };
         queueFilters.onclick = event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = button.dataset.category; renderQueue() };
         submissionList.onclick = event => { const button = event.target.closest('[data-submission]'); if (!button) return; selectedEmployee = button.dataset.employee; selectedCategory = button.dataset.category; renderQueue() };

@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 data/*.db
 data/exam/.converted/
+data/exam/*.doc
+data/exam/*.docx
 .agents/
 .deps/
 .venv/

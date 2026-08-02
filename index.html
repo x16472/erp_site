@@ -10,16 +10,17 @@
 </head>
 
 <body class="public-body" data-theme="ocean">
-    <header class="public-header"><a class="public-logo" href="/"><img src="static/0-3-08.png"
+    <header class="public-header"><a class="public-logo" href="/"><img src="static/appicon.png"
                 alt="福祿貝爾標誌"><span><b>福祿貝爾幼稚園</b><small>FROEBEL KINDERGARTEN</small></span></a><button
             class="mobile-menu" id="menuButton" aria-label="開啟選單">☰</button>
         <nav class="public-nav" id="publicNav"><a href="#about">教育理念</a><a href="#day">學習日常</a><a
-                href="#team">教職團隊</a><a href="#visit">預約參觀</a><a href="home.html">員工入口</a><a class="btn" href="#visit">招生諮詢</a></nav>
+                href="#team">教職團隊</a><a href="#visit">預約參觀</a><a href="home.html">員工入口</a><a class="btn"
+                href="#visit">招生諮詢</a></nav>
     </header>
     <main>
         <section class="public-hero">
             <div class="hero-copy-public">
-                <div class="announcement" id="announcement">歡迎預約參觀，認識福祿貝爾的學習日常。</div><span class="eyebrow">PLAY ·
+                <div class="announcement" id="announcement">歡迎！這是福祿貝爾的日常。</div><span class="eyebrow">PLAY ·
                     DISCOVER · GROW</span>
                 <h1 id="heroTitle">在愛與探索中，<br><span>陪孩子長成自己。</span></h1>
                 <p id="heroSubtitle">福祿貝爾以遊戲、自然與生活經驗為核心，讓每個孩子在安全而有溫度的環境裡主動學習。</p>
@@ -28,7 +29,7 @@
                 <div class="hero-trust"><span>遊戲本位</span><span>安心陪伴</span><span>生活共學</span></div>
             </div>
             <div class="hero-stage">
-                <div class="hero-card"><img src="static/0-3-08.png" alt="福祿貝爾教育識別"></div>
+                <div class="hero-card"></div>
                 <div class="floating-note one"><b>從遊戲出發</b><small>讓好奇心帶領每一天</small></div>
                 <div class="floating-note two"><b>安心陪伴</b><small>尊重每個孩子的步調</small></div>
             </div>
@@ -70,7 +71,7 @@
                     <p>穩定的作息帶來安全感，開放的活動讓孩子保有選擇與想像。</p>
                 </div>
                 <div class="day-grid">
-                <article class="day-item"><time>08:00</time>
+                    <article class="day-item"><time>08:00</time>
                         <h3>溫暖入園</h3>
                         <p>老師接住每個孩子的情緒，從問候與自由遊戲開始。</p>
                     </article>
@@ -96,8 +97,12 @@
                 </div>
                 <p>由教學、行政、保健與資訊夥伴共同照顧孩子的學習與園所日常。</p>
             </div>
-            <div class="team-toolbar"><label class="field"><span>依部門查看</span><select id="departmentFilter"><option value="">全部部門</option></select></label><span id="teamCount">正在整理團隊資料</span></div>
-            <div class="staff-grid" id="staffGrid"><div class="empty">正在載入教職團隊…</div></div>
+            <div class="team-toolbar"><label class="field"><span>依部門查看</span><select id="departmentFilter">
+                        <option value="">全部部門</option>
+                    </select></label><span id="teamCount">正在整理團隊資料</span></div>
+            <div class="staff-grid" id="staffGrid">
+                <div class="empty">正在載入教職團隊…</div>
+            </div>
         </section>
         <section class="public-section" id="visit">
             <div class="cta-banner">
@@ -125,19 +130,19 @@
         const apiFetch = (path, options = {}) => fetch(path, { credentials: 'include', ...options });
         const apiData = async (path, options = {}) => { const response = await apiFetch(path, options); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用'); return body.data };
         const esc = value => { const node = document.createElement('div'); node.textContent = value ?? ''; return node.innerHTML };
-        const menuButton = document.querySelector('#menuButton'), publicNav = document.querySelector('#publicNav'), heroTitle = document.querySelector('#heroTitle'), heroSubtitle = document.querySelector('#heroSubtitle'), announcement = document.querySelector('#announcement'), publicStats = document.querySelector('#campus'), staffGrid = document.querySelector('#staffGrid'), departmentFilter=document.querySelector('#departmentFilter'),teamCount=document.querySelector('#teamCount');
+        const menuButton = document.querySelector('#menuButton'), publicNav = document.querySelector('#publicNav'), heroTitle = document.querySelector('#heroTitle'), heroSubtitle = document.querySelector('#heroSubtitle'), announcement = document.querySelector('#announcement'), publicStats = document.querySelector('#campus'), staffGrid = document.querySelector('#staffGrid'), departmentFilter = document.querySelector('#departmentFilter'), teamCount = document.querySelector('#teamCount');
         menuButton.onclick = () => publicNav.classList.toggle('open');
         apiData('/api/public').then(data => {
             const settings = data.settings;
             document.body.dataset.theme = settings.theme;
             heroTitle.textContent = settings.hero_title;
             heroSubtitle.textContent = settings.hero_subtitle;
-            announcement.textContent = settings.announcement || '歡迎預約參觀，認識福祿貝爾的學習日常。';
+            announcement.textContent = settings.announcement || '歡迎！這是福祿貝爾的日常。';
             publicStats.innerHTML = data.stats.map(item => `<div class="public-stat"><b>${new Intl.NumberFormat('zh-TW').format(item.value)}</b><span>${esc(item.label)}</span></div>`).join('');
         }).catch(error => { announcement.textContent = error.message; publicStats.innerHTML = '<div class="error-note">園務資料暫時無法載入。</div>' });
-        function renderStaff(staff){teamCount.textContent=`共 ${staff.length} 位夥伴`;staffGrid.innerHTML = staff.map(item => `<article class="staff-card"><img src="${item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/0-3-08.png'}" alt="${esc(item.display_name)}"><div><span>${esc(item.department)}</span><h3>${esc(item.display_name)}</h3><b>${esc(item.position)}</b><p>${esc(item.traits || '用心陪伴每個孩子')}</p></div></article>`).join('') || '<div class="empty">此部門目前沒有可公開的教職資料。</div>';staffGrid.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/0-3-08.png' }, { once: true }))}
-        async function loadStaff(){staffGrid.innerHTML='<div class="empty">正在整理教職團隊…</div>';try{renderStaff(await apiData(`/api/staff/public?department=${encodeURIComponent(departmentFilter.value)}`))}catch(error){staffGrid.innerHTML=`<div class="error-note">${esc(error.message)}</div>`}}
-        apiData('/api/staff/departments').then(items=>{departmentFilter.replaceChildren(new Option('全部部門',''));items.forEach(item=>departmentFilter.add(new Option(`${item.department}（${item.staff_count}）`,item.department)));loadStaff()}).catch(error=>{departmentFilter.disabled=true;staffGrid.innerHTML=`<div class="error-note">${esc(error.message)}</div>`});departmentFilter.onchange=loadStaff;
+        function renderStaff(staff) { teamCount.textContent = `共 ${staff.length} 位夥伴`; staffGrid.innerHTML = staff.map(item => `<article class="staff-card"><img src="${item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/appicon.png'}" alt="${esc(item.display_name)}"><div><span>${esc(item.department)}</span><h3>${esc(item.display_name)}</h3><b>${esc(item.position)}</b><p>${esc(item.traits || '用心陪伴每個孩子')}</p></div></article>`).join('') || '<div class="empty">此部門目前沒有可公開的教職資料。</div>'; staffGrid.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/appicon.png' }, { once: true })) }
+        async function loadStaff() { staffGrid.innerHTML = '<div class="empty">正在整理教職團隊…</div>'; try { renderStaff(await apiData(`/api/staff/public?department=${encodeURIComponent(departmentFilter.value)}`)) } catch (error) { staffGrid.innerHTML = `<div class="error-note">${esc(error.message)}</div>` } }
+        apiData('/api/staff/departments').then(items => { departmentFilter.replaceChildren(new Option('全部部門', '')); items.forEach(item => departmentFilter.add(new Option(`${item.department}（${item.staff_count}）`, item.department))); loadStaff() }).catch(error => { departmentFilter.disabled = true; staffGrid.innerHTML = `<div class="error-note">${esc(error.message)}</div>` }); departmentFilter.onchange = loadStaff;
     </script>
 </body>
 
