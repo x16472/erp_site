@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>員工打卡與入口｜福祿貝爾營運中心</title>
+    <title>員工相關入口｜福祿貝爾營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="employee-access-page">
@@ -11,19 +11,19 @@
         <section class="employee-access-brand">
             <img src="static/0-3-08.png" alt="福祿貝爾標誌">
             <span class="top-kicker">FROBEL OPERATIONS</span>
-            <h1>員工打卡與入口</h1>
-            <p>輸入員工編號並完成本次打卡後，即可進入福祿貝爾營運中心。身分與打卡狀態皆由 SQL Server 即時驗證。</p>
+            <h1>員工相關入口</h1>
+            <p>匯聚你工作所需一切，通往事業與福利的入口。</p>
             <a href="index.html">返回官方網站</a>
         </section>
         <section class="employee-access-card">
-            <div class="live-clock"><small>目前時間（打卡後由資料庫校準）</small><strong id="accessClock">--:--:--</strong></div>
+            <div class="live-clock access-time"><small>目前時間</small><strong id="accessClock">--:--:--</strong></div>
             <form id="accessForm">
                 <label class="field"><span>員工編號</span><input name="employee_id" autocomplete="username" maxlength="20" pattern="[A-Za-z0-9_-]+" placeholder="例如 K001" required autofocus></label>
                 <div class="clock-actions">
-                    <button class="btn" name="action" value="CLOCK_IN" type="submit">上班打卡並進入</button>
-                    <button class="btn secondary" name="action" value="CLOCK_OUT" type="submit">下班打卡並進入</button>
+                    <button class="btn" name="mode" value="CLOCK_IN" type="submit">上班打卡並進入</button>
+                    <button class="btn secondary" name="mode" value="ACCESS_ONLY" type="submit">不打卡進入系統</button>
                 </div>
-                <p class="hint">不能連續上班或連續下班打卡；首次紀錄必須由上班打卡開始。</p>
+                <p class="hint">若本日已打卡，可直接進入；系統會提示最近一次打卡時間。</p>
                 <p id="accessStatus" aria-live="polite"></p>
             </form>
         </section>
@@ -39,14 +39,13 @@
         fetch('/api/employee/session',{credentials:'include'}).then(r=>r.json()).then(body=>{if(body.data?.authenticated)location.replace(next)}).catch(()=>{});
         form.addEventListener('submit',async event=>{
             event.preventDefault();const submitter=event.submitter;if(!submitter)return;
-            buttons.forEach(button=>button.disabled=true);statusBox.className='';statusBox.textContent='正在向資料庫驗證並寫入打卡紀錄…';
+            buttons.forEach(button=>button.disabled=true);statusBox.className='';statusBox.textContent='正在驗證員工資料…';
             try{
                 const employeeId=new FormData(form).get('employee_id');
-                const response=await fetch('/api/employee/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_id:employeeId,action:submitter.value})});
-                const body=await response.json();if(!response.ok)throw new Error(body.error||'驗證或打卡失敗');
-                const occurred=new Date(body.data.attendance.clocked_at);serverOffset=occurred.getTime()-Date.now();renderClock();
-                statusBox.className='success-note';statusBox.textContent=`${body.data.employee.display_name}，${body.data.attendance.action==='CLOCK_IN'?'上班':'下班'}打卡成功，正在進入營運中心…`;
-                setTimeout(()=>location.replace(next),450);
+                const response=await fetch('/api/employee/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_id:employeeId,mode:submitter.value})});
+                const body=await response.json();if(!response.ok)throw new Error(body.error||'驗證失敗');
+                const attendance=body.data.attendance;if(attendance){const occurred=new Date(attendance.clocked_at);serverOffset=occurred.getTime()-Date.now();renderClock();statusBox.className='success-note';statusBox.textContent=body.data.access_mode==='CLOCK_IN'?`${body.data.employee.display_name}，上班打卡成功，正在進入…`:`前次打卡時間：${occurred.toLocaleString('zh-TW')}，正在進入…`}else{statusBox.className='attendance-warning';statusBox.textContent='您尚未打卡，進入後請留意補打卡提醒。'}
+                setTimeout(()=>location.replace(next),1200);
             }catch(error){statusBox.className='error-note';statusBox.textContent=error.message;buttons.forEach(button=>button.disabled=false)}
         });
     </script>

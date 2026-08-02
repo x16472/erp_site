@@ -486,11 +486,18 @@ def ensure_application_schema() -> dict[str, Any]:
             category_code nvarchar(10) NOT NULL,
             quantity int NOT NULL,
             note nvarchar(200) NULL,
+            submitted_by nvarchar(20) NULL,
             status nvarchar(20) NOT NULL DEFAULT N'待審核',
             submitted_at datetime2 NOT NULL DEFAULT SYSDATETIME(),
             CONSTRAINT FK_Frobel_OperationSubmission_Category FOREIGN KEY (category_code) REFERENCES dbo.Frobel_OperationCategory(category_code),
+            CONSTRAINT FK_Frobel_OperationSubmission_Staff FOREIGN KEY (submitted_by) REFERENCES dbo.Frobel_Staff(employee_id),
             CONSTRAINT CK_Frobel_OperationSubmission_Quantity CHECK (quantity BETWEEN 0 AND 9999)
         )""",
+        """IF COL_LENGTH(N'dbo.Frobel_OperationSubmission', N'submitted_by') IS NULL
+        ALTER TABLE dbo.Frobel_OperationSubmission ADD submitted_by nvarchar(20) NULL""",
+        """IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_Frobel_OperationSubmission_Staff')
+        ALTER TABLE dbo.Frobel_OperationSubmission ADD CONSTRAINT FK_Frobel_OperationSubmission_Staff
+        FOREIGN KEY (submitted_by) REFERENCES dbo.Frobel_Staff(employee_id)""",
         """IF OBJECT_ID(N'dbo.Frobel_TrainingDocument', N'U') IS NULL
         CREATE TABLE dbo.Frobel_TrainingDocument (
             document_id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -635,12 +642,26 @@ def _staff_order(sort_by: str) -> str:
     raise ValueError("員工排序方式不正確")
 
 
-def public_staff(sort_by: str = "employee_id") -> list[dict[str, Any]]:
+def public_staff(department: str = "") -> list[dict[str, Any]]:
     """僅回傳適合官網公開的員工基本介紹。"""
     sync_staff_csv()
-    return _fetch(f"""
+    return _fetch("""
         SELECT display_name, department, position, traits, photo_file
-        FROM dbo.Frobel_Staff WHERE is_active=1 ORDER BY {_staff_order(sort_by)}
+        FROM dbo.Frobel_Staff
+        WHERE is_active=1 AND (?=N'' OR department=?)
+        ORDER BY employee_id
+    """, (department, department))
+
+
+def public_staff_departments() -> list[dict[str, Any]]:
+    """提供官網部門選單，部門順序依各部門最前面的員工編號決定。"""
+    sync_staff_csv()
+    return _fetch("""
+        SELECT department,COUNT(*) AS staff_count
+        FROM dbo.Frobel_Staff
+        WHERE is_active=1 AND department<>N''
+        GROUP BY department
+        ORDER BY MIN(employee_id)
     """)
 
 
@@ -655,11 +676,11 @@ def attendance_staff_options(sort_by: str = "employee_id") -> list[dict[str, Any
     """)
 
 
-def staff_records(sort_by: str = "employee_id") -> list[dict[str, Any]]:
+def staff_records() -> list[dict[str, Any]]:
     sync_staff_csv()
-    return _fetch(f"""
+    return _fetch("""
         SELECT employee_id,display_name,gender,age,department,position,traits,biography,photo_file,is_active,updated_by,updated_at
-        FROM dbo.Frobel_Staff ORDER BY is_active DESC, {_staff_order(sort_by)}
+        FROM dbo.Frobel_Staff ORDER BY is_active DESC, employee_id
     """)
 
 
@@ -679,6 +700,18 @@ def server_time() -> dict[str, str]:
     """回傳 SQL Server 帶時區時間，供前端校準顯示與打卡。"""
     row = _fetch("SELECT CONVERT(nvarchar(40),SYSDATETIMEOFFSET(),127) AS [current_time]")[0]
     return {"current_time": row["current_time"]}
+
+
+def attendance_status(employee_id: str) -> dict[str, Any] | None:
+    """只回傳員工當日最後一筆打卡，供不打卡登入與工作台提示。"""
+    rows = _fetch("""
+        SELECT TOP (1) employee_id,action,
+               CONVERT(nvarchar(40),TODATETIMEOFFSET(clocked_at,DATEPART(TZOFFSET,SYSDATETIMEOFFSET())),127) AS clocked_at
+        FROM dbo.Frobel_Attendance
+        WHERE employee_id=? AND CONVERT(date,clocked_at)=CONVERT(date,SYSDATETIME())
+        ORDER BY clocked_at DESC,attendance_id DESC
+    """, (employee_id,))
+    return rows[0] if rows else None
 
 
 def save_staff(item: dict[str, Any], actor: str, photo_file: str | None = None) -> dict[str, Any]:
@@ -769,26 +802,29 @@ def attendance_records(day: str = "", employee_id: str = "") -> list[dict[str, A
     """, (day, day, employee_id, employee_id))
 
 
-def add_operation(item: dict[str, Any]) -> dict[str, Any]:
+def add_operation(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
     submission_id = f"OPS-{datetime.now():%Y%m%d%H%M%S}-{uuid.uuid4().hex[:6].upper()}"
     try:
         with connect(read_only=False) as db:
             row = db.cursor().execute("""
                 INSERT dbo.Frobel_OperationSubmission
-                (submission_id,operation_date,campus_code,category_code,quantity,note)
+                (submission_id,operation_date,campus_code,category_code,quantity,note,submitted_by)
                 OUTPUT inserted.submitted_at
-                VALUES (?,?,?,?,?,?)
-            """, submission_id, item["date"], item["campus"], item["category"], item["count"], item["note"]).fetchone()
-        return {"id": submission_id, **item, "status": "待審核", "submitted_at": _json_value(row[0])}
+                VALUES (?,?,?,?,?,?,?)
+            """, submission_id, item["date"], item["campus"], item["category"], item["count"], item["note"], employee_id).fetchone()
+        return {"id": submission_id, **item, "submitted_by": employee_id, "status": "待審核", "submitted_at": _json_value(row[0])}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("營運紀錄寫入失敗。") from exc
 
 
 def operation_submissions() -> list[dict[str, Any]]:
     return _fetch("""
-        SELECT submission_id AS id,operation_date AS [date],campus_code AS campus,
-               category_code AS category,quantity AS [count],note,status,submitted_at
-        FROM dbo.Frobel_OperationSubmission ORDER BY submitted_at DESC
+        SELECT o.submission_id AS id,o.operation_date AS [date],o.campus_code AS campus,
+               o.category_code AS category,o.quantity AS [count],o.note,o.status,o.submitted_at,
+               o.submitted_by,s.display_name AS submitted_by_name,s.department AS submitted_by_department
+        FROM dbo.Frobel_OperationSubmission o
+        LEFT JOIN dbo.Frobel_Staff s ON s.employee_id=o.submitted_by
+        ORDER BY o.submitted_at DESC
     """)
 
 

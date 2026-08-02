@@ -204,11 +204,27 @@ class Handler(BaseHTTPRequestHandler):
         public_routes = {
             "/api/health": data.health,
             "/api/public": data.public_overview,
-            "/api/staff/public": data.public_staff,
         }
         if parsed.path in public_routes:
             try:
                 return self.send_json({"data": public_routes[parsed.path]()})
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+
+        if parsed.path == "/api/staff/public":
+            try:
+                department = parse_qs(parsed.query).get("department", [""])[0].strip()
+                if len(department) > 50:
+                    raise ValueError("部門名稱過長")
+                return self.send_json({"data": data.public_staff(department)})
+            except ValueError as exc:
+                return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+
+        if parsed.path == "/api/staff/departments":
+            try:
+                return self.send_json({"data": data.public_staff_departments()})
             except data.DatabaseUnavailable as exc:
                 return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
@@ -218,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"data": {"authenticated": False, "employee": None, "csrf": None}})
             try:
                 session["employee"] = data.employee_identity(session["employee_id"])
-                return self.send_json({"data": {"authenticated": True, "employee": session["employee"], "attendance": session.get("attendance"), "csrf": session["csrf"]}})
+                return self.send_json({"data": {"authenticated": True, "employee": session["employee"], "attendance": session.get("attendance"), "access_mode": session.get("access_mode"), "csrf": session["csrf"]}})
             except ValueError:
                 with SESSION_LOCK:
                     EMPLOYEE_SESSIONS.pop(session["token"], None)
@@ -290,7 +306,7 @@ class Handler(BaseHTTPRequestHandler):
                 if parsed.path == "/api/admin/submissions":
                     return self.send_json({"data": data.operation_submissions()})
                 if parsed.path == "/api/admin/staff":
-                    return self.send_json({"data": data.staff_records(query.get("sort", ["employee_id"])[0])})
+                    return self.send_json({"data": data.staff_records()})
                 if parsed.path == "/api/admin/attendance":
                     day = query.get("date", [""])[0]
                     if day:
@@ -327,7 +343,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not session or not self.require_csrf(session):
                     return
                 item = user_input.validate_operation(self.read_json())
-                return self.send_json({"data": data.add_operation(item)}, 201)
+                return self.send_json({"data": data.add_operation(item, session["employee_id"])}, 201)
             if parsed.path == "/api/attendance/clock":
                 session = self.require_employee()
                 if not session or not self.require_csrf(session):
@@ -335,7 +351,9 @@ class Handler(BaseHTTPRequestHandler):
                 payload = self.read_json()
                 payload["employee_id"] = session["employee_id"]
                 item = user_input.validate_attendance(payload)
-                return self.send_json({"data": data.clock_attendance(item, self.client_address[0])}, 201)
+                attendance = data.clock_attendance(item, self.client_address[0])
+                session["attendance"] = attendance
+                return self.send_json({"data": attendance}, 201)
             if parsed.path == "/api/admin/login":
                 employee_session = self.require_employee()
                 if not employee_session:
@@ -432,7 +450,7 @@ class Handler(BaseHTTPRequestHandler):
         if len(attempts) >= 10:
             return self.send_json({"error": "驗證失敗次數過多，請五分鐘後再試。", "code": "RATE_LIMITED"}, 429)
         payload = self.read_json()
-        item = user_input.validate_attendance(payload)
+        item = user_input.validate_employee_access(payload)
         try:
             employee = data.employee_identity(item["employee_id"])
         except ValueError:
@@ -440,7 +458,11 @@ class Handler(BaseHTTPRequestHandler):
                 attempts.append(now)
                 EMPLOYEE_LOGIN_ATTEMPTS[client] = attempts
             return self.send_json({"error": "員工編號不存在或已停用。", "code": "INVALID_EMPLOYEE"}, 401)
-        attendance = data.clock_attendance(item, self.client_address[0])
+        attendance = (
+            data.clock_attendance({"employee_id": item["employee_id"], "action": "CLOCK_IN"}, self.client_address[0])
+            if item["mode"] == "CLOCK_IN"
+            else data.attendance_status(item["employee_id"])
+        )
         token = secrets.token_urlsafe(32)
         csrf = secrets.token_urlsafe(24)
         session = {
@@ -448,6 +470,7 @@ class Handler(BaseHTTPRequestHandler):
             "employee_id": employee["employee_id"],
             "employee": employee,
             "attendance": attendance,
+            "access_mode": item["mode"],
             "csrf": csrf,
             "expires": now + SESSION_TTL,
         }
@@ -455,7 +478,7 @@ class Handler(BaseHTTPRequestHandler):
             EMPLOYEE_LOGIN_ATTEMPTS.pop(client, None)
             EMPLOYEE_SESSIONS[token] = session
         cookie = f"frobel_employee={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={SESSION_TTL}"
-        return self.send_json({"data": {"authenticated": True, "employee": employee, "attendance": attendance, "csrf": csrf}}, headers={"Set-Cookie": cookie})
+        return self.send_json({"data": {"authenticated": True, "employee": employee, "attendance": attendance, "access_mode": item["mode"], "csrf": csrf}}, headers={"Set-Cookie": cookie})
 
     def employee_logout(self) -> None:
         cookie = SimpleCookie(self.headers.get("Cookie", ""))

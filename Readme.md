@@ -1,88 +1,143 @@
 # 福祿貝爾營運中心
 
-福祿貝爾營運中心是一套前後端分離的幼稚園網站與園務入口。系統包含對外官方網站、全體員工入口、營運資料蒐集、教育訓練、休閒專區及受登入保護的 MIS 管理中心；後端透過 `pyodbc` 實際查詢 SQL Server，並依資料敏感度限制查閱範圍。
+福祿貝爾營運中心是一套前後端分離的幼稚園官方網站與內部園務平台。公開網站呈現教育理念、園務規模、學習日常與教職團隊；員工入口整合出勤、園務填報、教育訓練與內部資訊；MIS 管理中心則提供受控的網站設定、唯讀資料查閱及待審佇列。
 
-## 功能概覽
+後端使用 Python 與 `pyodbc` 實際連接 SQL Server。既有園務資料表維持唯讀，網站寫入只發生在 `dbo.Frobel_*` 專用資料表及員工照片資料夾，`.env` 不會由程式建立或修改。
 
-- 對外官網：介紹教育理念、幼兒學習日常、園務規模、教職團隊與參觀資訊。
-- 員工工作台：員工先以編號完成上班或下班打卡，再進入園務指標、班級概況、內部公告及知識搜尋。
-- 營運資料蒐集：提供出勤、班級、接送、收費、設備與餐點等日常紀錄表單。
-- 教育訓練：提供職掌、SOP、教師手冊查閱與園務安全互動題庫。
-- YouTube 直播休息站：網址由後端驗證並取得真實影片標題後播放，支援一般影片、直播、Shorts、分享或嵌入網址。
-- MIS 管理中心：提供受保護的官網設定、資料表查閱及待處理紀錄介面。
+## 主要功能
 
-## 目前新增功能
+### 公開官方網站
 
-- 建立公開網站、員工入口與 MIS 管理中心的分眾導覽及響應式版面。
-- 串接實際 SQL Server，將園區、班級、學籍、教職員、接送及收費資料轉為網站需要的摘要資訊。
-- 新增 MIS 管理員登入、工作階段逾時、登入頻率限制與 CSRF 驗證。
-- 新增海洋、晨光及森林三種官網主題，以及首頁標題、副標題與公告管理。
-- 新增 SQL Server 資料表目錄、分頁查閱及後端敏感欄位遮罩。
-- 新增園務資料輸入驗證、待查核佇列及 MIS 待審紀錄列表。
-- 新增正規化員工名冊、官網教職團隊、員工即時打卡及受保護的出缺勤查閱。
-- 新增員工編號打卡入口；打卡成功才建立 8 小時 HttpOnly 工作階段，所有內部與 MIS API 都會向 SQL Server 複驗在職狀態。
-- 打卡時間統一取自 SQL Server 的帶時區時間；資料庫寫入與 API 回傳使用同一時間值，前端時鐘再依該值校準。
-- `data/staff.csv` 改為異動式同步；員工名冊預設依員工編號排序，管理頁可切換為部門排序。
-- 新增舊版 Word 教育文件轉換、資料庫段落索引、分類搜尋及展開閱讀介面。
-- 只保留 Windows Port 80 批次啟動；Ritwick Dey Live Server 使用 Port 5500，並將 `/api` 代理至後端 Port 80。
-- 新增資料表白名單、任意 SQL 防護及靜態檔案路徑限制。
-- 統一全站品牌、按鈕、表單、資料卡片與行動裝置版面，圖像皆由 `static` 提供。
+- 響應式幼稚園品牌首頁，支援海洋、晨光、森林三種資料庫主題。
+- 顯示園區、班級與學籍彙總，不公開幼兒明細。
+- 教職團隊只回傳姓名、部門、職位、特質及公開照片。
+- 教職團隊可透過部門下拉選單篩選；部門清單與篩選結果皆由 `data.py` 查詢後交由 `app.py` 回傳。
+- 其餘首頁區域已統一強化層次、卡片、學習日常、招生參觀與行動版版面。
 
-## 網站角色
+### 員工入口與打卡
 
-| 頁面 | 對象與用途 |
+- 登入頁只顯示必要資訊，員工以員工編號進行身分驗證。
+- 「上班打卡並進入」會驗證在職狀態、檢查打卡順序、寫入打卡後建立工作階段。
+- 「不打卡進入系統」仍會驗證員工，但不新增出勤紀錄；系統會讀取當日最後一筆打卡時間，未打卡時醒目提示。
+- 工作台顯示「打卡時間」及資料庫校準時鐘；未打卡時提供補打卡按鈕。
+- 「打卡下班」會寫入下班紀錄後離開；「離開系統」只結束工作階段，不影響出勤資料。
+- 首筆必須是上班打卡，上下班必須交替；後端以交易鎖避免連續或同時重複打卡。
+- 工作台提示：未在特定時段補打卡，視同遲到或曠職。
+
+### 園務工作區
+
+- 工作台提供公告、園務指標、班級概況、常用入口與知識搜尋。
+- 營運蒐集可填寫出勤、班級、接送、收費、設備、餐點及其他彙總日報。
+- 新增的營運紀錄會保存建立員工編號，供 MIS 待審佇列依員工分類。
+- 教育訓練提供 Word 文件分類、段落查閱及互動題庫。
+- YouTube 休閒專區由後端驗證影片網址並取得真實標題後嵌入播放。
+
+### 員工與出缺勤管理
+
+- 員工文字資料的新增、更新與停用集中於 `staff.html`。
+- 員工編號是不可變更的主鍵，編輯時輸入框會鎖定並以警示色標示。
+- 員工照片只接受 JPEG、PNG、WebP，最大 5 MB；檔名會自動改為員工編號並存入 `static/staff`。
+- 員工主檔固定依員工編號排序，不使用中文部門名稱定序。
+- 管理員可依日期或員工查閱出缺勤紀錄；既有打卡紀錄不因員工停用而刪除。
+
+### MIS 管理中心
+
+- 進入 MIS 前必須先通過員工入口驗證，再使用 `.env` 內的管理帳號進行第二層登入。
+- 可管理官方網站主題、標題、副標題及公告。
+- 可唯讀查閱 SQL Server 使用者資料表；後端限制資料表名稱、分頁筆數並遮罩敏感欄位。
+- 原「員工資料」與「營運待審」已整合為「待審佇列」。
+- 待審佇列左側按員工編號顯示員工，右側顯示其建立的申請事件；可點選員工、事件或事件類別進行篩選。
+- MIS 不再提供員工編輯或停用控制，並保留前往 `staff.html` 的「查看出缺勤」入口。
+
+## 頁面與角色
+
+| 頁面 | 用途 |
 | --- | --- |
-| `index.html` | 對外官方網站，呈現教育理念、園區規模與參觀資訊 |
-| `employee-login.html` | 員工編號驗證、上／下班打卡與內部網站入口 |
-| `home.html` | 全體員工入口，提供園務摘要、公告、快速功能與知識搜尋 |
-| `sales.html` | 員工營運蒐集，受理出勤、班級、接送、收費、設備及餐點紀錄 |
-| `exam.html` | 員工教育訓練，題庫由後端提供 |
-| `game.html` | YouTube 直播休息站與網址轉換播放器 |
-| `staff.html` | MIS 員工主檔、照片上傳與出缺勤查閱，使用管理帳密登入 |
-| `mis.html` | MIS 管理中心，登入後管理官網內容、唯讀查閱資料表與檢視待處理紀錄 |
+| `index.html` | 公開官方網站與部門化教職團隊 |
+| `employee-login.html` | 員工編號驗證、上班打卡或不打卡進入 |
+| `home.html` | 員工工作台、打卡狀態、補打卡、下班及離開系統 |
+| `sales.html` | 園務彙總日報填報 |
+| `exam.html` | 教育文件與題庫 |
+| `game.html` | YouTube 網址驗證與播放器 |
+| `staff.html` | 員工主檔、照片與出缺勤管理 |
+| `mis.html` | 網站設定、唯讀資料查閱與待審佇列 |
 
-所有頁面共用一致的導覽與視覺語言，圖檔只使用 `static` 資料夾內的資源。官方網站支援海洋、晨光與森林三種主題，管理員儲存後即可由資料庫設定套用。
+所有網站圖檔都使用 `static` 資料夾內的檔案。
 
-## 實際資料來源
+## 資料來源與正規化資料表
 
-`data.py` 讀取既有 `.env` 連線資訊並連接 SQL Server，不會建立或修改 `.env`。園務摘要主要使用：
+`data.py` 讀取既有 `.env` 連線 SQL Server。公開及員工功能會使用園區、班級、學籍、接送、收費與教職員等既有資料表的彙總；MIS 可查閱其他使用者資料表，但不能從前端送入任意 SQL。
 
-- `學籍資料`：幼兒學籍彙總。
-- `班別名稱`：班級代號、名稱與園區。
-- `ALLtable`：教職員整合主檔與部門彙總。
-- `搭交通車況`：接送服務彙總。
-- `分校資料`：園區代號與人力彙總。
-- `繳費類別`、`繳費項目`、`繳費班別`、`繳費記錄`、`繳費明細`：托育收費流程。
+網站使用以下專用資料表：
 
-MIS 管理中心可查閱其他使用者資料表。後端會先比對 SQL Server 中繼資料、限制每頁筆數，並遮罩兒少、聯絡、證件、銀行、薪資、保險及稅務等敏感資料。前端不能送入任意 SQL，也沒有任意資料表編輯功能。
+| 資料表 | 用途 |
+| --- | --- |
+| `dbo.Frobel_WebSettings` | 官方網站主題與文字設定 |
+| `dbo.Frobel_Staff` | 員工主檔 |
+| `dbo.Frobel_Attendance` | 上下班打卡紀錄 |
+| `dbo.Frobel_OperationCategory` | 園務填報分類 |
+| `dbo.Frobel_OperationSubmission` | 待審園務紀錄與建立員工 |
+| `dbo.Frobel_TrainingDocument` | 教育文件主檔 |
+| `dbo.Frobel_TrainingSection` | 教育文件段落 |
+| `dbo.Frobel_TrainingQuestion` | 教育訓練題庫 |
+| `dbo.Frobel_ImportState` | `staff.csv` 匯入狀態 |
 
-## 管理端與寫入範圍
+## 員工 CSV 與照片
 
-進入內部網站前，員工需輸入員工編號並選擇上班或下班；後端會查詢 `dbo.Frobel_Staff` 的啟用狀態，完成不重複的打卡後才建立 8 小時 HttpOnly 工作階段。MIS 仍保留第二層管理員驗證，帳號由 `.env` 的 `BackendWebAdminUser` 與 `BackendWebAdminPassword` 提供，密碼只在伺服器端比對。兩層工作階段皆使用 SameSite Cookie、頻率限制，寫入操作另有 CSRF 驗證。
+- `data.py` 在員工查閱、驗證與維護前掃描 `data/staff.csv`。
+- 只有修改時間或檔案大小改變時才以參數化 `MERGE` 合併員工資料。
+- CSV 未列出的員工不會自動停用，管理員上傳的既有照片不會被 CSV 覆寫。
+- 官網與後台員工名單預設皆由 `data.py` 先按員工編號整理；只有公開教職團隊提供部門條件篩選。
 
-資料寫入嚴格限制為四類：
+## 驗證與安全
 
-1. 官網版型與文字設定只會寫入專案專用的 `dbo.Frobel_WebSettings`。此資料表會在管理員第一次儲存設定時建立，其他既有資料表仍為唯讀。
-2. 員工營運蒐集寫入 `dbo.Frobel_OperationSubmission`，搭配分類資料表進行正規化，供 MIS 查核。
-3. 員工資料與打卡分別寫入 `dbo.Frobel_Staff` 與 `dbo.Frobel_Attendance`；員工端只取得本次打卡時間。
-4. 教育文件、段落及題庫分開存放於三張教育訓練資料表，原始 Word 文件不會被修改。
+- 員工工作階段與 MIS 工作階段有效時間皆為 8 小時，使用 HttpOnly、SameSite Cookie。
+- 每個內部及 MIS API 都會重新查詢 `dbo.Frobel_Staff`，確認員工仍存在且啟用。
+- MIS 工作階段綁定目前員工，避免其他員工沿用既有管理工作階段。
+- 員工與管理登入都有失敗頻率限制；寫入操作另需 CSRF Token。
+- 打卡使用 SQL Server 的同一筆 `SYSDATETIMEOFFSET()` 完成寫入與回傳，避免資料庫與瀏覽器時間不一致。
+- 敏感欄位分類與遮罩在後端完成，前端不取得未遮罩內容。
+
+## API 摘要
+
+| 路徑 | 權限 | 說明 |
+| --- | --- | --- |
+| `GET /api/public` | 公開 | 官方網站設定與彙總 |
+| `GET /api/staff/departments` | 公開 | 公開教職團隊的部門選單 |
+| `GET /api/staff/public?department=...` | 公開 | 依部門取得公開教職資料 |
+| `POST /api/employee/login` | 公開 | 以 `CLOCK_IN` 或 `ACCESS_ONLY` 驗證並進入 |
+| `GET /api/employee/session` | 公開 | 查詢員工工作階段及當日打卡狀態 |
+| `POST /api/employee/logout` | 員工 | 結束工作階段，不異動打卡 |
+| `GET /api/time` | 員工 | 取得 SQL Server 帶時區時間 |
+| `POST /api/attendance/clock` | 員工 | 補上班或打卡下班 |
+| `POST /api/operations/submit` | 員工 | 新增附帶建立員工的待審事項 |
+| `GET /api/training` | 員工 | 教育文件目錄 |
+| `GET /api/training/document?id=...` | 員工 | 教育文件段落 |
+| `POST /api/admin/login` | 已驗證員工 | 建立 MIS 管理工作階段 |
+| `GET /api/admin/catalog` | 管理員 | 取得唯讀資料表目錄 |
+| `GET /api/admin/table?name=...` | 管理員 | 取得遮罩後的分頁資料 |
+| `GET/POST /api/admin/settings` | 管理員 | 讀取或儲存官方網站設定 |
+| `GET /api/admin/submissions` | 管理員 | 取得附帶建立員工的待審佇列 |
+| `GET/POST/DELETE /api/admin/staff` | 管理員 | 員工主檔查閱、維護與停用，供 `staff.html` 使用 |
+| `GET /api/admin/attendance` | 管理員 | 依日期或員工查閱出缺勤 |
+| `POST /api/admin/training/sync` | 管理員 | 重新同步教育 Word 文件 |
 
 ## 專案結構
 
 | 檔案 | 用途 |
 | --- | --- |
-| `app.py` | HTTP 服務、路由、員工／管理端工作階段、權限驗證與 JSON API |
-| `data.py` | SQL Server 連線、CSV 同步、員工排序、資料庫對時、唯讀查詢與受控寫入 |
-| `input.py` | 員工、打卡、營運與官網設定的輸入驗證 |
-| `doc.py` | 舊 Word 文件轉換、`python-docx` 擷取與教育資料同步 |
-| `style.css` | 官方網站、員工入口及管理中心共用樣式 |
-| `database.md` | 資料庫連線、安全範圍與部署注意事項 |
-| `site.md` | 頁面資訊架構、角色與操作流程 |
-| `start_windows_80.bat` | Windows 正式啟動，使用 Port 80 |
+| `app.py` | HTTP 路由、員工與 MIS 工作階段、CSRF 與 API 權限 |
+| `data.py` | SQL Server 查詢、CSV 同步、排序、打卡與受控寫入 |
+| `input.py` | 員工入口、打卡、園務、照片、YouTube 與設定輸入驗證 |
+| `doc.py` | Word 文件轉換、擷取與教育資料同步 |
+| `style.css` | 官方網站、員工入口、工作台與 MIS 共用樣式 |
+| `database.md` | 資料庫結構、資料治理及正式環境原則 |
+| `site.md` | 網站資訊架構與角色說明 |
+| `start_windows_80.bat` | Windows Port 80 啟動檔 |
 
 ## 安裝與啟動
 
-建議使用 Visual Studio Code 開啟專案，並確認電腦已安裝 Microsoft ODBC Driver 17 for SQL Server。
+建議使用 Visual Studio Code，並安裝 Microsoft ODBC Driver 17 for SQL Server。
 
 ```powershell
 python -m venv .venv
@@ -90,72 +145,31 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-首次匯入舊版 `.doc` 教育文件時需安裝 LibreOffice；系統會以無介面模式轉換，再交由 `python-docx` 擷取內容。
-
 ### Windows Port 80
 
-執行 `start_windows_80.bat`，本機可開啟 `http://127.0.0.1`；同一內網裝置可使用啟動時列出的內網 IP。若 Port 80 已被其他服務占用，需先停止該服務。
+執行 `start_windows_80.bat`。後端監聽 `0.0.0.0:80`，啟動時會列出同一內網可使用的 IPv4 網址。若 Windows 阻擋 Port 80，需以系統管理員身分執行。
 
-### Ritwick Dey Live Server Port 5500
+### Visual Studio Code Live Server
 
-1. 在 VS Code 安裝 [Live Server（ritwickdey.LiveServer）](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)。
-2. 執行 `start_windows_80.bat`，保持 Python API 的 Port 80 運作。
-3. 在 VS Code 點擊狀態列的「Go Live」，或對 `index.html` 選擇「Open with Live Server」。
-4. 開啟 `http://localhost:5500`。
+1. 安裝 [Live Server（ritwickdey.LiveServer）](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)。
+2. 執行 `start_windows_80.bat`，保持 API 運作。
+3. 在 VS Code 以 Live Server 開啟 `index.html`。
+4. 使用 `http://localhost:5500` 或同一內網的對應網址存取。
 
-專案的 `.vscode/settings.json` 已將 Live Server 固定於 Port 5500，並透過擴充功能內建的 Proxy 將 `/api` 轉送至 `http://localhost:80`。前端只使用同來源的 `/api` 路徑，MIS 登入 Cookie 不需依賴跨來源 CORS 設定。
+`.vscode/settings.json` 會將 `/api` 代理至 `http://localhost:80`。
 
-## API 摘要
+## 目前整合成果
 
-| 路徑 | 權限 | 說明 |
-| --- | --- | --- |
-| `GET /api/public` | 公開 | 官網文字、主題與公開彙總 |
-| `POST /api/employee/login` | 公開 | 驗證員工編號、完成上／下班打卡並建立員工工作階段 |
-| `GET /api/employee/session` | 公開 | 查詢目前員工工作階段；有效工作階段會重新查核在職狀態 |
-| `POST /api/employee/logout` | 員工入口 | 結束員工工作階段並返回打卡入口 |
-| `GET /api/time` | 員工入口 | 取得 SQL Server 帶時區時間供前端校準 |
-| `GET /api/dashboard` | 員工入口 | 園務彙總與班級摘要 |
-| `GET /api/knowledge` | 員工入口 | 園務知識內容 |
-| `GET /api/staff/public` | 公開 | 適合官網展示的教職員基本資料 |
-| `GET /api/training` | 員工入口 | 教育文件分類與目錄 |
-| `GET /api/training/document?id=...` | 員工入口 | 指定教育文件的段落內容 |
-| `GET /api/operations` | 員工入口 | 營運流程說明 |
-| `POST /api/operations/submit` | 員工入口 | 新增待 MIS 查核的營運紀錄 |
-| `POST /api/attendance/clock` | 員工入口 | 寫入上班或下班打卡並回傳本次時間 |
-| `POST /api/admin/login` | 已打卡員工 | 建立第二層 MIS 管理工作階段 |
-| `GET /api/admin/catalog` | 管理員 | 取得資料表目錄 |
-| `GET /api/admin/table?name=...` | 管理員 | 取得遮罩後的分頁資料 |
-| `GET/POST /api/admin/settings` | 管理員 | 讀取或儲存官網設定 |
-| `GET /api/admin/submissions` | 管理員 | 檢視待查核營運紀錄 |
-| `GET/POST/DELETE /api/admin/staff?sort=employee_id|department` | 管理員 | 依員工編號或部門查閱、維護或停用員工資料 |
-| `GET /api/admin/attendance` | 管理員 | 依日期或員工查閱出缺勤 |
-| `POST /api/admin/training/sync` | 管理員 | 重新轉換並同步教育 Word 文件 |
+- 對外網站、員工入口、園務工作區、員工管理與 MIS 已形成明確的角色分流。
+- 員工可選擇上班打卡或不打卡進入，工作台再依當日狀態提供補打卡、下班與離開功能。
+- 公開教職團隊支援部門選單，後台員工資料固定依員工編號管理。
+- 員工維護集中於 `staff.html`；MIS 原員工分頁改為以員工及事件雙向篩選的待審佇列。
+- 營運待審事項會保存建立員工，既有無建立者紀錄仍可查閱。
+- 實際 SQL Server、CSV、Word 文件與 `static` 圖片共同形成目前的資料來源。
 
 ## 上線注意事項
 
-- 正式環境應透過反向代理啟用 HTTPS，並將管理 Cookie 加上 Secure 屬性。
-- 園務唯讀查詢與官網設定寫入最好使用不同的最小權限資料庫帳號。
-- 目前登入工作階段存放在單一 Python 程序記憶體；多主機部署時應改用集中式工作階段儲存。
-- 上線前應由園方依兒少資料政策覆核欄位遮罩規則、網路來源限制與存取稽核。
-
-## 專案現況
-
-目前網站已形成符合幼稚園實務的分眾平台：對外官網聚焦教育品牌與招生資訊，員工端支援日常園務，MIS 端提供登入保護、受控資料查閱與官網內容管理。後端保留 SQL Server 真實資料串接，同時以白名單寫入、敏感資料遮罩及待查核佇列降低誤改正式資料的風險。
-
-## 對話更新歷程
-
-- 完成「福祿貝爾營運中心」前後端分離架構，前端頁面以 API 讀取資料，並實際串接既有 SQL Server。
-- 既有園務資料表維持唯讀；網站寫入功能僅使用 `dbo.Frobel_*` 專用資料表，包含官網設定、員工主檔、出缺勤、營運待審及教育訓練資料。
-- 建立 MIS 登入、HttpOnly Cookie、CSRF 驗證、登入頻率限制、資料表白名單與敏感欄位遮罩。
-- 新增園務官網、員工工作台、營運蒐集、教育訓練、YouTube 休息站、員工與出缺勤、MIS 管理等分眾頁面。
-- 從 `data/staff.csv` 匯入員工主檔，官網只公開姓名、部門、職位、特質與照片；年齡與背景資料僅供 MIS 維護。
-- 員工工作台已串接員工名冊與即時打卡；第一筆必須上班打卡，後續上、下班需交替，並使用資料庫交易鎖避免連續打卡。
-- 後台入口已整合員工編號驗證與打卡；只有資料庫驗證及打卡交易成功才建立工作階段，內部頁面、MIS 登入與各 API 皆會再次查核員工在職狀態。
-- 打卡改用 SQL Server 同一筆帶時區時間完成寫入與回傳，工作台時鐘透過 `/api/time` 校準，修正資料庫與瀏覽器時間無法對時的問題。
-- `data.py` 會在員工查閱與維護前掃描 `data/staff.csv`，只有檔案異動時才合併；前端預設依員工編號排序，並提供部門排序選項。
-- `staff.html` 已整合 MIS 員工主檔、照片預覽、照片上傳及出缺勤查閱。照片僅接受 JPEG、PNG、WebP，最大 5 MB，並以不可變更的員工編號自動命名。
-- 教育訓練已支援舊版 Word 文件轉換、段落擷取、分類搜尋與展開閱讀；目前已同步 23 份文件與 565 個整理後段落。
-- `doc.py` 已強化 LibreOffice／Word 備援、逾時、損壞文件、長內容分段及同步鎖定處理。
-- YouTube 休息站改為由 `input.py` 驗證網址，再由後端取得真實影片標題與嵌入資訊；前端不再顯示影片代碼，並提供逾時處理。
-- 啟動方式統一保留 `start_windows_80.bat`；服務可監聽內網介面，啟動時會列出可供同一內網使用的 IPv4 位址。VS Code Live Server 可透過 Proxy 轉送 API。
-- 專案 Python 虛擬環境已修正，並安裝 `pyodbc`、`python-docx`；VS Code 已設定使用專案直譯器與工作區模組路徑。
+- 正式環境應使用 HTTPS，並為工作階段 Cookie 加上 Secure 屬性。
+- 建議將唯讀查詢與網站專用寫入拆成不同的最小權限資料庫帳號。
+- 多程序或多主機部署時，記憶體工作階段應改為集中式儲存。
+- 上線前應由園方覆核打卡時段、補打卡判定、資料遮罩、待審流程與存取稽核規則。

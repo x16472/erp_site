@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, urlparse
 ALLOWED_CATEGORIES = {"出勤", "班級", "接送", "收費", "設備", "餐點", "其他"}
 ALLOWED_THEMES = {"ocean", "sunrise", "forest"}
 ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
+ALLOWED_ACCESS_MODES = {"CLOCK_IN", "ACCESS_ONLY"}
 MAX_STAFF_PHOTO_BYTES = 5 * 1024 * 1024
 
 
@@ -71,6 +72,13 @@ def validate_attendance(payload: dict[str, Any]) -> dict[str, str]:
     if action not in ALLOWED_CLOCK_ACTIONS:
         raise InputError("打卡類型不正確")
     return {"employee_id": _employee_id(payload.get("employee_id")), "action": action}
+
+
+def validate_employee_access(payload: dict[str, Any]) -> dict[str, str]:
+    mode = _text(payload.get("mode"), "進入方式", 20).upper()
+    if mode not in ALLOWED_ACCESS_MODES:
+        raise InputError("進入方式不正確")
+    return {"employee_id": _employee_id(payload.get("employee_id")), "mode": mode}
 
 
 def validate_staff(payload: dict[str, Any]) -> dict[str, Any]:
