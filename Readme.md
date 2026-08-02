@@ -50,14 +50,14 @@
 - 待審佇列左側按員工編號顯示員工，右側顯示其建立的申請事件；可點選員工、事件或事件類別進行篩選。
 - MIS 不再提供員工編輯或停用控制，並保留前往 `staff.html` 的「查看出缺勤」入口。
 
-## 員工 CSV 與照片
+### 員工 CSV 與照片
 
 - `data.py` 在員工查閱、驗證與維護前掃描 `data/staff.csv`。
 - 只有修改時間或檔案大小改變時才以參數化 `MERGE` 合併員工資料。
 - CSV 未列出的員工不會自動停用，管理員上傳的既有照片不會被 CSV 覆寫。
 - 官網與後台員工名單預設皆由 `data.py` 先按員工編號整理；只有公開教職團隊提供部門條件篩選。
 
-## 驗證與安全
+### 驗證與安全
 
 - 員工工作階段與 MIS 工作階段有效時間皆為 8 小時，使用 HttpOnly、SameSite Cookie。
 - 每個內部及 MIS API 都會重新查詢 `dbo.Frobel_Staff`，確認員工仍存在且啟用。
@@ -66,7 +66,7 @@
 - 打卡使用 SQL Server 的同一筆 `SYSDATETIMEOFFSET()` 完成寫入與回傳，避免資料庫與瀏覽器時間不一致。
 - 敏感欄位分類與遮罩在後端完成，前端不取得未遮罩內容。
 
-## 前端頁面色
+### 前端頁面
 
 | 頁面 | 用途 |
 | --- | --- |
@@ -81,7 +81,7 @@
 
 所有網站圖檔都使用 `static` 資料夾內的檔案。
 
-## 後端頁面
+### 後端頁面
 
 | 檔案 | 用途 |
 | --- | --- |
@@ -92,7 +92,7 @@
 | `style.css` | 官方網站、員工入口、工作台與 MIS 共用樣式 |
 | `database.md` | 資料庫結構、資料治理及正式環境原則 |
 | `site.md` | 網站資訊架構與角色說明 |
-| `start_windows_80.bat` | Windows Port 80 啟動檔 |
+| `win_start.bat` | Windows Port 80 啟動檔 |
 
 ## 安裝與啟動
 
@@ -106,7 +106,7 @@ pip install -r requirements.txt
 
 ### Windows Port 80
 
-執行 `start_windows_80.bat`。後端監聽 `0.0.0.0:80`，啟動時會列出同一內網可使用的 IPv4 網址。若 Windows 阻擋 Port 80，需以系統管理員身分執行。
+執行 `win_start.bat`。後端監聽 `0.0.0.0:80`，啟動時會列出同一內網可使用的 IPv4 網址。若 Windows 阻擋 Port 80，需以系統管理員身分執行。
 
 本專案不使用 Visual Studio Code Live Server。HTML、靜態資源與 API 均由 `app.py` 在同一個 Port 80 服務提供，避免跨來源 Cookie、Proxy 與前後端連線設定不一致。
 

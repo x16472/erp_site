@@ -94,7 +94,9 @@ def _convert_with_libreoffice(executable: str, legacy: list[Path]) -> None:
 def _convert_with_word(legacy: list[Path]) -> None:
     powershell = shutil.which("powershell")
     if os.name != "nt" or not powershell:
-        raise DocumentImportError("找不到 LibreOffice；此環境也無法使用 Microsoft Word COM。")
+        raise DocumentImportError(
+            "找不到 LibreOffice；此環境也無法使用 Microsoft Word COM。"
+        )
 
     script = r"""
 $ErrorActionPreference = 'Stop'
@@ -102,7 +104,7 @@ $source = $env:FROBEL_DOC_SOURCE
 $targetRoot = $env:FROBEL_DOC_TARGET
 $word = New-Object -ComObject Word.Application
 $word.Visible = $false
-$word.DisplayAlerts = 0
+$word.DisplayAlerts = 0}
 try {
     Get-ChildItem -LiteralPath $source -File | Where-Object { $_.Extension -ieq '.doc' } | ForEach-Object {
         $target = Join-Path $targetRoot ($_.BaseName + '.docx')
@@ -116,6 +118,7 @@ try {
     [void][Runtime.InteropServices.Marshal]::ReleaseComObject($word)
 }
 """
+    
     environment = os.environ.copy()
     environment["FROBEL_DOC_SOURCE"] = str(SOURCE_DIR)
     environment["FROBEL_DOC_TARGET"] = str(CACHE_DIR)
@@ -128,6 +131,10 @@ try {
         detail = (result.stderr or result.stdout or "Microsoft Word 轉換失敗").strip()
         incomplete = f"；未完成：{', '.join(missing[:3])}" if missing else ""
         raise DocumentImportError(f"{detail[-400:]}{incomplete}")
+
+
+
+    
 
 
 def _convert_legacy_documents() -> None:

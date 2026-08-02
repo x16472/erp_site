@@ -54,7 +54,7 @@ erp_site/
 - 驗證過程不執行官網設定寫入，也不建立測試營運紀錄，以避免測試資料進入正式環境。
 - 公開的 `Readme.md` 只保留專案用途、功能、安裝方式及安全設計；協作要求與內部決策集中記錄於本節。
 ## 維護功能
-- 啟動方式已由後續需求統一為 `start_windows_80.bat`，由 [app.py](/app.py) 在 Port 80 同時提供網頁、靜態資源與 API。
+- 啟動方式已由後續需求統一為 `win_start.bat`，由 [app.py](/app.py) 在 Port 80 同時提供網頁、靜態資源與 API。
 - 修正用.env內含的MIS帳號、密碼錯誤無法登入的問題。
 - 所有需要輸入的功能，先建立好資料表，並遵循正規化原則，詳細依照[database.md](/database.md)就好。輸入的時候以[input.py](/input.py)來處理，最後回傳給[app.py](/app.py)再去做其他輸出。
 ## 新增功能
@@ -62,8 +62,8 @@ erp_site/
 - 另外我已建立幼稚園員工的[員工資料](/data/staff.csv)，圖片放在這個[資料夾](/static/staff)，圖片檔名就是員工編號，根據目前設定的職掌，只有MIS才能做維護，[前台網頁](/index.html)只要呈現出員工的基本資料，[後台網頁](/home.html)要建置簡易的打卡功能（先建立起資料庫，後續用`inpuy.py`操作輸入），要有員工的打卡板塊，員工只能看到當下打卡時間，打卡狀況要用[員工出缺勤](/staff.html)檢視，同時需要用`.env`的`BackendWebAdminUser`、`BackendWebAdminPassword`進行登入
 
 ## 第 73 行起需求的實作紀錄
-- 已加入 `start_windows_80.bat`，由 Python 後端直接以 Port 80 提供網站與 API。
-- 專案只保留 `start_windows_80.bat` 啟動網站與 API；不再使用 Visual Studio Code Live Server、Port 5500 或 Proxy。
+- 已加入 `win_start.bat`，由 Python 後端直接以 Port 80 提供網站與 API。
+- 專案只保留 `win_start.bat` 啟動網站與 API；不再使用 Visual Studio Code Live Server、Port 5500 或 Proxy。
 - HTML、靜態資源與 `/api` 均由 `app.py` 在 Port 80 提供，維持同來源請求與工作階段 Cookie。
 - 已建立 8 張 `dbo.Frobel_*` 網站應用資料表；既有園務資料表仍維持唯讀。
 - `input.py` 只負責驗證員工、打卡、營運及官網設定輸入，通過後由 `app.py` 交由 `data.py` 寫入 SQL Server。
@@ -75,7 +75,7 @@ erp_site/
 - 已修正 `app.py` 的請求型別、服務執行緒、教育同步例外處理及重複建表流程；教育同步失敗不再阻止其他網站功能啟動。
 - 已修正 `doc.py` 的轉檔程式偵測、逾時與損壞文件處理、標題切段、長內容分段、UTC 修改時間及同步鎖定。
 - 官網員工名冊改為獨立載入，不再受其他首頁 API 失敗連帶影響；員工工作台的打卡人員選單直接讀取 `dbo.Frobel_Staff` 啟用資料。
-- 已依 Phoenix 指示刪除 `start_api_8000.bat`，只保留 `start_windows_80.bat`；啟動前會檢查專案 `.venv`、`pyodbc` 與 `python-docx`，並支援 `--check` 自我檢查。
+- 已依 Phoenix 指示刪除 `start_api_8000.bat`，只保留 `win_start.bat`；啟動前會檢查專案 `.venv`、`pyodbc` 與 `python-docx`，並支援 `--check` 自我檢查。
 - 已重建原先指向不存在 Python 3.10 的 `.venv`，改用 Python 3.12 並安裝 `requirements.txt`；VS Code 固定使用專案直譯器與工作區模組路徑，修正 `app.py` 匯入 `doc.py` 及 `doc.py` 匯入 `python-docx` 的解析問題。
 - 員工打卡改為第一筆必須上班、後續上下班交替，並以資料庫交易鎖避免同一員工同時送出造成連續打卡。
 - `game.html` 已改為 YouTube 直播休息站，只接受可辨識的 YouTube 網址並轉換為嵌入播放器。
@@ -89,7 +89,7 @@ erp_site/
 - `game.html` 改由 `input.py` 驗證 YouTube 網址，`app.py` 透過固定的 YouTube oEmbed 端點取得真實影片標題後才回傳嵌入網址；前端不再顯示影片代碼，並設有十秒逾時。
 - `staff.html` 已整合 MIS 員工主檔維護、照片預覽及上傳；文字寫入 `dbo.Frobel_Staff`，圖片限制為 JPEG、PNG、WebP 與 5 MB，檔名由不可變更的員工編號自動產生。
 - 員工編號進入編輯狀態後會鎖定並以警示色標記；後端沒有變更既有主鍵的操作。
-- `app.py` 與 `start_windows_80.bat` 改為監聽 `0.0.0.0`，啟動時列出可供同一內網使用的 IPv4 位址。
+- `app.py` 與 `win_start.bat` 改為監聽 `0.0.0.0`，啟動時列出可供同一內網使用的 IPv4 位址。
 
 ## 打卡功能做出來後，仍需要優化的部分
 -   該項功能目前做的不錯，有點公司網站的雛形。但是後台查詢`部門分類`是針對`首字筆畫數量`，但這樣看來後台還是維持原有的`員工編號`分類就好。我要的是在前台>教職團隊，可以針對各部門選擇`DropDownList`去分類，這邊要用[data.py](/data.py)做好後來去回傳[app.py](/app.py)
