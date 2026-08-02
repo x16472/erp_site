@@ -149,14 +149,7 @@ pip install -r requirements.txt
 
 執行 `start_windows_80.bat`。後端監聽 `0.0.0.0:80`，啟動時會列出同一內網可使用的 IPv4 網址。若 Windows 阻擋 Port 80，需以系統管理員身分執行。
 
-### Visual Studio Code Live Server
-
-1. 安裝 [Live Server（ritwickdey.LiveServer）](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)。
-2. 執行 `start_windows_80.bat`，保持 API 運作。
-3. 在 VS Code 以 Live Server 開啟 `index.html`。
-4. 使用 `http://localhost:5500` 或同一內網的對應網址存取。
-
-`.vscode/settings.json` 會將 `/api` 代理至 `http://localhost:80`。
+本專案不使用 Visual Studio Code Live Server。HTML、靜態資源與 API 均由 `app.py` 在同一個 Port 80 服務提供，避免跨來源 Cookie、Proxy 與前後端連線設定不一致。
 
 ## 目前整合成果
 

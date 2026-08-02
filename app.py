@@ -530,7 +530,7 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     parser = argparse.ArgumentParser(description="啟動福祿貝爾營運中心")
     parser.add_argument("--host", default=os.environ.get("FROBEL_HOST", "0.0.0.0"))
-    parser.add_argument("--port", type=int, default=int(os.environ.get("FROBEL_PORT", "8000")))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("FROBEL_PORT", "80")))
     parser.add_argument("--skip-doc-sync", action="store_true", help="略過啟動時的教育文件同步")
     args = parser.parse_args()
     data.ensure_application_schema()

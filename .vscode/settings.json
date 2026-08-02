@@ -4,15 +4,5 @@
     "${workspaceFolder}",
     "${workspaceFolder}/.deps"
   ],
-  "python.terminal.activateEnvironment": true,
-  "liveServer.settings.port": 5500,
-  "liveServer.settings.root": "/",
-  "liveServer.settings.host": "0.0.0.0",
-  "liveServer.settings.useLocalIp": true,
-  "liveServer.settings.NoBrowser": false,
-  "liveServer.settings.proxy": {
-    "enable": true,
-    "baseUri": "/api",
-    "proxyUri": "http://127.0.0.1:80"
-  }
+  "python.terminal.activateEnvironment": true
 }
