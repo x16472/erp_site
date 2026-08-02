@@ -1,5 +1,5 @@
 # Agent
-【總體要求】
+## 總體要求
 1. 前端是動態網頁（串接後端 API 與資料庫），搭配後端（app.py）處理資料。
 2. 頁面間的導覽連結與樣式架構保持一致，將[CSS UI](e:/資料、文檔/0.文件/Github/erp_site/style.css)建立起來，使用`static\`資料夾內涵的圖片進行發揮。
 3. 移除所有原本的內嵌資料，但仍有實際的前端互動功能，改成空架構顯示、或是接入資料庫測試探測資料。
@@ -13,21 +13,23 @@ erp_site/
 ├── .env        #存放機密性資料用的
 ├── .gitignore  #Github排除檔案專用
 ├── app.py      #後端：網頁後端的核心控制
-├── data.py     #後端：控制資料庫的串接
-├── input.py    #後端：接收來自前端的輸入
+├── data.py     #後端：主要處理資料庫的串接
+├── input.py    #後端：接收來自前端的輸入，將資料餵給app.py
 ├── database.md #針對資料庫設定的說明
 ├── site.md     #針對網頁設定的說明
 ├── agent.md    #主要大方向（這個檔案）
 ├── style.css   #網頁CSS布局設定
 ├── script.js   #javascript控制項
-├── index.html  #前端：主要網頁首頁
-│       ├── home.html   #ERP知識百科
-│       ├── sales.html  #銷貨模組百科
-│       ├── mis.html    #MIS知識百科
-│       ├── exam.html   #互動式網頁：模擬考練習
-│       └── game.html   #互動式網頁：輕鬆向的放鬆遊戲
+├── index.html  #前端：前台官方網頁
+│       ├── home.html   #前端：後台首頁，主要為員工入口網站，所有人都能看到
+│       ├── sales.html  #前端：後台蒐集營運資料的分頁
+│       ├── mis.html    #前端：後台管理所有設定的區域，必須使用帳號密碼登入獲得較高的權限
+│       ├── exam.html   #前端：後台用來給予員工教育訓練的區域，資料會存放於上層data資料夾
+│       └── game.html   #前端：後台給予員工放鬆的遊戲區域，並非要貼近網站內容，更多的是基於休閒性質
 └── Readme.md   # 專案說明
 ```
+## 管理員帳號密碼
+設定在`.env`裡面，帳號：`BackendWebAdminUser`、密碼：`BackendWebAdminPassword`，進入[mis.html](/mis.html)必須輸入密碼登錄，且只有這個區塊在前端有較高的權限，可以控管網頁版面，及寫入資料表。
 
 【各頁面具體修改指示】
 1. [ERP 知識百科首頁](e:/資料、文檔/0.文件/Github/erp_site/home.html)：

@@ -1,95 +1,12 @@
 <!doctype html>
-<html lang="zh-TW">
-
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>收費營運流程｜福祿貝爾營運中心</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-  <div class="app">
-    <aside class="sidebar"><a class="brand" href="index.html"><img class="brand-logo" src="static/0-3-08.png" alt="福祿貝爾標誌"><span>福祿貝爾<small>園務營運中心</small></span></a>
-            <nav class="nav"><a href="index.html">園務總覽</a><a href="home.html">資料查閱</a><a class="active"
-          href="sales.html">托育收費</a><a href="mis.html">人事權限</a><a href="exam.html">園務研習</a><a href="game.html">團隊小憩</a>
-      </nav>
-    </aside>
-    <main class="main">
-      <header class="topbar">
-        <div><span class="top-kicker">托育財務</span>
-          <h1>幼兒收費資料生命週期</h1>
-        </div><span class="api-state" id="apiState">載入中</span>
-      </header>
-      <div class="container corporate-container">
-        <section class="section-head">
-          <div><span class="eyebrow">PAYMENT OPERATIONS</span>
-            <h2>從學期規則到家長繳費核對</h2>
-            <p>依 SQL Server 實際資料呈現學費、餐點、活動、交通與減免的作業流程。</p>
-          </div><button class="btn" id="addBtn">＋ 建立檢核練習</button>
-        </section>
-        <div class="split process-layout">
-          <section class="panel table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>流程</th>
-                  <th>資料表</th>
-                  <th>目前筆數</th>
-                  <th>說明</th>
-                </tr>
-              </thead>
-              <tbody id="rows">
-                <tr>
-                  <td colspan="4">正在讀取資料庫…</td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
-          <section class="panel"><span class="eyebrow">PROCESS DETAIL</span>
-            <h2 id="detailTitle">選取流程節點</h2>
-            <p class="hint" id="detailMeta">查看此節點在整體收費作業中的位置。</p>
-            <div class="vertical-flow" id="flow"></div>
-          </section>
-        </div>
-        <section class="section-head">
-          <div><span class="eyebrow">PRACTICE CASES</span>
-            <h2>收費檢核練習</h2>
-            <p>模擬新學期收費設定，僅儲存在瀏覽器，不會寫入園務資料庫。</p>
-          </div>
-        </section>
-        <div class="grid" id="practice">
-          <div class="empty">尚未建立練習案件。</div>
-        </div>
-      </div>
-    </main>
-  </div>
-  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
-    <form class="modal-box" id="form"><button type="button" class="close" aria-label="關閉">×</button><span
-        class="eyebrow">LOCAL SIMULATION</span>
-      <h2 id="formTitle">建立托育收費檢核練習</h2>
-      <p class="hint">此資料只供園務人員演練，與正式資料庫完全隔離。</p>
-      <div class="form-grid"><label class="field">案件名稱<input name="name" maxlength="40" placeholder="例如：新學期收費設定"
-            required></label><label class="field">負責單位<input name="department" maxlength="30" placeholder="例如：財務部"
-            required></label><label class="field full">目前節點<select name="stage" id="stageSelect"
-            required></select></label></div>
-      <div class="actions"><button class="btn" type="submit">儲存練習案件</button><button class="btn light close-action"
-          type="button">取消</button></div>
-    </form>
-  </div>
-  <div class="toast" id="toast" role="status"></div>
-  <script>
-    let stages = []; const storageKey = 'frobel-payment-practice';
-    const esc = value => { const node = document.createElement('div'); node.textContent = value; return node.innerHTML }; const number = value => new Intl.NumberFormat('zh-TW').format(value);
-    function renderProcess() { rows.innerHTML = stages.map(item => `<tr data-id="${item.id}" tabindex="0"><td><b>${esc(item.stage)}</b></td><td><code>${esc(item.table)}</code></td><td>${number(item.count)}</td><td>${esc(item.description)}</td></tr>`).join(''); stageSelect.innerHTML = stages.map(item => `<option value="${item.id}">${esc(item.stage)}</option>`).join('') }
-    function showStage(id) { const current = stages.find(item => item.id === id); if (!current) return; detailTitle.textContent = current.stage; detailMeta.textContent = `${current.table} · 目前 ${number(current.count)} 筆資料`; flow.innerHTML = stages.map(item => `<div class="flow-node ${item.id === id ? 'current' : ''}"><span>${item.id}</span><div><b>${esc(item.stage)}</b><small>${esc(item.description)}</small></div></div>`).join('') }
-    function practices() { try { return JSON.parse(localStorage.getItem(storageKey)) || [] } catch { return [] } }
-    function renderPractice() { const items = practices(); practice.innerHTML = items.length ? items.map(item => { const stage = stages.find(step => step.id === item.stage); return `<article class="card"><span class="tag">${esc(stage?.stage || '流程練習')}</span><h3>${esc(item.name)}</h3><p>${esc(item.department)} · ${esc(item.date)}</p></article>` }).join('') : '<div class="empty">尚未建立練習案件。</div>' }
-    fetch('/api/operations').then(r => { if (!r.ok) throw new Error(); return r.json() }).then(response => { stages = response.data; renderProcess(); renderPractice(); showStage(stages[0]?.id); apiState.textContent = 'SQL Server 即時資料'; apiState.classList.add('ok') }).catch(() => { rows.innerHTML = '<tr><td colspan="4">無法取得收費流程資料。</td></tr>'; apiState.textContent = '資料庫未連線' });
-    rows.addEventListener('click', event => { const row = event.target.closest('[data-id]'); if (row) showStage(row.dataset.id) }); rows.addEventListener('keydown', event => { if (event.key === 'Enter') event.target.click() });
-    addBtn.onclick = () => { if (!stages.length) return; form.reset(); modal.classList.add('open'); form.name.focus() }; document.addEventListener('click', event => { if (event.target === modal || event.target.closest('.close,.close-action')) modal.classList.remove('open') });
-    form.onsubmit = event => { event.preventDefault(); const item = Object.fromEntries(new FormData(form)); item.date = new Date().toLocaleDateString('zh-TW'); const items = practices(); items.unshift(item); localStorage.setItem(storageKey, JSON.stringify(items.slice(0, 12))); renderPractice(); modal.classList.remove('open'); toast.textContent = '練習案件已儲存在本機'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2200) };
-  </script>
-</body>
-
-</html>
+<html lang="zh-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>營運資料蒐集｜福祿貝爾營運中心</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="portal-shell"><aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a><nav class="portal-nav"><a href="home.html">工作台</a><a class="active" href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav><p class="portal-foot">OPERATION INPUT · 待審資料</p></aside><main class="portal-main"><header class="portal-topbar"><div><span class="top-kicker">OPERATION COLLECTION</span><h1>園務資料蒐集</h1></div><span class="api-state" id="apiState">準備填報</span></header><div class="portal-content"><div class="portal-grid">
+<section class="portal-card wide"><div class="card-head"><div><span class="eyebrow">DAILY REPORT</span><h2>新增園務日報</h2><p>填寫出勤、班級、接送、收費、設備或餐點數量；送出後進入 MIS 待審佇列。</p></div></div><form id="operationForm"><div class="form-grid"><label class="field"><span>日期</span><input type="date" name="date" required></label><label class="field"><span>園區</span><select name="campus" id="campus" required><option value="">載入園區中…</option></select></label><label class="field"><span>資料類別</span><select name="category" required><option>出勤</option><option>班級</option><option>接送</option><option>收費</option><option>設備</option><option>餐點</option><option>其他</option></select></label><label class="field"><span>數量</span><input type="number" name="count" min="0" max="9999" value="0" required></label><label class="field full"><span>備註</span><textarea name="note" maxlength="200" placeholder="只填寫作業摘要，請勿輸入幼兒姓名、電話或其他個資。"></textarea></label></div><div class="actions"><button class="btn" type="submit">送交 MIS 審核</button><button class="btn secondary" type="reset">清除</button></div><p id="formStatus" aria-live="polite"></p></form></section>
+<aside class="portal-card narrow"><div class="card-head"><div><span class="eyebrow">SAFE INPUT</span><h2>填報提醒</h2></div></div><div class="success-note">只記錄彙總數量與園務摘要，不輸入幼兒、家長或教職員個資。</div><p class="hint">資料會先存放於專案內待審佇列，由 MIS 管理員確認後再處理；不會直接寫入既有園務資料表。</p><div id="lastSubmission"></div></aside>
+<section class="portal-card full"><div class="card-head"><div><span class="eyebrow">PAYMENT FLOW</span><h2>托育收費資料生命週期</h2><p>即時讀取相關 SQL Server 資料表筆數，協助理解收費資料如何流動。</p></div></div><div class="process-list" id="process"><div class="empty">正在讀取收費流程…</div></div></section>
+</div></div></main></div><div class="toast" id="toast" role="status"></div>
+<script>
+const operationForm=document.querySelector('#operationForm'),campus=document.querySelector('#campus'),process=document.querySelector('#process'),apiState=document.querySelector('#apiState'),formStatus=document.querySelector('#formStatus'),lastSubmission=document.querySelector('#lastSubmission'),toast=document.querySelector('#toast');const esc=value=>{const n=document.createElement('div');n.textContent=value??'';return n.innerHTML};const number=value=>new Intl.NumberFormat('zh-TW').format(value);operationForm.date.value=new Date().toISOString().slice(0,10);
+Promise.all([fetch('/api/branches').then(r=>r.json()),fetch('/api/operations').then(r=>r.json())]).then(([branchResponse,processResponse])=>{campus.innerHTML='<option value="">請選擇園區</option>'+branchResponse.data.map(item=>`<option value="${esc(item.code)}">${esc(item.name)}</option>`).join('');process.innerHTML=processResponse.data.map(item=>`<div class="process-node"><span>${item.id}</span><div><b>${esc(item.stage)}</b><small>${esc(item.description)}</small></div><em>${number(item.count)} 筆</em></div>`).join('');apiState.textContent='園務服務已連線';apiState.classList.add('ok')}).catch(()=>{apiState.textContent='資料服務未連線'});
+operationForm.onsubmit=async event=>{event.preventDefault();formStatus.className='';formStatus.textContent='送出中…';const payload=Object.fromEntries(new FormData(operationForm));payload.count=Number(payload.count);try{const response=await fetch('/api/operations/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),body=await response.json();if(!response.ok)throw new Error(body.error||'送出失敗');formStatus.className='success-note';formStatus.textContent=`${body.data.id} 已送交 MIS 待審。`;lastSubmission.innerHTML=`<div class="submission-card"><header><b>${esc(body.data.category)}</b><span class="tag">待審核</span></header><p>${esc(body.data.campus)} · ${esc(body.data.date)} · ${number(body.data.count)} 筆</p></div>`;operationForm.reset();operationForm.date.value=new Date().toISOString().slice(0,10);toast.textContent='園務日報已送出';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200)}catch(error){formStatus.className='error-note';formStatus.textContent=error.message}};
+</script></body></html>

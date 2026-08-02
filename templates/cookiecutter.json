@@ -1,7 +1,7 @@
 {
-  "project_name": "ERP 知識學習中心",
-  "project_slug": "erp_learning_site",
-  "project_description": "純靜態、可直接以瀏覽器開啟的 ERP 互動知識學習網站",
+  "project_name": "福祿貝爾營運中心",
+  "project_slug": "frobel_operation_center",
+  "project_description": "串接 SQL Server 的幼稚園官網、員工入口與管理平台",
   "author_name": "Phoenix",
   "language": "zh-TW",
   "timezone": "Asia/Taipei",
@@ -11,12 +11,12 @@
   "permission_page": "mis.html",
   "exam_page": "exam.html",
   "game_page": "game.html",
-  "navigation_title": "ERP 知識學習中心",
+  "navigation_title": "福祿貝爾營運中心",
   "primary_color": "#3b82f6",
   "sidebar_color": "#1e293b",
   "background_color": "#f4f6f9",
   "font_family": "Microsoft JhengHei, Arial, sans-serif",
-  "local_storage_prefix": "erp",
+  "local_storage_prefix": "frobel",
   "include_knowledge_search": [
     "yes",
     "no"

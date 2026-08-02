@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 data/*.db
+data/operation_submissions.json
 .agents/
 .deps/
 .venv/
+.data/MSSQL_ALLtable.png

@@ -43,8 +43,8 @@ def _load_env() -> dict[str, str]:
     return values
 
 
-def connect():
-    """建立 SQL Server 唯讀連線，不在記錄中輸出連線密碼。"""
+def connect(read_only: bool = True):
+    """建立 SQL Server 連線；一般查詢預設使用唯讀意圖。"""
     cfg = _load_env()
     required = ("DatabaseIP", "DatabasePort", "DatabaseName", "DatabaseUser", "DatabasePassword")
     missing = [key for key in required if not cfg.get(key)]
@@ -58,12 +58,22 @@ def connect():
         f"DATABASE={cfg['DatabaseName']};"
         f"UID={cfg['DatabaseUser']};PWD={cfg['DatabasePassword']};"
         "Encrypt=no;TrustServerCertificate=yes;Connection Timeout=5;"
-        "ApplicationIntent=ReadOnly"
+        + ("ApplicationIntent=ReadOnly" if read_only else "")
     )
     try:
         return pyodbc.connect(connection_string, autocommit=True)
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("無法連線至 SQL Server，請檢查網路與資料庫設定。") from exc
+
+
+def admin_credentials() -> tuple[str, str]:
+    """取得 MIS 管理員帳密，只供後端比對，永不傳送至前端。"""
+    cfg = _load_env()
+    username = cfg.get("BackendWebAdminUser", "")
+    password = cfg.get("BackendWebAdminPassword", "")
+    if not username or not password:
+        raise DatabaseUnavailable(".env 尚未設定 MIS 管理員帳號密碼。")
+    return username, password
 
 
 def _fetch(query: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
@@ -218,6 +228,66 @@ def _count(table: str) -> int:
 def health() -> dict[str, Any]:
     info = _fetch("SELECT DB_NAME() AS [資料庫], COUNT(*) AS [資料表數] FROM sys.tables")[0]
     return {"status": "ok", "source": "mssql", "database": info["資料庫"], "table_count": info["資料表數"], "mode": "read-only"}
+
+
+DEFAULT_SITE_SETTINGS = {
+    "theme": "ocean",
+    "hero_title": "在愛與探索中，陪孩子長成自己的模樣",
+    "hero_subtitle": "福祿貝爾以遊戲、自然與生活經驗為核心，讓每個孩子在安全而有溫度的環境裡主動學習。",
+    "announcement": "歡迎預約參觀，認識福祿貝爾的學習日常。",
+}
+
+
+def site_settings() -> dict[str, str]:
+    """讀取網站設定；管理資料表尚未建立時使用安全預設值。"""
+    exists = _fetch("SELECT CASE WHEN OBJECT_ID(N'dbo.Frobel_WebSettings', N'U') IS NULL THEN 0 ELSE 1 END AS [exists]")[0]["exists"]
+    if not exists:
+        return dict(DEFAULT_SITE_SETTINGS)
+    rows = _fetch("SELECT TOP (1) [theme], [hero_title], [hero_subtitle], [announcement] FROM dbo.Frobel_WebSettings WHERE [id] = 1")
+    return {**DEFAULT_SITE_SETTINGS, **(rows[0] if rows else {})}
+
+
+def save_site_settings(settings: dict[str, str], actor: str) -> dict[str, str]:
+    """只寫入網站專屬設定表，不接受任意資料表或 SQL。"""
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                IF OBJECT_ID(N'dbo.Frobel_WebSettings', N'U') IS NULL
+                CREATE TABLE dbo.Frobel_WebSettings (
+                    id int NOT NULL PRIMARY KEY,
+                    theme nvarchar(20) NOT NULL,
+                    hero_title nvarchar(60) NOT NULL,
+                    hero_subtitle nvarchar(180) NOT NULL,
+                    announcement nvarchar(160) NULL,
+                    updated_by nvarchar(80) NOT NULL,
+                    updated_at datetime2 NOT NULL DEFAULT SYSDATETIME()
+                )
+            """)
+            cursor.execute("""
+                MERGE dbo.Frobel_WebSettings AS target
+                USING (SELECT 1 AS id) AS source ON target.id = source.id
+                WHEN MATCHED THEN UPDATE SET theme=?, hero_title=?, hero_subtitle=?, announcement=?, updated_by=?, updated_at=SYSDATETIME()
+                WHEN NOT MATCHED THEN INSERT (id,theme,hero_title,hero_subtitle,announcement,updated_by)
+                VALUES (1,?,?,?,?,?);
+            """, settings["theme"], settings["hero_title"], settings["hero_subtitle"], settings["announcement"], actor,
+                 settings["theme"], settings["hero_title"], settings["hero_subtitle"], settings["announcement"], actor)
+            db.commit()
+        return settings
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("網站設定寫入失敗，請確認管理帳號的資料表權限。") from exc
+
+
+def public_overview() -> dict[str, Any]:
+    """官方網站可公開的設定與統計，不含園區及個人明細。"""
+    return {
+        "settings": site_settings(),
+        "stats": [
+            {"label": "園務據點", "value": _count("分校資料")},
+            {"label": "教學班級", "value": _count("班別名稱")},
+            {"label": "幼兒學籍", "value": _count("學籍資料")},
+        ],
+    }
 
 
 def dashboard() -> dict[str, Any]:

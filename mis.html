@@ -1,82 +1,23 @@
 <!doctype html>
-<html lang="zh-TW">
-
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>權限與資料治理｜福祿貝爾營運中心</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-  <div class="app">
-    <aside class="sidebar"><a class="brand" href="index.html"><img class="brand-logo" src="static/0-3-08.png" alt="福祿貝爾標誌"><span>福祿貝爾<small>園務營運中心</small></span></a>
-            <nav class="nav"><a href="index.html">園務總覽</a><a href="home.html">資料查閱</a><a href="sales.html">托育收費</a><a
-          class="active" href="mis.html">人事權限</a><a href="exam.html">園務研習</a><a href="game.html">團隊小憩</a></nav>
-    </aside>
-    <main class="main">
-      <header class="topbar">
-        <div><span class="top-kicker">園務資訊管理</span>
-          <h1>教職員權限與兒少資料治理</h1>
-        </div><span class="api-state" id="apiState">載入中</span>
-      </header>
-      <div class="container corporate-container">
-        <section class="section-head">
-          <div><span class="eyebrow">PERMISSION MATRIX</span>
-            <h2>依園務職責決定資料權限</h2>
-            <p>角色來源取自教職員資料庫；矩陣採最小權限原則，不會修改正式權限。</p>
-          </div>
-        </section>
-        <div class="split governance-grid">
-          <section class="panel">
-            <div class="role-tabs" id="roleTabs"></div>
-            <h2 id="roleName">正在讀取職務類別</h2>
-            <p class="hint" id="roleDesc"></p>
-            <div class="matrix" id="matrix"></div>
-            <p class="error-note" id="securityNote"></p><button class="btn light" id="reviewBtn"
-              hidden>檢視資安注意事項</button>
-          </section>
-          <section class="panel"><span class="eyebrow">BRANCH ACCESS SCOPE</span>
-            <h2>據點資料範圍</h2>
-            <p class="hint">呈現各園區代號及彙總人力，不顯示地址與聯絡資訊。</p>
-            <div class="branch-list" id="branches">
-              <div class="empty">載入中…</div>
-            </div>
-          </section>
-        </div>
-        <section class="panel governance-note"><span class="eyebrow">GOVERNANCE BASELINE</span>
-          <div class="governance-rules">
-            <div><b>01</b>
-              <h3>前端不直連資料庫</h3>
-              <p>所有資料經由後端 API 與白名單查詢。</p>
-            </div>
-            <div><b>02</b>
-              <h3>幼兒與家長資料不外送</h3>
-              <p>姓名、證號、聯絡地址、接送電話及收費明細皆受遮罩保護。</p>
-            </div>
-            <div><b>03</b>
-              <h3>正式資料唯讀</h3>
-              <p>目前連線採唯讀用途，網站不提供更新與刪除。</p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
-  </div>
-  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-box"><button class="close" aria-label="關閉">×</button><span class="eyebrow">SECURITY REVIEW</span>
-      <h2 id="modalTitle"></h2>
-      <div class="matrix" id="modalMatrix"></div>
-      <p class="error-note" id="modalNote"></p>
-    </div>
-  </div>
-  <script>
-    let roles = [], activeRole = null; const esc = value => { const node = document.createElement('div'); node.textContent = value; return node.innerHTML };
-    function showRole(id) { const role = roles.find(item => item.id === id); if (!role) return; activeRole = role; roleTabs.querySelectorAll('button').forEach(button => button.classList.toggle('active', button.dataset.id === id)); roleName.textContent = role.name; roleDesc.textContent = role.description; matrix.innerHTML = Object.entries(role.permissions).map(([name, value]) => `<div class="permission"><span>${esc(name)}</span><b>${esc(value)}</b></div>`).join(''); securityNote.textContent = `治理建議：${role.security_note}`; reviewBtn.hidden = false }
-    function openReview() { if (!activeRole) return; modalTitle.textContent = `${activeRole.name}｜建議權限`; modalMatrix.innerHTML = Object.entries(activeRole.permissions).map(([name, value]) => `<div class="permission"><span>${esc(name)}</span><b>${esc(value)}</b></div>`).join(''); modalNote.textContent = activeRole.security_note; modal.classList.add('open') }
-    Promise.all([fetch('/api/roles').then(r => { if (!r.ok) throw new Error(); return r.json() }), fetch('/api/branches').then(r => { if (!r.ok) throw new Error(); return r.json() })]).then(([roleResponse, branchResponse]) => { roles = roleResponse.data; roleTabs.innerHTML = roles.map(role => `<button data-id="${role.id}">${esc(role.name)}</button>`).join(''); branches.innerHTML = branchResponse.data.map(branch => `<div class="branch-row"><span class="branch-code">${esc(branch.code)}</span><div><b>${esc(branch.name)}</b><small>${branch.headcount} 位人員</small></div></div>`).join(''); showRole(roles[0]?.id); apiState.textContent = 'SQL Server 即時資料'; apiState.classList.add('ok') }).catch(() => { roleName.textContent = '無法取得資料'; branches.innerHTML = '<div class="error-note">資料庫未連線</div>'; apiState.textContent = '資料庫未連線' });
-    roleTabs.onclick = event => { const button = event.target.closest('[data-id]'); if (button) showRole(button.dataset.id) }; reviewBtn.onclick = openReview; document.addEventListener('click', event => { if (event.target === modal || event.target.closest('.close')) modal.classList.remove('open') }); document.addEventListener('keydown', event => { if (event.key === 'Escape') modal.classList.remove('open') });
-  </script>
-</body>
-
-</html>
+<html lang="zh-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MIS 管理區｜福祿貝爾營運中心</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="portal-shell"><aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>MIS 管理區</small></span></a><nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a class="active" href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav><p class="portal-foot">ADMIN ONLY · 需管理員登入</p></aside><main class="portal-main"><header class="portal-topbar"><div><span class="top-kicker">MANAGEMENT INFORMATION SYSTEM</span><h1>MIS 管理區</h1></div><span class="api-state" id="apiState">檢查登入狀態</span></header>
+<section class="login-shell" id="loginShell"><form class="login-card" id="loginForm"><img src="static/0-3-08.png" alt="福祿貝爾標誌"><h2>管理員登入</h2><p>網站設定、資料表查閱與待審資料僅供授權管理員使用。</p><label class="field"><span>管理員帳號</span><input name="username" autocomplete="username" required></label><label class="field" style="margin-top:12px"><span>密碼</span><input name="password" type="password" autocomplete="current-password" required></label><button class="btn" type="submit" style="width:100%;margin-top:20px">安全登入</button><p id="loginStatus" aria-live="polite"></p></form></section>
+<section class="admin-console" id="adminConsole" hidden><div class="portal-content"><div class="card-head"><div><span class="eyebrow">ADMIN CONSOLE</span><h2>園務系統管理</h2><p>登入者：<span id="adminName"></span></p></div><button class="btn secondary" id="logoutButton">登出</button></div><nav class="admin-tabs" id="adminTabs"><button class="active" data-panel="settingsPanel">官方網站設定</button><button data-panel="dataPanel">資料表查閱</button><button data-panel="queuePanel">營運待審</button></nav>
+<section class="admin-panel active" id="settingsPanel"><div class="portal-grid"><form class="portal-card wide" id="settingsForm"><div class="card-head"><div><span class="eyebrow">PUBLIC WEBSITE</span><h2>官方網站版面設定</h2><p>儲存後會寫入網站專屬設定表，不會修改既有園務資料表。</p></div></div><div class="form-grid"><label class="field"><span>視覺主題</span><select name="theme"><option value="ocean">海洋藍</option><option value="sunrise">晨光橙</option><option value="forest">森林綠</option></select></label><label class="field full"><span>首頁主標題</span><input name="hero_title" maxlength="60" required></label><label class="field full"><span>首頁說明</span><textarea name="hero_subtitle" maxlength="180" required></textarea></label><label class="field full"><span>最新公告</span><input name="announcement" maxlength="160"></label></div><button class="btn" type="submit">儲存並發布設定</button><p id="settingsStatus" aria-live="polite"></p></form><aside class="portal-card narrow"><div class="card-head"><div><span class="eyebrow">PREVIEW</span><h2>首頁預覽</h2></div></div><div class="settings-preview" id="settingsPreview"><span>福祿貝爾幼稚園</span><h2 id="previewTitle">首頁標題</h2><p id="previewSubtitle">首頁說明</p></div></aside></div></section>
+<section class="admin-panel" id="dataPanel"><div class="admin-data-layout"><aside class="catalog-pane"><label class="field"><span>搜尋資料表</span><input id="catalogSearch" type="search"></label><div class="catalog-list" id="catalog"><div class="empty">載入中…</div></div></aside><div class="data-pane"><div class="card-head"><div><span class="eyebrow">READ ONLY</span><h2 id="dataTitle">選擇資料表</h2><p id="dataMeta">敏感欄位仍會遮罩。</p></div></div><div class="table-scroll"><table class="data-table"><thead id="dataHead"></thead><tbody id="dataBody"><tr><td>請先選擇資料表。</td></tr></tbody></table></div><div class="pager"><span id="pageInfo">第 1 頁</span><div><button class="btn secondary" id="prevPage">上一頁</button> <button class="btn secondary" id="nextPage">下一頁</button></div></div></div></div></section>
+<section class="admin-panel" id="queuePanel"><div class="portal-card full"><div class="card-head"><div><span class="eyebrow">REVIEW QUEUE</span><h2>園務資料待審佇列</h2><p>由員工入口送出的彙總日報，不包含幼兒或家長個資。</p></div></div><div class="result-list" id="submissionList"><div class="empty">載入中…</div></div></div></section>
+</div></section></main></div><div class="toast" id="toast" role="status"></div>
+<script>
+let csrf='',tables=[],selectedTable='',currentPage=1,totalRows=0,pageSize=20;const loginShell=document.querySelector('#loginShell'),adminConsole=document.querySelector('#adminConsole'),apiState=document.querySelector('#apiState'),adminName=document.querySelector('#adminName'),settingsForm=document.querySelector('#settingsForm'),settingsPreview=document.querySelector('#settingsPreview'),toast=document.querySelector('#toast'),loginForm=document.querySelector('#loginForm'),loginStatus=document.querySelector('#loginStatus'),logoutButton=document.querySelector('#logoutButton'),adminTabs=document.querySelector('#adminTabs'),previewTitle=document.querySelector('#previewTitle'),previewSubtitle=document.querySelector('#previewSubtitle'),settingsStatus=document.querySelector('#settingsStatus'),catalogSearch=document.querySelector('#catalogSearch'),catalog=document.querySelector('#catalog'),dataTitle=document.querySelector('#dataTitle'),dataBody=document.querySelector('#dataBody'),dataMeta=document.querySelector('#dataMeta'),dataHead=document.querySelector('#dataHead'),pageInfo=document.querySelector('#pageInfo'),prevPage=document.querySelector('#prevPage'),nextPage=document.querySelector('#nextPage'),submissionList=document.querySelector('#submissionList');const esc=value=>{const n=document.createElement('div');n.textContent=value??'';return n.innerHTML};const number=value=>new Intl.NumberFormat('zh-TW').format(value);
+async function request(url,options={}){const response=await fetch(url,options),body=await response.json();if(!response.ok)throw new Error(body.error||'操作失敗');return body.data}
+function showLogin(){loginShell.hidden=false;adminConsole.hidden=true;apiState.textContent='需要管理員登入'}function showAdmin(session){loginShell.hidden=true;adminConsole.hidden=false;adminName.textContent=session.username;csrf=session.csrf;apiState.textContent='管理員已登入';apiState.classList.add('ok');loadAdmin()}
+async function loadAdmin(){try{const [settings,catalogData,submissions]=await Promise.all([request('/api/admin/settings'),request('/api/admin/catalog'),request('/api/admin/submissions')]);settingsForm.theme.value=settings.theme;settingsForm.hero_title.value=settings.hero_title;settingsForm.hero_subtitle.value=settings.hero_subtitle;settingsForm.announcement.value=settings.announcement||'';updatePreview();tables=catalogData;renderCatalog();renderSubmissions(submissions)}catch(error){toast.textContent=error.message;toast.classList.add('show')}}
+loginForm.onsubmit=async event=>{event.preventDefault();loginStatus.className='';loginStatus.textContent='驗證中…';try{const session=await request('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(loginForm)))});loginForm.reset();loginStatus.textContent='';showAdmin(session)}catch(error){loginStatus.className='error-note';loginStatus.textContent=error.message}};
+logoutButton.onclick=async()=>{await request('/api/admin/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});csrf='';showLogin()};
+adminTabs.onclick=event=>{const button=event.target.closest('[data-panel]');if(!button)return;adminTabs.querySelectorAll('button').forEach(item=>item.classList.toggle('active',item===button));document.querySelectorAll('.admin-panel').forEach(panel=>panel.classList.toggle('active',panel.id===button.dataset.panel))};
+function updatePreview(){settingsPreview.className=`settings-preview ${settingsForm.theme.value}`;previewTitle.textContent=settingsForm.hero_title.value||'首頁標題';previewSubtitle.textContent=settingsForm.hero_subtitle.value||'首頁說明'}settingsForm.addEventListener('input',updatePreview);settingsForm.onsubmit=async event=>{event.preventDefault();settingsStatus.className='';settingsStatus.textContent='儲存中…';try{await request('/api/admin/settings',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(Object.fromEntries(new FormData(settingsForm)))});settingsStatus.className='success-note';settingsStatus.textContent='設定已寫入 SQL Server 並發布。'}catch(error){settingsStatus.className='error-note';settingsStatus.textContent=error.message}};
+function renderCatalog(){const q=catalogSearch.value.trim().toLowerCase(),items=tables.filter(item=>item.name.toLowerCase().includes(q));catalog.innerHTML=items.map(item=>`<button class="catalog-item ${item.name===selectedTable?'active':''}" data-table="${esc(item.name)}"><span>${esc(item.name)}</span><small>${number(item.row_count)} 筆</small></button>`).join('')||'<div class="empty">找不到資料表</div>'}catalogSearch.oninput=renderCatalog;catalog.onclick=event=>{const button=event.target.closest('[data-table]');if(button)loadTable(button.dataset.table,1)};
+async function loadTable(name,page){selectedTable=name;currentPage=page;renderCatalog();dataTitle.textContent=name;dataBody.innerHTML='<tr><td>查詢中…</td></tr>';try{const result=await request(`/api/admin/table?name=${encodeURIComponent(name)}&page=${page}&page_size=${pageSize}`);totalRows=result.total;dataMeta.textContent=`${result.columns.length} 欄 · ${number(result.total)} 筆 · 唯讀遮罩`;dataHead.innerHTML=`<tr>${result.columns.map(column=>`<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`;dataBody.innerHTML=result.rows.length?result.rows.map(row=>`<tr>${result.columns.map(column=>`<td class="${column.classification}">${row[column.name]===null?'NULL':esc(row[column.name])}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`;const totalPages=Math.max(1,Math.ceil(result.total/result.page_size));pageInfo.textContent=`第 ${page} / ${totalPages} 頁`;prevPage.disabled=page<=1;nextPage.disabled=page>=totalPages}catch(error){dataBody.innerHTML=`<tr><td>${esc(error.message)}</td></tr>`}}prevPage.onclick=()=>currentPage>1&&loadTable(selectedTable,currentPage-1);nextPage.onclick=()=>currentPage*pageSize<totalRows&&loadTable(selectedTable,currentPage+1);
+function renderSubmissions(items){submissionList.innerHTML=items.length?items.map(item=>`<article class="submission-card"><header><b>${esc(item.category)} · ${esc(item.campus)}</b><span class="tag">${esc(item.status)}</span></header><p>${esc(item.date)} · ${number(item.count)} 筆 · ${esc(item.note||'無備註')}</p><small class="hint">${esc(item.id)}｜${esc(item.submitted_at)}</small></article>`).join(''):'<div class="empty">目前沒有待審資料。</div>'}
+request('/api/admin/session').then(session=>session.authenticated?showAdmin(session):showLogin()).catch(showLogin);
+</script></body></html>
