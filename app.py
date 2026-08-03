@@ -192,6 +192,7 @@ class Handler(BaseHTTPRequestHandler):
             return None
         try:
             session["employee"] = data.employee_identity(session["employee_id"])
+            session["attendance"] = data.attendance_status(session["employee_id"])
         except ValueError:
             with SESSION_LOCK:
                 EMPLOYEE_SESSIONS.pop(session["token"], None)
@@ -211,6 +212,7 @@ class Handler(BaseHTTPRequestHandler):
         public_routes = {
             "/api/health": data.health,
             "/api/public": data.public_overview,
+            "/api/time": data.server_time,
         }
         if parsed.path in public_routes:
             try:
@@ -241,7 +243,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"data": {"authenticated": False, "employee": None, "csrf": None}})
             try:
                 session["employee"] = data.employee_identity(session["employee_id"])
-                return self.send_json({"data": {"authenticated": True, "employee": session["employee"], "attendance": session.get("attendance"), "access_mode": session.get("access_mode"), "csrf": session["csrf"]}})
+                session["attendance"] = data.attendance_status(session["employee_id"])
+                return self.send_json({"data": {"authenticated": True, "employee": session["employee"], "attendance": session["attendance"], "access_mode": session.get("access_mode"), "csrf": session["csrf"]}})
             except ValueError:
                 with SESSION_LOCK:
                     EMPLOYEE_SESSIONS.pop(session["token"], None)
@@ -259,7 +262,6 @@ class Handler(BaseHTTPRequestHandler):
             "/api/questions": data.questions,
             "/api/staff/attendance-options": data.attendance_staff_options,
             "/api/training": data.training_catalog,
-            "/api/time": data.server_time,
         }
         if parsed.path in employee_routes:
             try:
@@ -314,11 +316,17 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"data": data.operation_submissions()})
                 if parsed.path == "/api/admin/staff":
                     return self.send_json({"data": data.staff_records()})
+                if parsed.path == "/api/admin/departments":
+                    return self.send_json({"data": data.admin_departments()})
                 if parsed.path == "/api/admin/attendance":
                     day = query.get("date", [""])[0]
                     if day:
                         date.fromisoformat(day)
                     return self.send_json({"data": data.attendance_records(day, query.get("employee_id", [""])[0].upper())})
+                if parsed.path == "/api/admin/training/documents":
+                    return self.send_json({"data": data.training_documents_admin()})
+                if parsed.path == "/api/admin/training/questions":
+                    return self.send_json({"data": data.training_questions_admin()})
             except ValueError as exc:
                 return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
             except data.DatabaseUnavailable as exc:
@@ -386,9 +394,18 @@ class Handler(BaseHTTPRequestHandler):
                     photo = user_input.validate_staff_photo(payload.get("photo"))
                     photo_file = save_staff_photo(staff["employee_id"], photo) if photo else None
                     return self.send_json({"data": data.save_staff(staff, session["username"], photo_file)})
+                if parsed.path == "/api/admin/departments":
+                    department = user_input.validate_department(self.read_json())
+                    return self.send_json({"data": data.save_department(department, session["username"])})
                 if parsed.path == "/api/admin/training/sync":
                     documents = training_documents.sync_training_library(ensure_schema=False)
                     return self.send_json({"data": {"documents": documents}})
+                if parsed.path == "/api/admin/training/document":
+                    item = user_input.validate_training_document_state(self.read_json())
+                    return self.send_json({"data": data.set_training_document_state(item["id"], item["is_active"])})
+                if parsed.path == "/api/admin/training/question":
+                    item = user_input.validate_training_question(self.read_json())
+                    return self.send_json({"data": data.save_training_question(item)})
         except user_input.InputError as exc:
             return self.send_json({"error": str(exc), "code": "INVALID_INPUT"}, 400)
         except ValueError as exc:
@@ -401,7 +418,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path != "/api/admin/staff":
+        allowed_paths = {"/api/admin/staff", "/api/admin/departments", "/api/admin/training/question"}
+        if parsed.path not in allowed_paths:
             return self.send_json({"error": "此路徑不接受刪除。"}, 405)
         try:
             employee_session = self.require_employee()
@@ -414,10 +432,24 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             payload = self.read_json()
-            employee_id = str(payload.get("employee_id", "")).strip().upper()
-            if not re.fullmatch(r"[A-Z0-9_-]{1,20}", employee_id):
-                raise user_input.InputError("員工編號格式不正確")
-            return self.send_json({"data": data.deactivate_staff(employee_id, session["username"])})
+            if parsed.path == "/api/admin/staff":
+                employee_id = str(payload.get("employee_id", "")).strip().upper()
+                if not re.fullmatch(r"[A-Z0-9_-]{1,20}", employee_id):
+                    raise user_input.InputError("員工編號格式不正確")
+                result = data.deactivate_staff(employee_id, session["username"])
+            elif parsed.path == "/api/admin/departments":
+                try:
+                    department_id = int(payload.get("id"))
+                except (TypeError, ValueError) as exc:
+                    raise user_input.InputError("部門編號不正確") from exc
+                result = data.deactivate_department(department_id, session["username"])
+            else:
+                try:
+                    question_id = int(payload.get("id"))
+                except (TypeError, ValueError) as exc:
+                    raise user_input.InputError("題目編號不正確") from exc
+                result = data.deactivate_training_question(question_id)
+            return self.send_json({"data": result})
         except user_input.InputError as exc:
             return self.send_json({"error": str(exc), "code": "INVALID_INPUT"}, 400)
         except ValueError as exc:

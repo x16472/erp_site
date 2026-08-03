@@ -17,6 +17,7 @@ ALLOWED_CATEGORIES = {"出勤", "班級", "接送", "收費", "設備", "餐點"
 ALLOWED_THEMES = {"ocean", "sunrise", "forest"}
 ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
 ALLOWED_ACCESS_MODES = {"CLOCK_IN", "ACCESS_ONLY"}
+ALLOWED_GENDERS = {"男", "女", "其他"}
 MAX_STAFF_PHOTO_BYTES = 5 * 1024 * 1024
 
 
@@ -82,23 +83,79 @@ def validate_employee_access(payload: dict[str, Any]) -> dict[str, str]:
 
 
 def validate_staff(payload: dict[str, Any]) -> dict[str, Any]:
-    age_value = payload.get("age")
+    """以 match-case 分欄驗證必填員工欄位，對應後端 switch-case 規則。"""
+    result: dict[str, Any] = {}
+    for field in ("employee_id", "display_name", "gender", "age", "department", "position"):
+        match field:
+            case "employee_id":
+                result[field] = _employee_id(payload.get(field))
+            case "display_name":
+                result[field] = _text(payload.get(field), "姓名", 50)
+            case "gender":
+                gender = _text(payload.get(field), "性別", 10)
+                if gender not in ALLOWED_GENDERS:
+                    raise InputError("性別選項不正確")
+                result[field] = gender
+            case "age":
+                try:
+                    age = int(_text(payload.get(field), "年齡", 3))
+                except (TypeError, ValueError) as exc:
+                    raise InputError("年齡必須是整數") from exc
+                if not 16 <= age <= 100:
+                    raise InputError("年齡必須介於 16 到 100")
+                result[field] = age
+            case "department":
+                result[field] = _text(payload.get(field), "部門", 50)
+            case "position":
+                result[field] = _text(payload.get(field), "職位", 50)
+    result["traits"] = _text(payload.get("traits"), "個性特質", 200, required=False)
+    result["biography"] = _text(payload.get("biography"), "背景簡述", 1000, required=False)
+    return result
+
+
+def validate_department(payload: dict[str, Any]) -> dict[str, Any]:
     try:
-        age = int(age_value) if str(age_value or "").strip() else None
+        department_id = int(payload.get("id") or 0)
     except (TypeError, ValueError) as exc:
-        raise InputError("年齡必須是整數") from exc
-    if age is not None and not 16 <= age <= 100:
-        raise InputError("年齡必須介於 16 到 100")
-    gender = _text(payload.get("gender"), "性別", 10, required=False)
+        raise InputError("部門編號不正確") from exc
+    if department_id < 0:
+        raise InputError("部門編號不正確")
+    return {"id": department_id, "name": _text(payload.get("name"), "部門名稱", 50)}
+
+
+def validate_training_document_state(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        document_id = int(payload.get("id"))
+    except (TypeError, ValueError) as exc:
+        raise InputError("教育文件編號不正確") from exc
+    if document_id <= 0 or not isinstance(payload.get("is_active"), bool):
+        raise InputError("教育文件狀態不正確")
+    return {"id": document_id, "is_active": payload["is_active"]}
+
+
+def validate_training_question(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        question_id = int(payload.get("id") or 0)
+        document_id = int(payload.get("document_id") or 0) or None
+        answer = int(payload.get("answer"))
+    except (TypeError, ValueError) as exc:
+        raise InputError("題目編號或答案設定不正確") from exc
+    options_value = payload.get("options")
+    if not isinstance(options_value, list):
+        raise InputError("選項格式不正確")
+    options = [_text(value, f"選項 {index + 1}", 200) for index, value in enumerate(options_value)]
+    if not 2 <= len(options) <= 6:
+        raise InputError("題目必須有 2 到 6 個選項")
+    if not 0 <= answer < len(options):
+        raise InputError("正確答案超出選項範圍")
     return {
-        "employee_id": _employee_id(payload.get("employee_id")),
-        "display_name": _text(payload.get("display_name"), "姓名", 50),
-        "gender": gender,
-        "age": age,
-        "department": _text(payload.get("department"), "部門", 50),
-        "position": _text(payload.get("position"), "職位", 50),
-        "traits": _text(payload.get("traits"), "個性特質", 200, required=False),
-        "biography": _text(payload.get("biography"), "背景簡述", 1000, required=False),
+        "id": question_id,
+        "document_id": document_id,
+        "category": _text(payload.get("category"), "題目分類", 50),
+        "question": _text(payload.get("question"), "題目", 500),
+        "options": options,
+        "answer": answer,
+        "explanation": _text(payload.get("explanation"), "答案解說", 1000),
     }
 
 

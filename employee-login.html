@@ -38,7 +38,8 @@
         const next = allowedNext.has(requested) ? requested : '/home.html';
         let serverOffset = 0;
         const renderClock = () => clock.textContent = new Date(Date.now() + serverOffset).toLocaleString('zh-TW', { hour12: false });
-        setInterval(renderClock, 1000); renderClock();
+        async function syncTime() { const started = Date.now(); const response = await fetch('/api/time', { cache: 'no-store' }); const body = await response.json(); if (!response.ok) throw new Error(body.error || '校時失敗'); const ended = Date.now(); serverOffset = Number(body.data.unix_ms) + (ended - started) / 2 - ended; renderClock() }
+        setInterval(renderClock, 1000); setInterval(() => syncTime().catch(() => {}), 60000); renderClock(); syncTime().catch(() => { statusBox.className = 'attendance-warning'; statusBox.textContent = '目前使用本機時間，等待伺服器重新校時。' });
         fetch('/api/employee/session', { credentials: 'include' }).then(r => r.json()).then(body => { if (body.data?.authenticated) location.replace(next) }).catch(() => { });
         form.addEventListener('submit', async event => {
             event.preventDefault(); const submitter = event.submitter; if (!submitter) return;
@@ -47,7 +48,7 @@
                 const employeeId = new FormData(form).get('employee_id');
                 const response = await fetch('/api/employee/login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employee_id: employeeId, mode: submitter.value }) });
                 const body = await response.json(); if (!response.ok) throw new Error(body.error || '驗證失敗');
-                const attendance = body.data.attendance; if (attendance) { const occurred = new Date(attendance.clocked_at); serverOffset = occurred.getTime() - Date.now(); renderClock(); statusBox.className = 'success-note'; statusBox.textContent = body.data.access_mode === 'CLOCK_IN' ? `${body.data.employee.display_name}，上班打卡成功，正在進入…` : `前次打卡時間：${occurred.toLocaleString('zh-TW')}，正在進入…` } else { statusBox.className = 'attendance-warning'; statusBox.textContent = '您尚未打卡，進入後請留意補打卡提醒。' }
+                const attendance = body.data.attendance; await syncTime(); if (attendance) { const occurred = new Date(attendance.clocked_at); statusBox.className = 'success-note'; statusBox.textContent = body.data.access_mode === 'CLOCK_IN' ? `${body.data.employee.display_name}，上班打卡成功，正在進入…` : `前次打卡時間：${occurred.toLocaleString('zh-TW')}，正在進入…` } else { statusBox.className = 'attendance-warning'; statusBox.textContent = '您尚未打卡，進入後請留意補打卡提醒。' }
                 setTimeout(() => location.replace(next), 1200);
             } catch (error) { statusBox.className = 'error-note'; statusBox.textContent = error.message; buttons.forEach(button => button.disabled = false) }
         });

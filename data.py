@@ -15,6 +15,8 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+import time_sync as time
+
 ROOT = Path(__file__).parent.resolve()
 STAFF_CSV = ROOT / "data" / "staff.csv"
 STAFF_SYNC_LOCK = threading.Lock()
@@ -427,7 +429,7 @@ def _default_questions() -> list[dict[str, Any]]:
 
 
 APPLICATION_TABLES = (
-    "Frobel_WebSettings", "Frobel_Staff", "Frobel_Attendance",
+    "Frobel_WebSettings", "Frobel_Department", "Frobel_Staff", "Frobel_Attendance",
     "Frobel_OperationCategory", "Frobel_OperationSubmission",
     "Frobel_TrainingDocument", "Frobel_TrainingSection", "Frobel_TrainingQuestion",
     "Frobel_ImportState",
@@ -463,16 +465,34 @@ def ensure_application_schema() -> dict[str, Any]:
             updated_at datetime2 NOT NULL DEFAULT SYSDATETIME(),
             CONSTRAINT CK_Frobel_Staff_Age CHECK (age IS NULL OR age BETWEEN 16 AND 100)
         )""",
+        """IF OBJECT_ID(N'dbo.Frobel_Department', N'U') IS NULL
+        CREATE TABLE dbo.Frobel_Department (
+            department_id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            department_name nvarchar(50) NOT NULL UNIQUE,
+            is_active bit NOT NULL DEFAULT 1,
+            updated_by nvarchar(80) NOT NULL,
+            updated_at datetime2 NOT NULL DEFAULT SYSDATETIME()
+        )""",
         """IF OBJECT_ID(N'dbo.Frobel_Attendance', N'U') IS NULL
         CREATE TABLE dbo.Frobel_Attendance (
             attendance_id bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
             employee_id nvarchar(20) NOT NULL,
             action nvarchar(20) NOT NULL,
             clocked_at datetime2 NOT NULL DEFAULT SYSDATETIME(),
+            clocked_at_utc datetime2 NULL,
+            work_date date NULL,
             source_ip nvarchar(45) NULL,
             CONSTRAINT FK_Frobel_Attendance_Staff FOREIGN KEY (employee_id) REFERENCES dbo.Frobel_Staff(employee_id),
             CONSTRAINT CK_Frobel_Attendance_Action CHECK (action IN (N'CLOCK_IN', N'CLOCK_OUT'))
         )""",
+        """IF COL_LENGTH(N'dbo.Frobel_Attendance', N'clocked_at_utc') IS NULL
+        ALTER TABLE dbo.Frobel_Attendance ADD clocked_at_utc datetime2 NULL""",
+        """IF COL_LENGTH(N'dbo.Frobel_Attendance', N'work_date') IS NULL
+        ALTER TABLE dbo.Frobel_Attendance ADD work_date date NULL""",
+        """UPDATE dbo.Frobel_Attendance
+        SET clocked_at_utc=COALESCE(clocked_at_utc,clocked_at),
+            work_date=COALESCE(work_date,CONVERT(date,clocked_at AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time'))
+        WHERE clocked_at_utc IS NULL OR work_date IS NULL""",
         """IF OBJECT_ID(N'dbo.Frobel_OperationCategory', N'U') IS NULL
         CREATE TABLE dbo.Frobel_OperationCategory (
             category_code nvarchar(10) NOT NULL PRIMARY KEY,
@@ -560,6 +580,15 @@ def ensure_application_schema() -> dict[str, Any]:
                         VALUES (?,?,?,?,?)
                     """, item["category"], item["question"], json.dumps(item["options"], ensure_ascii=False), item["answer"], item["explanation"])
             _sync_staff_csv_cursor(cursor)
+            cursor.execute("""
+                INSERT dbo.Frobel_Department (department_name,updated_by)
+                SELECT DISTINCT s.department,N'schema-sync'
+                FROM dbo.Frobel_Staff s
+                WHERE s.department<>N''
+                  AND NOT EXISTS (
+                      SELECT 1 FROM dbo.Frobel_Department d WHERE d.department_name=s.department
+                  )
+            """)
             db.commit()
         return {"tables": list(APPLICATION_TABLES), "status": "ready"}
     except pyodbc.Error as exc:
@@ -696,22 +725,110 @@ def employee_identity(employee_id: str) -> dict[str, Any]:
     return rows[0]
 
 
-def server_time() -> dict[str, str]:
-    """回傳 SQL Server 帶時區時間，供前端校準顯示與打卡。"""
-    row = _fetch("SELECT CONVERT(nvarchar(40),SYSDATETIMEOFFSET(),127) AS [current_time]")[0]
-    return {"current_time": row["current_time"]}
+def server_time() -> dict[str, Any]:
+    """回傳 SQL Server 權威時間，供前端以網路往返時間校準本機時鐘。"""
+    try:
+        with connect() as db:
+            current = time.now(db.cursor())
+        return {
+            "current_time": current["iso_time"],
+            "unix_ms": current["unix_ms"],
+            "work_date": current["work_date"].isoformat(),
+            "source": "SERVER_CLOCK",
+        }
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("無法取得 SQL Server 校時資料。") from exc
 
 
 def attendance_status(employee_id: str) -> dict[str, Any] | None:
     """只回傳員工當日最後一筆打卡，供不打卡登入與工作台提示。"""
     rows = _fetch("""
         SELECT TOP (1) employee_id,action,
-               CONVERT(nvarchar(40),TODATETIMEOFFSET(clocked_at,DATEPART(TZOFFSET,SYSDATETIMEOFFSET())),127) AS clocked_at
+               CONVERT(nvarchar(33),CONVERT(datetime2,clocked_at_utc AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time'),126)+N'+08:00' AS clocked_at
         FROM dbo.Frobel_Attendance
-        WHERE employee_id=? AND CONVERT(date,clocked_at)=CONVERT(date,SYSDATETIME())
+        WHERE employee_id=? AND work_date=CONVERT(date,SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time')
         ORDER BY clocked_at DESC,attendance_id DESC
     """, (employee_id,))
     return rows[0] if rows else None
+
+
+def admin_departments() -> list[dict[str, Any]]:
+    """回傳員工維護使用的部門清單。"""
+    return _fetch("""
+        SELECT d.department_id AS id,d.department_name AS name,d.is_active,
+               COUNT(s.employee_id) AS staff_count,d.updated_by,d.updated_at
+        FROM dbo.Frobel_Department d
+        LEFT JOIN dbo.Frobel_Staff s ON s.department=d.department_name AND s.is_active=1
+        GROUP BY d.department_id,d.department_name,d.is_active,d.updated_by,d.updated_at
+        ORDER BY d.is_active DESC,d.department_id
+    """)
+
+
+def save_department(item: dict[str, Any], actor: str) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            if item["id"]:
+                old = cursor.execute(
+                    "SELECT department_name FROM dbo.Frobel_Department WHERE department_id=?",
+                    item["id"],
+                ).fetchone()
+                if not old:
+                    raise ValueError("找不到指定部門")
+                cursor.execute("""
+                    UPDATE dbo.Frobel_Department
+                    SET department_name=?,is_active=1,updated_by=?,updated_at=SYSDATETIME()
+                    WHERE department_id=?
+                """, item["name"], actor, item["id"])
+                if old[0] != item["name"]:
+                    cursor.execute(
+                        "UPDATE dbo.Frobel_Staff SET department=?,updated_by=?,updated_at=SYSDATETIME() WHERE department=?",
+                        item["name"], actor, old[0],
+                    )
+                department_id = item["id"]
+            else:
+                row = cursor.execute("""
+                    SELECT department_id FROM dbo.Frobel_Department WHERE department_name=?
+                """, item["name"]).fetchone()
+                if row:
+                    cursor.execute("""
+                        UPDATE dbo.Frobel_Department SET is_active=1,updated_by=?,updated_at=SYSDATETIME()
+                        WHERE department_id=?
+                    """, actor, row[0])
+                    department_id = row[0]
+                else:
+                    department_id = cursor.execute("""
+                        INSERT dbo.Frobel_Department (department_name,updated_by)
+                        OUTPUT inserted.department_id VALUES (?,?)
+                    """, item["name"], actor).fetchone()[0]
+        return {"id": department_id, "name": item["name"], "is_active": True}
+    except pyodbc.IntegrityError as exc:
+        raise ValueError("部門名稱已存在") from exc
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("部門資料儲存失敗。") from exc
+
+
+def deactivate_department(department_id: int, actor: str) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            row = cursor.execute("""
+                SELECT d.department_name,COUNT(s.employee_id)
+                FROM dbo.Frobel_Department d
+                LEFT JOIN dbo.Frobel_Staff s ON s.department=d.department_name AND s.is_active=1
+                WHERE d.department_id=? GROUP BY d.department_name
+            """, department_id).fetchone()
+            if not row:
+                raise ValueError("找不到指定部門")
+            if row[1]:
+                raise ValueError("此部門仍有在職員工，無法停用")
+            cursor.execute("""
+                UPDATE dbo.Frobel_Department SET is_active=0,updated_by=?,updated_at=SYSDATETIME()
+                WHERE department_id=?
+            """, actor, department_id)
+        return {"id": department_id, "is_active": False}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("部門停用失敗。") from exc
 
 
 def save_staff(item: dict[str, Any], actor: str, photo_file: str | None = None) -> dict[str, Any]:
@@ -719,6 +836,11 @@ def save_staff(item: dict[str, Any], actor: str, photo_file: str | None = None) 
     try:
         with connect(read_only=False) as db:
             cursor = db.cursor()
+            department = cursor.execute("""
+                SELECT 1 FROM dbo.Frobel_Department WHERE department_name=? AND is_active=1
+            """, item["department"]).fetchone()
+            if not department:
+                raise ValueError("請選擇有效的部門")
             existing = cursor.execute(
                 "SELECT photo_file FROM dbo.Frobel_Staff WHERE employee_id=?",
                 item["employee_id"],
@@ -769,23 +891,20 @@ def clock_attendance(item: dict[str, str], source_ip: str) -> dict[str, Any]:
             """, item["employee_id"]).fetchone()
             if not exists:
                 raise ValueError("員工編號不存在或已停用")
+            current = time.now(cursor)
             previous = cursor.execute("""
                 SELECT TOP (1) action
                 FROM dbo.Frobel_Attendance
-                WHERE employee_id=?
+                WHERE employee_id=? AND work_date=?
                 ORDER BY clocked_at DESC, attendance_id DESC
-            """, item["employee_id"]).fetchone()
+            """, item["employee_id"], current["work_date"]).fetchone()
             _validate_attendance_sequence(previous[0] if previous else None, item["action"])
-            occurred = cursor.execute("""
-                DECLARE @occurred datetimeoffset=SYSDATETIMEOFFSET();
-                SELECT CONVERT(nvarchar(40),@occurred,127),CONVERT(datetime2,@occurred)
-            """).fetchone()
             cursor.execute("""
-                INSERT dbo.Frobel_Attendance (employee_id,action,clocked_at,source_ip)
-                VALUES (?,?,?,?)
-            """, item["employee_id"], item["action"], occurred[1], source_ip)
+                INSERT dbo.Frobel_Attendance (employee_id,action,clocked_at,clocked_at_utc,work_date,source_ip)
+                VALUES (?,?,?,?,?,?)
+            """, item["employee_id"], item["action"], current["local_time"], current["utc_time"], current["work_date"], source_ip)
             db.commit()
-        return {"employee_id": item["employee_id"], "action": item["action"], "clocked_at": occurred[0]}
+        return {"employee_id": item["employee_id"], "action": item["action"], "clocked_at": current["iso_time"]}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("打卡寫入失敗。") from exc
 
@@ -793,10 +912,10 @@ def clock_attendance(item: dict[str, str], source_ip: str) -> dict[str, Any]:
 def attendance_records(day: str = "", employee_id: str = "") -> list[dict[str, Any]]:
     return _fetch("""
         SELECT a.attendance_id,a.employee_id,s.display_name,s.department,s.position,a.action,
-               CONVERT(nvarchar(40),TODATETIMEOFFSET(a.clocked_at,DATEPART(TZOFFSET,SYSDATETIMEOFFSET())),127) AS clocked_at
+               CONVERT(nvarchar(33),CONVERT(datetime2,a.clocked_at_utc AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time'),126)+N'+08:00' AS clocked_at
         FROM dbo.Frobel_Attendance a
         JOIN dbo.Frobel_Staff s ON s.employee_id=a.employee_id
-        WHERE (?=N'' OR CONVERT(date,a.clocked_at)=CONVERT(date,?))
+        WHERE (?=N'' OR a.work_date=CONVERT(date,?))
           AND (?=N'' OR a.employee_id=?)
         ORDER BY a.clocked_at DESC
     """, (day, day, employee_id, employee_id))
@@ -898,3 +1017,86 @@ def questions() -> list[dict[str, Any]]:
     for row in rows:
         row["options"] = json.loads(row.pop("options_json"))
     return rows
+
+
+def training_documents_admin() -> list[dict[str, Any]]:
+    """回傳含停用狀態的教育文件，供 MIS 維護。"""
+    return _fetch("""
+        SELECT d.document_id AS id,d.title,d.role_category AS category,d.file_name,
+               d.source_size,d.source_modified,d.is_active,d.imported_at,
+               COUNT(s.section_id) AS section_count
+        FROM dbo.Frobel_TrainingDocument d
+        LEFT JOIN dbo.Frobel_TrainingSection s ON s.document_id=d.document_id
+        GROUP BY d.document_id,d.title,d.role_category,d.file_name,d.source_size,
+                 d.source_modified,d.is_active,d.imported_at
+        ORDER BY d.is_active DESC,d.role_category,d.title
+    """)
+
+
+def set_training_document_state(document_id: int, is_active: bool) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute(
+                "UPDATE dbo.Frobel_TrainingDocument SET is_active=? WHERE document_id=?",
+                int(is_active), document_id,
+            )
+            if cursor.rowcount == 0:
+                raise ValueError("找不到指定教育文件")
+        return {"id": document_id, "is_active": is_active}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("教育文件狀態更新失敗。") from exc
+
+
+def training_questions_admin() -> list[dict[str, Any]]:
+    rows = _fetch("""
+        SELECT question_id AS id,document_id,category,question,options_json,
+               correct_index AS answer,explanation,is_active
+        FROM dbo.Frobel_TrainingQuestion ORDER BY is_active DESC,question_id
+    """)
+    for row in rows:
+        row["options"] = json.loads(row.pop("options_json"))
+    return rows
+
+
+def save_training_question(item: dict[str, Any]) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            options_json = json.dumps(item["options"], ensure_ascii=False)
+            if item["id"]:
+                cursor.execute("""
+                    UPDATE dbo.Frobel_TrainingQuestion
+                    SET document_id=?,category=?,question=?,options_json=?,correct_index=?,
+                        explanation=?,is_active=1
+                    WHERE question_id=?
+                """, item["document_id"], item["category"], item["question"], options_json,
+                     item["answer"], item["explanation"], item["id"])
+                if cursor.rowcount == 0:
+                    raise ValueError("找不到指定題目")
+                question_id = item["id"]
+            else:
+                question_id = cursor.execute("""
+                    INSERT dbo.Frobel_TrainingQuestion
+                    (document_id,category,question,options_json,correct_index,explanation)
+                    OUTPUT inserted.question_id VALUES (?,?,?,?,?,?)
+                """, item["document_id"], item["category"], item["question"], options_json,
+                     item["answer"], item["explanation"]).fetchone()[0]
+        return {**item, "id": question_id, "is_active": True}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("教育題庫儲存失敗。") from exc
+
+
+def deactivate_training_question(question_id: int) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute(
+                "UPDATE dbo.Frobel_TrainingQuestion SET is_active=0 WHERE question_id=?",
+                question_id,
+            )
+            if cursor.rowcount == 0:
+                raise ValueError("找不到指定題目")
+        return {"id": question_id, "is_active": False}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("教育題庫停用失敗。") from exc
