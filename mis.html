@@ -10,11 +10,12 @@
 
 <body>
     <div class="portal-shell">
-        <aside class="portal-sidebar"><a class="portal-brand" href="home.html"><img src="static/appicon.png"
+        <aside class="portal-sidebar">
+            <a class="portal-brand" href="home.html"><img src="static/appicon.png"
                     alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>MIS 管理區</small></span></a>
-            <nav class="portal-nav"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
-                    href="exam.html">教育訓練</a><a href="game.html">休閒專區</a><a href="staff.html">員工出缺勤</a><a class="active"
-                    href="mis.html">MIS 管理</a><a href="index.html">官方網站</a></nav>
+            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a
+                    href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a href="game.html">YouTube 直播</a><a
+                    href="staff.html">員工與出缺勤</a><a class="active" href="mis.html">MIS 管理</a></nav>
             <p class="portal-foot">ADMIN ONLY · 需管理員登入</p>
         </aside>
         <main class="portal-main">
@@ -63,8 +64,10 @@
                                         class="field full"><span>首頁說明</span><textarea name="hero_subtitle"
                                             maxlength="180" required></textarea></label><label
                                         class="field full"><span>最新公告</span><input name="announcement"
-                                            maxlength="160"></label></div><button class="btn"
-                                    type="submit">儲存並發布設定</button>
+                                            maxlength="160"></label></div>
+                                <div class="actions"><button class="btn" type="submit">儲存並發布設定</button><a
+                                        class="btn secondary" href="index.html" target="_blank"
+                                        rel="noopener">查看官方網站</a></div>
                                 <p id="settingsStatus" aria-live="polite"></p>
                             </form>
                             <aside class="portal-card narrow">
