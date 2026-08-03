@@ -29,9 +29,15 @@ import input as user_input
 ROOT = Path(__file__).parent.resolve()
 STATIC_ROOT = (ROOT / "static").resolve()
 PAGES = {
-    "/": "index.html", "/index.html": "index.html", "/home.html": "home.html",
-    "/sales.html": "sales.html", "/mis.html": "mis.html", "/exam.html": "exam.html",
-    "/game.html": "game.html", "/staff.html": "staff.html", "/style.css": "style.css",
+    "/": "index.html",
+    "/index.html": "index.html",
+    "/home.html": "home.html",
+    "/sales.html": "sales.html",
+    "/mis.html": "mis.html",
+    "/exam.html": "exam.html",
+    "/game.html": "game.html",
+    "/staff.html": "staff.html",
+    "/style.css": "style.css",
     "/employee-login.html": "employee-login.html",
 }
 SESSION_TTL = 8 * 60 * 60
@@ -55,7 +61,8 @@ def youtube_metadata(item: dict[str, str]) -> dict[str, str]:
         cached = YOUTUBE_CACHE.get(video_id)
     if cached:
         return cached
-    endpoint = "https://www.youtube.com/oembed?" + urlencode({"url": item["watch_url"], "format": "json"})
+    query = urlencode({"url": item["watch_url"], "format": "json"})
+    endpoint = "https://www.youtube.com/oembed?" + query
     request = Request(endpoint, headers={"User-Agent": "FrobelOperations/1.0"})
     try:
         with urlopen(request, timeout=6) as response:
