@@ -1407,15 +1407,56 @@ body[data-theme="forest"] .hero-copy-public h1 span {
     font-size: 13px
 }
 
-/*1. 確保卡片內部元件垂直居中，不亂拉伸*/
+/*讓卡片用 flex 並限制文字區域寬度*/
 .staff-admin-card {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    /*標題彈性佔滿、按鈕群組靠右固定*/
     align-items: center;
-    /*關鍵：讓按鈕維持原高度，不隨題目文字長度變高*/
-    justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
     padding: 12px 16px;
 }
+
+.staff-admin-card>div:first-child {
+    min-width: 0;
+    /* 允許縮小，讓省略號 / 換行生效 */
+}
+
+.staff-admin-card b {
+    display: block;
+    /* 方案A：允許多行完整顯示題目（推薦，題目通常需要看全） */
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
+
+    /* 方案B：若堅持單行截斷，改用下面這組取代方案A */
+    /*
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    */
+}
+
+.staff-admin-card small {
+    display: block;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.staff-admin-card .btn-group {
+    display: flex;
+    gap: 8px;
+    justify-self: end;
+    /* 在 grid 中靠右對齊 */
+}
+
+.staff-admin-card .btn-group .btn {
+    flex: 0 0 auto;
+    min-width: 72px;
+    text-align: center;
+    white-space: nowrap;
+}
+
 
 .clock-panel {
     display: grid;
@@ -1609,12 +1650,28 @@ body[data-theme="forest"] .hero-copy-public h1 span {
 
 .staff-admin-card {
     display: grid;
-    grid-template-columns: 52px 1fr auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    /*用minmax明確告知最小可為 0，但仍優先分配剩餘空間*/
     align-items: center;
-    gap: 11px;
-    padding: 10px;
-    border: 1px solid var(--line);
-    border-radius: 12px
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.staff-admin-card>div:first-child {
+    min-width: 0;
+    overflow: hidden;
+    /*防止內容撐爆欄位*/
+}
+
+.staff-admin-card b {
+    display: block;
+    white-space: normal;
+    overflow-wrap: break-word;
+    /*改用 overflow-wrap，只在真的太長的單字才斷*/
+    word-break: normal;
+    /*避免中文也被逐字斷行*/
+    line-height: 1.4;
 }
 
 .staff-admin-card.inactive {
@@ -2343,9 +2400,15 @@ body[data-theme="forest"] .hero-copy-public h1 span {
         grid-template-columns: 45px 1fr
     }
 
-    .staff-admin-card .btn {
+    /* .staff-admin-card .btn {
         grid-column: span 1
+    } */
+
+    .staff-admin-card .btn {
+        flex: 0 0 auto;
+        white-space: nowrap;
     }
+
 
     .youtube-form {
         grid-template-columns: 1fr

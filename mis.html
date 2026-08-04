@@ -318,8 +318,13 @@
                 <b>${esc(item.category)}｜${esc(item.question)}</b>
                 <small>${item.options.length} 個選項 · 答案 ${item.answer + 1}${item.is_active ? '' : ' · 已停用'}</small>
             </div>
-            <button class="btn secondary" data-question-edit="${item.id}">編輯</button>
-            ${item.is_active ? `<button class="btn secondary" data-question-disable="${item.id}">停用</button>` : ''}</article>`).join('') || '<div class="empty">目前沒有題目。</div>';//清單為空時顯示提示文字
+            <div class="btn-group">
+                <button class="btn secondary" data-question-edit="${item.id}">編輯</button>
+                ${item.is_active ? `<button class="btn secondary" data-question-disable="${item.id}">停用</button>` : ''}
+            </div>
+            </article>`).join('') || '<div class="empty">目前沒有題目。</div>';
+            //清單為空時顯示提示文字
+
         }
         trainingDocumentList.onclick = async event => {
             const button = event.target.closest('[data-document-state]'); if (!button) return; await request('/api/admin/training/document', {
