@@ -13,8 +13,7 @@
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html"><img src="static/appicon.png"
                     alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
-            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a
-                    href="sales.html">營運蒐集</a><a
+            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
                     href="exam.html">教育訓練</a><a class="active" href="game.html">YouTube 直播</a><a
                     href="staff.html">員工與出缺勤</a><a href="mis.html">MIS 管理</a></nav>
             <p class="portal-foot">YOUTUBE LIVE · 內部使用</p>
@@ -64,17 +63,29 @@
         const DEFAULT_URL = 'https://www.youtube.com/watch?v=fxnjjVyMd7g';
         const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoTitle = document.querySelector('#videoTitle'), openYoutube = document.querySelector('#openYoutube'), submitButton = youtubeForm.querySelector('button[type="submit"]');
         const loginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`;
-        const employeeAccess = fetch('/api/employee/session', { credentials: 'include' }).then(r => r.json()).then(body => { if (!body.data?.authenticated) { location.replace(loginUrl); throw new Error('需要員工驗證') } return body.data });
-
+        const employeeAccess = fetch('/api/employee/session', {
+            credentials: 'include'
+        }).then(r => r.json()).then(body => {
+            if (!body.data?.authenticated) {
+                location.replace(loginUrl);
+                throw new Error('需要員工驗證')
+            } return body.data
+        });
         async function resolveVideo(url, remember = true) {
-            const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
+            const controller = new AbortController(),
+                timer = setTimeout(() => controller.abort(), 10000);
             submitButton.disabled = true;
             playerState.textContent = '後端驗證中';
             youtubeStatus.className = 'hint';
             youtubeStatus.textContent = '正在確認影片並取得標題…';
             try {
                 await employeeAccess;
-                const response = await fetch('/api/youtube/resolve', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }), signal: controller.signal });
+                const response = await fetch('/api/youtube/resolve', {
+                    method: 'POST', credentials: 'include', headers: {
+                        'Content-Type': 'application/json'
+                    }, body: JSON.stringify({ url }),
+                    signal: controller.signal
+                });
                 const body = await response.json().catch(() => ({}));
                 if (response.status === 401) location.replace(loginUrl);
                 if (!response.ok) throw new Error(body.error || '影片資訊取得失敗');
@@ -89,15 +100,17 @@
                 playerState.textContent = '播放器已更新';
             } catch (error) {
                 const message = error.name === 'AbortError' ? '影片資訊讀取逾時，請稍後重試。' : error.message;
-                youtubeStatus.className = 'error-note'; youtubeStatus.textContent = message; playerState.textContent = '影片載入失敗';
-            } finally { clearTimeout(timer); submitButton.disabled = false }
+                youtubeStatus.className = 'error-note';
+                youtubeStatus.textContent = message; playerState.textContent = '影片載入失敗';
+            } finally {
+                clearTimeout(timer);
+                submitButton.disabled = false
+            }
         }
-
         youtubeForm.addEventListener('submit', event => {
             event.preventDefault();
             resolveVideo(youtubeUrl.value);
         });
-
         const savedUrl = localStorage.getItem('frobelYoutubeVideo');
         resolveVideo(savedUrl || DEFAULT_URL, false);
     </script>
