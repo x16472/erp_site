@@ -13,9 +13,9 @@
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html"><img src="static/appicon.png"
                     alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>MIS 管理區</small></span></a>
-            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a
-                    href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a href="game.html">YouTube 直播</a><a
-                    href="staff.html">員工與出缺勤</a><a class="active" href="mis.html">MIS 管理</a></nav>
+            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
+                    href="exam.html">教育訓練</a><a href="game.html">YouTube 直播</a><a href="staff.html">員工與出缺勤</a><a
+                    class="active" href="mis.html">MIS 管理</a></nav>
             <p class="portal-foot">ADMIN ONLY · 需管理員登入</p>
         </aside>
         <main class="portal-main">
@@ -46,7 +46,8 @@
                     <nav class="admin-tabs" id="adminTabs"><button class="active"
                             data-panel="settingsPanel">官方網站設定</button><button
                             data-panel="dataPanel">資料表查閱</button><button data-panel="queuePanel">待審佇列</button><button
-                            data-panel="trainingPanel">教育文件</button><button data-panel="questionPanel">題庫維護</button></nav>
+                            data-panel="trainingPanel">教育文件</button><button data-panel="questionPanel">題庫維護</button>
+                    </nav>
                     <section class="admin-panel active" id="settingsPanel">
                         <div class="portal-grid">
                             <form class="portal-card wide" id="settingsForm">
@@ -145,23 +146,53 @@
                         </div>
                     </section>
                     <section class="admin-panel" id="trainingPanel">
-                        <div class="queue-head"><div><span class="eyebrow">TRAINING FILES</span><h2>教育文件維護</h2><p>同步 `data/exam` 的 Word 文件，並控制前台是否顯示。</p></div><button class="btn" id="syncTraining" type="button">同步教育文件</button></div>
+                        <div class="queue-head">
+                            <div><span class="eyebrow">TRAINING FILES</span>
+                                <h2>教育文件維護</h2>
+                                <p>同步 `data/exam` 的 Word 文件，並控制前台是否顯示。</p>
+                            </div><button class="btn" id="syncTraining" type="button">同步教育文件</button>
+                        </div>
                         <p id="syncStatus" aria-live="polite"></p>
-                        <div class="staff-admin-list" id="trainingDocumentList"><div class="empty">載入中…</div></div>
+                        <div class="staff-admin-list" id="trainingDocumentList">
+                            <div class="empty">載入中…</div>
+                        </div>
                     </section>
                     <section class="admin-panel" id="questionPanel">
                         <div class="portal-grid staff-maintenance">
                             <form class="portal-card narrow" id="questionForm">
-                                <div class="card-head"><div><span class="eyebrow">QUESTION EDITOR</span><h2>新增或更新題目</h2></div></div>
-                                <input name="id" type="hidden"><label class="field"><span>關聯文件</span><select name="document_id" id="questionDocument"><option value="">不指定文件</option></select></label>
-                                <label class="field"><span>題目分類</span><input name="category" maxlength="50" required></label>
-                                <label class="field"><span>題目</span><textarea name="question" maxlength="500" required></textarea></label>
-                                <label class="field"><span>選項（每行一個，2 至 6 個）</span><textarea name="options" rows="6" required></textarea></label>
-                                <label class="field"><span>正確答案序號</span><input name="answer" type="number" min="1" max="6" step="1" required></label>
-                                <label class="field"><span>答案解說</span><textarea name="explanation" maxlength="1000" required></textarea></label>
-                                <div class="actions"><button class="btn" type="submit">儲存題目</button><button class="btn secondary" id="resetQuestion" type="button">新增另一題</button></div><p id="questionStatus" aria-live="polite"></p>
+                                <div class="card-head">
+                                    <div><span class="eyebrow">QUESTION EDITOR</span>
+                                        <h2>新增或更新題目</h2>
+                                    </div>
+                                </div>
+                                <input name="id" type="hidden"><label class="field"><span>關聯文件</span><select
+                                        name="document_id" id="questionDocument">
+                                        <option value="">不指定文件</option>
+                                    </select></label>
+                                <label class="field"><span>題目分類</span><input name="category" maxlength="50"
+                                        required></label>
+                                <label class="field"><span>題目</span><textarea name="question" maxlength="500"
+                                        required></textarea></label>
+                                <label class="field"><span>選項（每行一個，2 至 6 個）</span><textarea name="options" rows="6"
+                                        required></textarea></label>
+                                <label class="field"><span>正確答案序號</span><input name="answer" type="number" min="1"
+                                        max="6" step="1" required></label>
+                                <label class="field"><span>答案解說</span><textarea name="explanation" maxlength="1000"
+                                        required></textarea></label>
+                                <div class="actions"><button class="btn" type="submit">儲存題目</button><button
+                                        class="btn secondary" id="resetQuestion" type="button">新增另一題</button></div>
+                                <p id="questionStatus" aria-live="polite"></p>
                             </form>
-                            <section class="portal-card wide"><div class="card-head"><div><span class="eyebrow">QUESTION BANK</span><h2>園務安全知識題庫</h2></div></div><div class="staff-admin-list" id="questionList"><div class="empty">載入中…</div></div></section>
+                            <section class="portal-card wide">
+                                <div class="card-head">
+                                    <div><span class="eyebrow">QUESTION BANK</span>
+                                        <h2>園務安全知識題庫</h2>
+                                    </div>
+                                </div>
+                                <div class="staff-admin-list" id="questionList">
+                                    <div class="empty">載入中…</div>
+                                </div>
+                            </section>
                         </div>
                     </section>
                 </div>
@@ -172,27 +203,200 @@
     <script>
         const employeeLoginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`; let csrf = '', tables = [], staffItems = [], submissions = [], selectedEmployee = '', selectedCategory = '', selectedTable = '', currentPage = 1, totalRows = 0, pageSize = 20; const loginShell = document.querySelector('#loginShell'), adminConsole = document.querySelector('#adminConsole'), apiState = document.querySelector('#apiState'), adminName = document.querySelector('#adminName'), settingsForm = document.querySelector('#settingsForm'), settingsPreview = document.querySelector('#settingsPreview'), toast = document.querySelector('#toast'), loginForm = document.querySelector('#loginForm'), loginStatus = document.querySelector('#loginStatus'), logoutButton = document.querySelector('#logoutButton'), adminTabs = document.querySelector('#adminTabs'), previewTitle = document.querySelector('#previewTitle'), previewSubtitle = document.querySelector('#previewSubtitle'), settingsStatus = document.querySelector('#settingsStatus'), catalogSearch = document.querySelector('#catalogSearch'), catalog = document.querySelector('#catalog'), dataTitle = document.querySelector('#dataTitle'), dataBody = document.querySelector('#dataBody'), dataMeta = document.querySelector('#dataMeta'), dataHead = document.querySelector('#dataHead'), pageInfo = document.querySelector('#pageInfo'), prevPage = document.querySelector('#prevPage'), nextPage = document.querySelector('#nextPage'), submissionList = document.querySelector('#submissionList'), staffList = document.querySelector('#staffList'), queueFilters = document.querySelector('#queueFilters'), queueTitle = document.querySelector('#queueTitle'), queueCount = document.querySelector('#queueCount'), syncTraining = document.querySelector('#syncTraining'), syncStatus = document.querySelector('#syncStatus'); const esc = value => { const n = document.createElement('div'); n.textContent = value ?? ''; return n.innerHTML }; const number = value => new Intl.NumberFormat('zh-TW').format(value);
         let trainingDocuments = [], trainingQuestions = []; const trainingDocumentList = document.querySelector('#trainingDocumentList'), questionForm = document.querySelector('#questionForm'), questionDocument = document.querySelector('#questionDocument'), questionList = document.querySelector('#questionList'), questionStatus = document.querySelector('#questionStatus'), resetQuestion = document.querySelector('#resetQuestion');
-        async function request(url, options = {}) { const response = await fetch(url, { credentials: 'include', ...options }), body = await response.json().catch(() => ({})); if (response.status === 401 && body.code === 'EMPLOYEE_AUTH_REQUIRED') location.replace(employeeLoginUrl); if (!response.ok) throw new Error(body.error || '操作失敗'); return body.data }
-        function showLogin() { loginShell.hidden = false; adminConsole.hidden = true; apiState.textContent = '需要管理員登入' } function showAdmin(session) { loginShell.hidden = true; adminConsole.hidden = false; adminName.textContent = session.username; csrf = session.csrf; apiState.textContent = '管理員已登入'; apiState.classList.add('ok'); loadAdmin() }
-        async function loadAdmin() { try { const [settings, catalogData, submissionData, staff, documents, questionItems] = await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'), request('/api/admin/submissions'), request('/api/admin/staff'), request('/api/admin/training/documents'), request('/api/admin/training/questions')]); settingsForm.theme.value = settings.theme; settingsForm.hero_title.value = settings.hero_title; settingsForm.hero_subtitle.value = settings.hero_subtitle; settingsForm.announcement.value = settings.announcement || ''; updatePreview(); tables = catalogData; staffItems = staff; submissions = submissionData; trainingDocuments = documents; trainingQuestions = questionItems; renderCatalog(); renderQueue(); renderTrainingDocuments(); renderQuestions() } catch (error) { toast.textContent = error.message; toast.classList.add('show') } }
-        loginForm.onsubmit = async event => { event.preventDefault(); loginStatus.className = ''; loginStatus.textContent = '驗證中…'; try { const session = await request('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm))) }); loginForm.reset(); loginStatus.textContent = ''; showAdmin(session) } catch (error) { loginStatus.className = 'error-note'; loginStatus.textContent = error.message } };
-        logoutButton.onclick = async () => { await request('/api/admin/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); csrf = ''; showLogin() };
-        adminTabs.onclick = event => { const button = event.target.closest('[data-panel]'); if (!button) return; adminTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button)); document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel)) };
-        function updatePreview() { settingsPreview.className = `settings-preview ${settingsForm.theme.value}`; previewTitle.textContent = settingsForm.hero_title.value || '首頁標題'; previewSubtitle.textContent = settingsForm.hero_subtitle.value || '首頁說明' } settingsForm.addEventListener('input', updatePreview); settingsForm.onsubmit = async event => { event.preventDefault(); settingsStatus.className = ''; settingsStatus.textContent = '儲存中…'; try { await request('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(Object.fromEntries(new FormData(settingsForm))) }); settingsStatus.className = 'success-note'; settingsStatus.textContent = '設定已寫入 SQL Server 並發布。' } catch (error) { settingsStatus.className = 'error-note'; settingsStatus.textContent = error.message } };
-        function renderCatalog() { const q = catalogSearch.value.trim().toLowerCase(), items = tables.filter(item => item.name.toLowerCase().includes(q)); catalog.innerHTML = items.map(item => `<button class="catalog-item ${item.name === selectedTable ? 'active' : ''}" data-table="${esc(item.name)}"><span>${esc(item.name)}</span><small>${number(item.row_count)} 筆</small></button>`).join('') || '<div class="empty">找不到資料表</div>' } catalogSearch.oninput = renderCatalog; catalog.onclick = event => { const button = event.target.closest('[data-table]'); if (button) loadTable(button.dataset.table, 1) };
-        async function loadTable(name, page) { selectedTable = name; currentPage = page; renderCatalog(); dataTitle.textContent = name; dataBody.innerHTML = '<tr><td>查詢中…</td></tr>'; try { const result = await request(`/api/admin/table?name=${encodeURIComponent(name)}&page=${page}&page_size=${pageSize}`); totalRows = result.total; dataMeta.textContent = `${result.columns.length} 欄 · ${number(result.total)} 筆 · 唯讀遮罩`; dataHead.innerHTML = `<tr>${result.columns.map(column => `<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`; dataBody.innerHTML = result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column => `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`; const totalPages = Math.max(1, Math.ceil(result.total / result.page_size)); pageInfo.textContent = `第 ${page} / ${totalPages} 頁`; prevPage.disabled = page <= 1; nextPage.disabled = page >= totalPages } catch (error) { dataBody.innerHTML = `<tr><td>${esc(error.message)}</td></tr>` } } prevPage.onclick = () => currentPage > 1 && loadTable(selectedTable, currentPage - 1); nextPage.onclick = () => currentPage * pageSize < totalRows && loadTable(selectedTable, currentPage + 1);
-        function renderQueue() { const counts = new Map(); submissions.forEach(item => { if (item.submitted_by) counts.set(item.submitted_by, (counts.get(item.submitted_by) || 0) + 1) }); staffList.innerHTML = `<button class="review-person ${selectedEmployee === '' ? 'active' : ''}" data-employee=""><span class="review-avatar">ALL</span><div><b>全部員工</b><small>顯示所有待審事件</small></div><em>${number(submissions.length)}</em></button>` + staffItems.map(item => `<button class="review-person ${selectedEmployee === item.employee_id ? 'active' : ''}" data-employee="${esc(item.employee_id)}"><img src="${item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/appicon.png'}" alt=""><div><b>${esc(item.employee_id)}｜${esc(item.display_name)}</b><small>${esc(item.department)} · ${esc(item.position)}</small></div><em>${number(counts.get(item.employee_id) || 0)}</em></button>`).join(''); staffList.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/appicon.png' }, { once: true })); const categories = [...new Set(submissions.map(item => item.category))]; queueFilters.innerHTML = `<button class="${selectedCategory === '' ? 'active' : ''}" data-category="">全部事件</button>` + categories.map(category => `<button class="${selectedCategory === category ? 'active' : ''}" data-category="${esc(category)}">${esc(category)}</button>`).join(''); const employee = staffItems.find(item => item.employee_id === selectedEmployee); const items = submissions.filter(item => (!selectedEmployee || item.submitted_by === selectedEmployee) && (!selectedCategory || item.category === selectedCategory)); queueTitle.textContent = `${employee ? `${employee.display_name}的` : ''}${selectedCategory || '全部'}申請事件`; queueCount.textContent = `${number(items.length)} 筆`; submissionList.innerHTML = items.length ? items.map(item => `<button class="review-event-card submission-card" data-submission="${esc(item.id)}" data-employee="${esc(item.submitted_by || '')}" data-category="${esc(item.category)}"><header><b>${esc(item.category)} · ${esc(item.campus)}</b><span class="tag">${esc(item.status)}</span></header><p>${esc(item.date)} · ${number(item.count)} 筆 · ${esc(item.note || '無備註')}</p><footer><span>${esc(item.submitted_by || '未記錄')}｜${esc(item.submitted_by_name || '未記錄建立者')}</span><small>${esc(item.submitted_at)}</small></footer></button>`).join('') : '<div class="empty">目前沒有符合條件的待審事項。</div>' }
-        staffList.onclick = event => { const button = event.target.closest('[data-employee]'); if (!button) return; selectedEmployee = button.dataset.employee; selectedCategory = ''; renderQueue() };
-        queueFilters.onclick = event => { const button = event.target.closest('[data-category]'); if (!button) return; selectedCategory = button.dataset.category; renderQueue() };
-        submissionList.onclick = event => { const button = event.target.closest('[data-submission]'); if (!button) return; selectedEmployee = button.dataset.employee; selectedCategory = button.dataset.category; renderQueue() };
-        function renderTrainingDocuments() { trainingDocumentList.innerHTML = trainingDocuments.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><div><b>${esc(item.title)}</b><small>${esc(item.category)} · ${item.section_count} 段 · ${esc(item.file_name)}${item.is_active ? '' : ' · 已停用'}</small></div><button class="btn secondary" data-document-state="${item.id}" data-active="${item.is_active ? 'false' : 'true'}">${item.is_active ? '停用' : '啟用'}</button></article>`).join('') || '<div class="empty">目前沒有教育文件。</div>'; questionDocument.innerHTML = '<option value="">不指定文件</option>' + trainingDocuments.map(item => `<option value="${item.id}">${esc(item.title)}</option>`).join('') }
-        function renderQuestions() { questionList.innerHTML = trainingQuestions.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><div><b>${esc(item.category)}｜${esc(item.question)}</b><small>${item.options.length} 個選項 · 答案 ${item.answer + 1}${item.is_active ? '' : ' · 已停用'}</small></div><button class="btn secondary" data-question-edit="${item.id}">編輯</button>${item.is_active ? `<button class="btn secondary" data-question-disable="${item.id}">停用</button>` : ''}</article>`).join('') || '<div class="empty">目前沒有題目。</div>' }
-        trainingDocumentList.onclick = async event => { const button = event.target.closest('[data-document-state]'); if (!button) return; await request('/api/admin/training/document', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({ id: Number(button.dataset.documentState), is_active: button.dataset.active === 'true' }) }); trainingDocuments = await request('/api/admin/training/documents'); renderTrainingDocuments() };
-        questionList.onclick = async event => { const edit = event.target.closest('[data-question-edit]'), disable = event.target.closest('[data-question-disable]'); if (edit) { const item = trainingQuestions.find(row => row.id === Number(edit.dataset.questionEdit)); if (item) { questionForm.elements.id.value = item.id; questionForm.elements.document_id.value = item.document_id || ''; questionForm.elements.category.value = item.category; questionForm.elements.question.value = item.question; questionForm.elements.options.value = item.options.join('\n'); questionForm.elements.answer.value = item.answer + 1; questionForm.elements.explanation.value = item.explanation; questionForm.elements.category.focus() } } if (disable && confirm('確定停用此題目？')) { await request('/api/admin/training/question', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({ id: Number(disable.dataset.questionDisable) }) }); trainingQuestions = await request('/api/admin/training/questions'); renderQuestions() } };
-        questionForm.onsubmit = async event => { event.preventDefault(); const values = Object.fromEntries(new FormData(questionForm)); const payload = { ...values, id: Number(values.id || 0), document_id: Number(values.document_id || 0) || null, options: values.options.split(/\r?\n/).map(value => value.trim()).filter(Boolean), answer: Number(values.answer) - 1 }; questionStatus.textContent = '儲存中…'; try { await request('/api/admin/training/question', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(payload) }); questionForm.reset(); trainingQuestions = await request('/api/admin/training/questions'); renderQuestions(); questionStatus.className = 'success-note'; questionStatus.textContent = '題目已儲存。' } catch (error) { questionStatus.className = 'error-note'; questionStatus.textContent = error.message } };
-        resetQuestion.onclick = () => { questionForm.reset(); questionStatus.textContent = ''; questionForm.elements.category.focus() };
-        syncTraining.onclick = async () => { syncTraining.disabled = true; syncStatus.textContent = '正在轉換並同步 Word 文件…'; try { const result = await request('/api/admin/training/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}' }); trainingDocuments = await request('/api/admin/training/documents'); renderTrainingDocuments(); syncStatus.className = 'success-note'; syncStatus.textContent = `已同步 ${result.documents} 份教育文件。` } catch (error) { syncStatus.className = 'error-note'; syncStatus.textContent = error.message } finally { syncTraining.disabled = false } };
-        request('/api/employee/session').then(session => { if (!session.authenticated) { location.replace(employeeLoginUrl); return null } return request('/api/admin/session') }).then(session => session && (session.authenticated ? showAdmin(session) : showLogin())).catch(showLogin);
+        async function request(url, options = {}) {
+            const response = await fetch(url, { credentials: 'include', ...options }), body = await response.json().catch(() => ({}));
+            if (response.status === 401 && body.code === 'EMPLOYEE_AUTH_REQUIRED') location.replace(employeeLoginUrl);
+            if (!response.ok) throw new Error(body.error || '操作失敗'); return body.data
+        }
+        function showLogin() {
+            loginShell.hidden = false; adminConsole.hidden = true; apiState.textContent = '需要管理員登入'
+        }
+        function showAdmin(session) {
+            loginShell.hidden = true; adminConsole.hidden = false; adminName.textContent = session.username; csrf = session.csrf; apiState.textContent = '管理員已登入'; apiState.classList.add('ok'); loadAdmin()
+        }
+        async function loadAdmin() {
+            try {
+                const [settings, catalogData, submissionData, staff, documents, questionItems] = await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'), request('/api/admin/submissions'), request('/api/admin/staff'), request('/api/admin/training/documents'), request('/api/admin/training/questions')]); settingsForm.theme.value = settings.theme; settingsForm.hero_title.value = settings.hero_title; settingsForm.hero_subtitle.value = settings.hero_subtitle; settingsForm.announcement.value = settings.announcement || ''; updatePreview(); tables = catalogData; staffItems = staff; submissions = submissionData; trainingDocuments = documents; trainingQuestions = questionItems; renderCatalog(); renderQueue(); renderTrainingDocuments();
+                renderQuestions()
+            } catch (error) { toast.textContent = error.message; toast.classList.add('show') }
+        }
+        loginForm.onsubmit = async event => {
+            event.preventDefault(); loginStatus.className = ''; loginStatus.textContent = '驗證中…'; try {
+                const session = await request('/api/admin/login', {
+                    method: 'POST', headers: {
+                        'Content-Type': 'application/json'
+                    }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm)))
+                });
+                loginForm.reset(); loginStatus.textContent = '';
+                showAdmin(session)
+            } catch (error) { loginStatus.className = 'error-note'; loginStatus.textContent = error.message }
+        };
+        logoutButton.onclick = async () => {
+            await request('/api/admin/logout', {
+                method: 'POST', headers: {
+                    'Content-Type': 'application/json'
+                }, body: '{}'
+            }); csrf = ''; showLogin()
+        };
+        adminTabs.onclick = event => {
+            const button = event.target.closest('[data-panel]');
+            if (!button) return;
+            adminTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
+            document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel))
+        };
+        function updatePreview() {
+            settingsPreview.className = `settings-preview ${settingsForm.theme.value}`; previewTitle.textContent = settingsForm.hero_title.value || '首頁標題';
+            previewSubtitle.textContent = settingsForm.hero_subtitle.value || '首頁說明'
+        }
+        settingsForm.addEventListener('input', updatePreview);
+        settingsForm.onsubmit = async event => {
+            event.preventDefault(); settingsStatus.className = ''; settingsStatus.textContent = '儲存中…'; try {
+                await request('/api/admin/settings', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(Object.fromEntries(new FormData(settingsForm)))
+                }); settingsStatus.className = 'success-note'; settingsStatus.textContent = '設定已寫入 SQL Server 並發布。'
+            } catch (error) { settingsStatus.className = 'error-note'; settingsStatus.textContent = error.message }
+        };
+        function renderCatalog() {
+            const q = catalogSearch.value.trim().toLowerCase(), items = tables.filter(item => item.name.toLowerCase().includes(q)); catalog.innerHTML = items.map(item => `<button class="catalog-item ${item.name === selectedTable ? 'active' : ''}" data-table="${esc(item.name)}"><span>${esc(item.name)}</span><small>${number(item.row_count)} 筆</small></button>`).join('') || '<div class="empty">找不到資料表</div>'
+        } catalogSearch.oninput = renderCatalog; catalog.onclick = event => {
+            const button = event.target.closest('[data-table]'); if (button) loadTable(button.dataset.table, 1)
+        };
+        async function loadTable(name, page) {
+            selectedTable = name; currentPage = page; renderCatalog(); dataTitle.textContent = name; dataBody.innerHTML = '<tr><td>查詢中…</td></tr>'; try {
+                const result = await request(`/api/admin/table?name=${encodeURIComponent(name)}&page=${page}&page_size=${pageSize}`); totalRows = result.total; dataMeta.textContent = `${result.columns.length} 欄 · ${number(result.total)} 筆 · 唯讀遮罩`; dataHead.innerHTML = `<tr>${result.columns.map(column => `<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`; dataBody.innerHTML = result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column => `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`; const totalPages = Math.max(1, Math.ceil(result.total / result.page_size)); pageInfo.textContent = `第 ${page} / ${totalPages} 頁`; prevPage.disabled = page <= 1; nextPage.disabled = page >= totalPages
+            } catch (error) { dataBody.innerHTML = `<tr><td>${esc(error.message)}</td></tr>` }
+        }
+        prevPage.onclick = () => currentPage > 1 && loadTable(selectedTable, currentPage - 1); nextPage.onclick = () => currentPage * pageSize < totalRows && loadTable(selectedTable, currentPage + 1);
+        function renderQueue() {
+            const counts = new Map(); submissions.forEach(item => { if (item.submitted_by) counts.set(item.submitted_by, (counts.get(item.submitted_by) || 0) + 1) });
+
+            staffList.innerHTML = `<button class="review-person ${selectedEmployee === '' ? 'active' : ''}" data-employee=""><span class="review-avatar">ALL</span><div><b>全部員工</b><small>顯示所有待審事件</small></div><em>${number(submissions.length)}</em></button>` + staffItems.map(item => `<button class="review-person ${selectedEmployee === item.employee_id ? 'active' : ''}" data-employee="${esc(item.employee_id)}"><img src="${item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/appicon.png'}" alt=""><div><b>${esc(item.employee_id)}｜${esc(item.display_name)}</b><small>${esc(item.department)} · ${esc(item.position)}</small></div><em>${number(counts.get(item.employee_id) || 0)}</em></button>`).join(''); staffList.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/appicon.png' }, { once: true })); const categories = [...new Set(submissions.map(item => item.category))]; queueFilters.innerHTML = `<button class="${selectedCategory === '' ? 'active' : ''}" data-category="">全部事件</button>` + categories.map(category => `<button class="${selectedCategory === category ? 'active' : ''}" data-category="${esc(category)}">${esc(category)}</button>`).join(''); const employee = staffItems.find(item => item.employee_id === selectedEmployee); const items = submissions.filter(item => (!selectedEmployee || item.submitted_by === selectedEmployee) && (!selectedCategory || item.category === selectedCategory)); queueTitle.textContent = `${employee ? `${employee.display_name}的` : ''}${selectedCategory || '全部'}申請事件`; queueCount.textContent = `${number(items.length)} 筆`; submissionList.innerHTML = items.length ? items.map(item => `<button class="review-event-card submission-card" data-submission="${esc(item.id)}" data-employee="${esc(item.submitted_by || '')}" data-category="${esc(item.category)}"><header><b>${esc(item.category)} · ${esc(item.campus)}</b><span class="tag">${esc(item.status)}</span></header><p>${esc(item.date)} · ${number(item.count)} 筆 · ${esc(item.note || '無備註')}</p><footer><span>${esc(item.submitted_by || '未記錄')}｜${esc(item.submitted_by_name || '未記錄建立者')}</span><small>${esc(item.submitted_at)}</small></footer></button>`).join('') : '<div class="empty">目前沒有符合條件的待審事項。</div>'
+        }
+        staffList.onclick = event => {
+            const button = event.target.closest('[data-employee]');
+            if (!button) return; selectedEmployee = button.dataset.employee; selectedCategory = ''; renderQueue()
+        };
+        queueFilters.onclick = event => {
+            const button = event.target.closest('[data-category]');
+            if (!button) return; selectedCategory = button.dataset.category; renderQueue()
+        };
+        submissionList.onclick = event => {
+            const button = event.target.closest('[data-submission]');
+            if (!button) return; selectedEmployee = button.dataset.employee; selectedCategory = button.dataset.category; renderQueue()
+        };
+        /*渲染「教育訓練文件」清單，並同步更新「新增/編輯題目」表單中的文件下拉選單（questionDocument）。依賴的全域狀態：trainingDocuments（陣列）*/
+        function renderTrainingDocuments() {
+            //將每筆文件轉成一張卡片（article）
+            //is_active 為 false 時，卡片加上 inactive class（樣式變灰/降低顯示優先度）
+            //顯示標題、分類、段落數、原始檔名，並在停用時附加「已停用」文字
+            //按鈕依目前啟用狀態顯示「停用」或「啟用」，並透過 data-* 屬性
+            //傳遞文件id與「點擊後應該切換成的目標狀態」(data-active)
+            trainingDocumentList.innerHTML = trainingDocuments.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}">
+            <div>
+                <b>${esc(item.title)}</b>
+                <small>${esc(item.category)} · ${item.section_count} 段 · ${esc(item.file_name)}${item.is_active ? '' : ' · 已停用'}</small>
+            </div>
+            <button class="btn secondary" data-document-state="${item.id}" data-active="${item.is_active ? 'false' : 'true'}">
+                ${item.is_active ? '停用' : '啟用'}
+            </button>
+        </article>`).join('') || '<div class="empty">目前沒有教育文件。</div>';
+            questionDocument.innerHTML = '<option value="">不指定文件</option>' +
+                trainingDocuments.map(item =>
+                    `<option value="${item.id}">${esc(item.title)}</option>`
+                ).join('');
+        }
+        /*renderQuestions渲染「訓練測驗題目」清單。依賴的全域狀態：trainingQuestions（陣列）*/
+        function renderQuestions() {
+            //將每筆題目轉成一張卡片（article）
+            //is_active 為 false 時，卡片加上 inactive class
+            //顯示分類、題目內容、選項數、正確答案（answer + 1：將內部 0-based
+            //索引轉為人類可讀的第幾個選項）
+            //「編輯」按鈕永遠顯示；「停用」按鈕只在題目目前為啟用狀態時才顯示
+            //（已停用的題目不需要再提供停用操作）
+            questionList.innerHTML = trainingQuestions.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}">
+            <div>
+                <b>${esc(item.category)}｜${esc(item.question)}</b>
+                <small>${item.options.length} 個選項 · 答案 ${item.answer + 1}${item.is_active ? '' : ' · 已停用'}</small>
+            </div>
+            <button class="btn secondary" data-question-edit="${item.id}">編輯</button>
+            ${item.is_active ? `<button class="btn secondary" data-question-disable="${item.id}">停用</button>` : ''}</article>`).join('') || '<div class="empty">目前沒有題目。</div>';//清單為空時顯示提示文字
+        }
+        trainingDocumentList.onclick = async event => {
+            const button = event.target.closest('[data-document-state]'); if (!button) return; await request('/api/admin/training/document', {
+                method: 'POST', headers: {
+                    'Content-Type': 'application/json', 'X-CSRF-Token': csrf
+                }, body: JSON.stringify({ id: Number(button.dataset.documentState), is_active: button.dataset.active === 'true' })
+            });
+            //重新載入並渲染文件
+            trainingDocuments = await request('/api/admin/training/documents'); renderTrainingDocuments()
+        };
+        questionList.onclick = async event => {
+            const edit = event.target.closest('[data-question-edit]'), disable = event.target.closest('[data-question-disable]'); if (edit) {
+                const item = trainingQuestions.find(row => row.id === Number(edit.dataset.questionEdit));
+                //點擊編輯：將資料填入表單
+                if (item) {
+                    questionForm.elements.id.value = item.id;
+                    questionForm.elements.document_id.value = item.document_id || '';
+                    questionForm.elements.category.value = item.category;
+                    questionForm.elements.question.value = item.question;
+                    questionForm.elements.options.value = item.options.join('\n');
+                    questionForm.elements.answer.value = item.answer + 1;
+                    questionForm.elements.explanation.value = item.explanation;
+                    questionForm.elements.category.focus()
+                }
+            }
+            //點擊停用：刪除/停用題目
+            if (disable && confirm('確定停用此題目？')) {
+                await request('/api/admin/training/question', {
+                    method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                    //重新載入並渲染題目
+                    body: JSON.stringify({ id: Number(disable.dataset.questionDisable) })
+                });
+                trainingQuestions = await request('/api/admin/training/questions');
+                renderQuestions()
+            }
+        };
+        //儲存/新增題目表單提交
+        questionForm.onsubmit = async event => {
+            event.preventDefault(); const values = Object.fromEntries(new FormData(questionForm));
+            const payload = {
+                ...values, id: Number(values.id || 0), document_id: Number(values.document_id || 0) || null,
+                options: values.options.split(/\r?\n/).map(value => value.trim()).filter(Boolean),
+                answer: Number(values.answer) - 1
+            };
+            questionStatus.textContent = '儲存中…'; try {
+                await request('/api/admin/training/question', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(payload)
+                });
+                questionForm.reset();
+                trainingQuestions = await request('/api/admin/training/questions');
+                renderQuestions(); questionStatus.className = 'success-note';
+                questionStatus.textContent = '題目已儲存。'
+            } catch (error) {
+                questionStatus.className = 'error-note';
+                questionStatus.textContent = error.message
+            }
+        };
+        resetQuestion.onclick = () => {
+            questionForm.reset(); questionStatus.textContent = '';
+            questionForm.elements.category.focus()
+        };
+        syncTraining.onclick = async () => {
+            syncTraining.disabled = true; syncStatus.textContent = '正在轉換並同步 Word 文件…'; try {
+                const result = await request('/api/admin/training/sync', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}'
+                });
+                trainingDocuments = await request('/api/admin/training/documents'); renderTrainingDocuments();
+                syncStatus.className = 'success-note'; syncStatus.textContent = `已同步 ${result.documents} 份教育文件。`
+            } catch (error) {
+                syncStatus.className = 'error-note'; syncStatus.textContent = error.message
+            } finally {
+                syncTraining.disabled = false
+            }
+        };
+        request('/api/employee/session').then(session => {
+            if (!session.authenticated) { location.replace(employeeLoginUrl); return null } return request('/api/admin/session')
+        }).then(session => session && (session.authenticated ? showAdmin(session) : showLogin())).catch(showLogin);
     </script>
 </body>
 
