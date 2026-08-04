@@ -1407,57 +1407,6 @@ body[data-theme="forest"] .hero-copy-public h1 span {
     font-size: 13px
 }
 
-/*讓卡片用 flex 並限制文字區域寬度*/
-.staff-admin-card {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    /*標題彈性佔滿、按鈕群組靠右固定*/
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-}
-
-.staff-admin-card>div:first-child {
-    min-width: 0;
-    /* 允許縮小，讓省略號 / 換行生效 */
-}
-
-.staff-admin-card b {
-    display: block;
-    /* 方案A：允許多行完整顯示題目（推薦，題目通常需要看全） */
-    white-space: normal;
-    word-break: break-word;
-    line-height: 1.4;
-
-    /* 方案B：若堅持單行截斷，改用下面這組取代方案A */
-    /*
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    */
-}
-
-.staff-admin-card small {
-    display: block;
-    color: #6b7280;
-    margin-top: 2px;
-}
-
-.staff-admin-card .btn-group {
-    display: flex;
-    gap: 8px;
-    justify-self: end;
-    /* 在 grid 中靠右對齊 */
-}
-
-.staff-admin-card .btn-group .btn {
-    flex: 0 0 auto;
-    min-width: 72px;
-    text-align: center;
-    white-space: nowrap;
-}
-
-
 .clock-panel {
     display: grid;
     grid-template-columns: 1.3fr auto 1.2fr 1fr;
@@ -1648,14 +1597,34 @@ body[data-theme="forest"] .hero-copy-public h1 span {
     gap: 9px
 }
 
+/*.staff-admin-card 的完整定義統一放在下方*/
 .staff-admin-card {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    /*用minmax明確告知最小可為 0，但仍優先分配剩餘空間*/
     align-items: center;
     gap: 12px;
     width: 100%;
     box-sizing: border-box;
+}
+
+/* 員工名冊才有照片欄，固定維持照片、資訊、按鈕三欄。 */
+#staffList .staff-admin-card {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+}
+
+.training-document-card .compact-action {
+    justify-self: end;
+    width: auto;
+    min-width: 0;
+    padding: 6px 14px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.question-card .question-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .staff-admin-card>div:first-child {
@@ -1686,12 +1655,30 @@ body[data-theme="forest"] .hero-copy-public h1 span {
     background: #f1f3f4
 }
 
+.staff-admin-card .btn-group {
+    display: flex;
+    /*群組內部改用flex排兩顆按鈕 */
+    gap: 8px;
+    justify-self: end;
+    /*在 grid 中靠右對齊*/
+}
+
+.staff-admin-card .btn-group .btn {
+    flex: 0 0 auto;
+    min-width: 72px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 讓兩顆按鈕等寬 */
+
+
 .staff-admin-card small {
     display: block;
     color: var(--muted)
 }
 
-.staff-maintenance {
+.staff-adm .staff-maintenance {
     align-items: start;
     margin-bottom: 38px
 }
@@ -2396,17 +2383,43 @@ body[data-theme="forest"] .hero-copy-public h1 span {
         margin-top: 12px
     }
 
+    /* 窄螢幕下，兩種卡片改為直式排列：
+       文字/照片區在上、按鈕群組在下靠右，避免橫向空間不足時
+       文字被壓縮到只剩省略號、或按鈕被撐爆變形 */
     .staff-admin-card {
-        grid-template-columns: 45px 1fr
+        grid-template-columns: 1fr;
+        /* 有照片的員工卡：照片和文字仍在同一行，靠內層 flex 排列 */
     }
 
-    /* .staff-admin-card .btn {
-        grid-column: span 1
-    } */
+    #staffList .staff-admin-card {
+        grid-template-columns: 1fr;
+    }
 
-    .staff-admin-card .btn {
+    .staff-admin-card:has(img) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .staff-admin-card:has(img) img {
         flex: 0 0 auto;
-        white-space: nowrap;
+    }
+
+    .staff-admin-card:has(img)>div:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .staff-admin-card .btn-group {
+        justify-self: start;
+        /* 直式排列下靠左對齊，與上方文字對齊 */
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .staff-admin-card .btn-group .btn {
+        flex: 1 1 0;
+        /* 窄螢幕下讓兩顆按鈕平分寬度，方便點擊 */
     }
 
 
