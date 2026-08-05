@@ -111,7 +111,16 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
-
+建立一個`.env`檔案，在裡面填入ENV設定
+```
+DatabaseIP=資料庫IP
+DatabasePort=1433
+DatabaseName=資料庫
+DatabaseUser=資料庫帳號
+DatabasePassword=資料庫密碼
+BackendWebAdminUser=後台管理員帳號
+BackendWebAdminPassword=後台管理員密碼
+```
 ### Windows Port 80
 
 執行 `win_start.bat`。後端監聽 `0.0.0.0:80`，啟動時會列出同一內網可使用的 IPv4 網址。若 Windows 阻擋 Port 80，需以系統管理員身分執行。
