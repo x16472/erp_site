@@ -1,4 +1,4 @@
-"""福祿貝爾官方網站、員工入口與受保護的 MIS 管理 API。"""
+"""官方網站、員工入口與受保護的 MIS 管理 API。"""
 
 from __future__ import annotations
 

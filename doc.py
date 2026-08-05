@@ -1,7 +1,6 @@
 """教育訓練 Word 文件的轉換、文字擷取與資料庫同步。
-
-舊版 ``.doc`` 優先使用 LibreOffice 無介面轉成快取 ``.docx``；若本機沒有
-LibreOffice，才在 Windows 使用 Microsoft Word COM。原始文件永遠不會被修改。
+舊版*.doc優先使用 LibreOffice 無介面轉成快取*.docx；
+若本機沒有LibreOffice，才在 Windows使用 Microsoft Word COM。原始文件永遠不會被修改。
 """
 
 from __future__ import annotations

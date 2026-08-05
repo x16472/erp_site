@@ -11,11 +11,18 @@
 <body>
     <div class="portal-shell">
         <aside class="portal-sidebar">
-            <a class="portal-brand" href="home.html"><img src="static/appicon.png"
-                    alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
-            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a class="active"
-                    href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a href="game.html">YouTube 直播</a><a
-                    href="staff.html">員工與出缺勤</a><a href="mis.html">MIS 管理</a></nav>
+            <a class="portal-brand" href="home.html">
+                <img src="static/appicon.png" alt="福祿貝爾標誌">
+                <span><b>福祿貝爾</b> <small>員工入口網站</small></span>
+            </a>
+            <nav class="portal-nav" aria-label="內部系統導覽">
+                <a href="home.html">工作台</a>
+                <a class="active" href="sales.html">營運蒐集</a>
+                <a href="exam.html">教育訓練</a>
+                <a href="game.html">YouTube 直播</a>
+                <a href="staff.html">員工與出缺勤</a>
+                <a href="mis.html">MIS 管理</a>
+            </nav>
             <p class="portal-foot">OPERATION INPUT · 待審資料</p>
         </aside>
         <main class="portal-main">
@@ -25,50 +32,52 @@
                 </div><span class="api-state" id="apiState">準備填報</span>
             </header>
             <div class="portal-content">
-                <nav class="admin-tabs" id="salesTabs"><button class="active" data-panel="reportPanel">新增園務日報</button><button
-                        data-panel="lifecyclePanel">托育收費資料生命週期</button></nav>
+                <nav class="admin-tabs" id="salesTabs">
+                    <button class="active" data-panel="reportPanel">新增園務日報</button><button
+                        data-panel="lifecyclePanel">托育收費資料生命週期</button>
+                </nav>
                 <section class="admin-panel active" id="reportPanel">
                     <div class="portal-grid">
-                    <section class="portal-card wide">
-                        <div class="card-head">
-                            <div><span class="eyebrow">DAILY REPORT</span>
-                                <h2>新增園務日報</h2>
-                                <p>填寫出勤、班級、接送、收費、設備或餐點數量；送出後進入 MIS 待審佇列。</p>
+                        <section class="portal-card wide">
+                            <div class="card-head">
+                                <div><span class="eyebrow">DAILY REPORT</span>
+                                    <h2>新增園務日報</h2>
+                                    <p>填寫出勤、班級、接送、收費、設備或餐點數量；送出後進入 MIS 待審佇列。</p>
+                                </div>
                             </div>
-                        </div>
-                        <form id="operationForm">
-                            <div class="form-grid"><label class="field"><span>日期</span><input type="date" name="date"
-                                        required></label><label class="field"><span>園區</span><select name="campus"
-                                        id="campus" required>
-                                        <option value="">載入園區中…</option>
-                                    </select></label><label class="field"><span>資料類別</span><select name="category"
-                                        required>
-                                        <option>出勤</option>
-                                        <option>班級</option>
-                                        <option>接送</option>
-                                        <option>收費</option>
-                                        <option>設備</option>
-                                        <option>餐點</option>
-                                        <option>其他</option>
-                                    </select></label><label class="field"><span>數量</span><input type="number"
-                                        name="count" min="0" max="9999" value="0" required></label><label
-                                    class="field full"><span>備註</span><textarea name="note" maxlength="200"
-                                        placeholder="只填寫作業摘要，請勿輸入幼兒姓名、電話或其他個資。"></textarea></label></div>
-                            <div class="actions"><button class="btn" type="submit">送交 MIS 審核</button><button
-                                    class="btn secondary" type="reset">清除</button></div>
-                            <p id="formStatus" aria-live="polite"></p>
-                        </form>
-                    </section>
-                    <aside class="portal-card narrow">
-                        <div class="card-head">
-                            <div><span class="eyebrow">SAFE INPUT</span>
-                                <h2>填報提醒</h2>
+                            <form id="operationForm">
+                                <div class="form-grid"><label class="field"><span>日期</span><input type="date"
+                                            name="date" required></label><label class="field"><span>園區</span><select
+                                            name="campus" id="campus" required>
+                                            <option value="">載入園區中…</option>
+                                        </select></label><label class="field"><span>資料類別</span><select name="category"
+                                            required>
+                                            <option>出勤</option>
+                                            <option>班級</option>
+                                            <option>接送</option>
+                                            <option>收費</option>
+                                            <option>設備</option>
+                                            <option>餐點</option>
+                                            <option>其他</option>
+                                        </select></label><label class="field"><span>數量</span><input type="number"
+                                            name="count" min="0" max="9999" value="0" required></label><label
+                                        class="field full"><span>備註</span><textarea name="note" maxlength="200"
+                                            placeholder="只填寫作業摘要，請勿輸入幼兒姓名、電話或其他個資。"></textarea></label></div>
+                                <div class="actions"><button class="btn" type="submit">送交 MIS 審核</button><button
+                                        class="btn secondary" type="reset">清除</button></div>
+                                <p id="formStatus" aria-live="polite"></p>
+                            </form>
+                        </section>
+                        <aside class="portal-card narrow">
+                            <div class="card-head">
+                                <div><span class="eyebrow">SAFE INPUT</span>
+                                    <h2>填報提醒</h2>
+                                </div>
                             </div>
-                        </div>
-                        <div class="success-note">只記錄彙總數量與園務摘要，不輸入幼兒、家長或教職員個資。</div>
-                        <p class="hint">資料會寫入網站專用待審資料表，由 MIS 管理員確認後再處理；不會直接修改既有園務資料表。</p>
-                        <div id="lastSubmission"></div>
-                    </aside>
+                            <div class="success-note">只記錄彙總數量與園務摘要，不輸入幼兒、家長或教職員個資。</div>
+                            <p class="hint">資料會寫入網站專用待審資料表，由 MIS 管理員確認後再處理；不會直接修改既有園務資料表。</p>
+                            <div id="lastSubmission"></div>
+                        </aside>
                     </div>
                 </section>
                 <section class="admin-panel" id="lifecyclePanel">
