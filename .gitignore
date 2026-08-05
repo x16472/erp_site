@@ -1,11 +1,12 @@
 .env
+.agents/
+.deps/
+.venv/
+.vscode/
 __pycache__/
 *.pyc
 data/*.db
 data/exam/.converted/
 data/exam/*.doc
 data/exam/*.docx
-.agents/
-.deps/
-.venv/
 .data/MSSQL_ALLtable.png

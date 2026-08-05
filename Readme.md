@@ -5,8 +5,33 @@
 後端使用 Python 與 `pyodbc` 實際連接 SQL Server。既有園務資料表維持唯讀，網站寫入只發生在 `dbo.Frobel_*` 專用資料表及員工照片資料夾，`.env` 不會由程式建立或修改。
 
 特別感謝小助手Codex、ChatGPT、Grok給予協助。
+## 程式架構
+```text
+erp_site/
+├── static/     #圖片素材庫
+├── templates/  #專案資料夾
+│       └── cookiecutter.json
+├── data/       #存放較大的檔案資料夾
+├── .env        #存放機密性資料用的
+├── .gitignore  #Github排除檔案專用
+├── app.py      #後端：網頁後端的核心控制
+├── data.py     #後端：主要處理資料庫的串接
+├── input.py    #後端：接收來自前端的輸入，彙整後將需要的資料餵給app.py
+├── doc.py      #後端：接收來自data/exam的資料，彙整後將需要的資料餵給app.py
+├── database.md #針對資料庫設定的說明
+├── site.md     #針對網頁設定的說明
+├── agent.md    #主要大方向（這個檔案）
+├── style.css   #網頁CSS布局設定
+├── script.js   #javascript控制項
+├── index.html  #前端：前台官方網頁
+│       ├── home.html   #前端：後台首頁，主要為員工入口網站，所有人都能看到
+│       ├── sales.html  #前端：後台蒐集營運資料的分頁
+│       ├── mis.html    #前端：後台管理所有設定的區域，必須使用帳號密碼登入獲得較高的權限
+│       ├── exam.html   #前端：後台用來給予員工教育訓練的區域，資料會存放於上層data資料夾
+│       └── game.html   #前端：後台給予員工放鬆的遊戲區域，並非要貼近網站內容，更多的是基於休閒性質
+└── Readme.md   # 專案說明
+```
 ## 主要功能
-
 ### 公開官方網站
 
 - 響應式幼稚園品牌首頁，支援海洋、晨光、森林三種資料庫主題。
