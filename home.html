@@ -4,18 +4,25 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>員工入口｜福祿貝爾營運中心</title>
+    <title>員工入口｜營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="portal-shell">
         <aside class="portal-sidebar">
-            <a class="portal-brand" href="home.html"><img src="static/appicon.png"
-                    alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
-            <nav class="portal-nav" aria-label="內部系統導覽"><a class="active" href="home.html">工作台</a><a
-                    href="sales.html">營運蒐集</a><a href="exam.html">教育訓練</a><a href="game.html">YouTube 直播</a><a
-                    href="staff.html">員工與出缺勤</a><a href="mis.html">MIS 管理</a></nav>
+            <a class="portal-brand" href="home.html">
+                <img src="static/appicon.png" alt="福祿貝爾標誌">
+                <span><b>福祿貝爾</b>
+                    <small>員工入口網站</small>
+                </span>
+            </a>
+            <nav class="portal-nav" aria-label="內部系統導覽">
+                <a class="active" href="home.html">工作台</a>
+                <a href="sales.html">營運資料</a><a href="exam.html">教育訓練</a>
+                <a href="game.html">YouTube</a><a href="staff.html">員工出缺勤</a>
+                <a href="mis.html">後台管理</a>
+            </nav>
             <p class="portal-foot">EMPLOYEE PORTAL · 內部使用</p>
         </aside>
         <main class="portal-main">
@@ -26,66 +33,78 @@
             </header>
             <div class="portal-content">
                 <section class="portal-welcome">
-                    <div><span class="eyebrow" style="color:#8edcff">TODAY AT FROEBEL</span>
+                    <div>
+                        <span class="eyebrow" style="color:#8edcff">TODAY AT FROEBEL</span>
                         <h2>歡迎，今天也是美好的一天</h2>
                         <p id="announcement">讀取園務公告中…</p>
-                    </div><img src="static/appicon.png" alt="福祿貝爾識別">
+                    </div>
                 </section>
                 <section class="clock-panel">
-                    <div><span class="eyebrow">ATTENDANCE SESSION</span>
+                    <div>
+                        <span class="eyebrow">Wellcome</span>
                         <h2 id="employeeWelcome">正在驗證員工身分</h2>
                         <p id="employeeProfile">正在確認員工資料。</p>
                     </div>
-                    <div class="live-clock"><small>目前時間</small><strong id="currentClock">--:--:--</strong></div>
+                    <div class="live-clock"><small>目前時間</small>
+                        <strong id="currentClock">--:--:--</strong>
+                    </div>
                     <div class="attendance-session-state">
                         <div class="clock-result" id="clockResult" aria-live="polite">正在讀取打卡狀態…</div>
                         <p class="attendance-policy">未在特定時段「補打卡」視同遲到或曠職</p>
                     </div>
-                    <div class="attendance-session-actions"><button class="btn red" id="makeupClock" type="button"
-                            hidden>補打卡</button><button class="btn" id="clockOutButton"
-                            type="button">打卡下班</button><button class="btn secondary" id="employeeLeave"
-                            type="button">離開系統</button></div>
-                </section>
-                <section class="metric-grid" id="metrics">
-                    <article class="metric-card">
-                        <p>載入園務指標…</p>
-                    </article>
+                    <div class="attendance-session-actions">
+                        <button class="btn red" id="makeupClock" type="button" hidden>補打卡</button>
+                        <button class="btn" id="clockOutButton" type="button">打卡下班</button>
+                        <button class="btn secondary" id="employeeLeave" type="button">離開系統</button>
+                    </div>
                 </section>
                 <div class="portal-grid">
                     <section class="portal-card wide">
                         <div class="card-head">
-                            <div><span class="eyebrow">QUICK ACCESS</span>
-                                <h2>常用工作入口</h2>
+                            <div><span class="eyebrow">Central Entrance</span>
+                                <h2>常用入口</h2>
                             </div>
                         </div>
                         <div class="quick-links">
-                            <a class="quick-link" href="sales.html"><b>園務資料蒐集</b>
-                                <small>填寫出勤、班級、接送與設備日報</small></a>
+                            <a class="quick-link" href="sales.html"><b>資訊需求單</b>
+                                <small>填寫需求單</small></a>
                             <a class="quick-link" href="exam.html"><b>教育訓練</b>
-                                <small>兒少資料與園務安全研習</small></a>
-                            <a class="quick-link" href="game.html"><b>YouTube 直播</b>
-                                <small>在工作空檔觀看直播</small></a>
+                                <small>在工作空檔進行研習</small></a>
                             <a class="quick-link" href="index.html" target="_blank" rel="noopener">
                                 <b>官方網站</b><small>另開視窗查看目前公開版面</small></a>
                         </div>
                     </section>
                     <section class="portal-card narrow">
                         <div class="card-head">
-                            <div><span class="eyebrow">CLASSROOMS</span>
-                                <h2>班級概況</h2>
+                            <div><span class="eyebrow">Side Navigation</span>
+                                <h2>快捷入口</h2>
+                                <div class="quick-links">
+                                    <a class="quick-link" href="exam.html">
+                                        <b>教育訓練</b>
+                                        <small>進行研習</small></a>
+                                    <a class="quick-link" href="game.html">
+                                        <b>YouTube</b>
+                                        <small>喘口氣吧</small></a>
+                                    <a class="quick-link" href="index.html" target="_blank" rel="noopener">
+                                        <b>官方網站</b>
+                                        <small>另開視窗</small></a>
+                                </div>
                             </div>
                         </div>
-                        <div class="class-list" id="classes"></div>
                     </section>
                     <section class="portal-card full">
                         <div class="card-head">
                             <div><span class="eyebrow">KNOWLEDGE SEARCH</span>
-                                <h2>園務知識快速檢索</h2>
+                                <h2>相關知識快速檢索</h2>
                                 <p>搜尋學籍、班級、收費、接送與資料保護說明。</p>
                             </div>
+                            <article class="metric-card">
+                                <p>正在載入統計數據…</p>
+                            </article>
                         </div>
-                        <div class="search-box"><label class="sr-only" for="search">搜尋知識</label>
-                            <input id="search" type="search" placeholder="例如：學籍異動、接送資料、托育收費…">
+                        <div class="search-box">
+                            <label class="sr-only" for="search">搜尋知識</label>
+                            <input id="search" type="search" placeholder="請輸入欲查詢內容…">
                             <span>⌕</span>
                         </div>
                         <div class="knowledge-grid" id="knowledge">
@@ -113,7 +132,9 @@
         const apiData = async (path, options = {}) => {
             const response = await apiFetch(path, options);
             const body = await response.json().catch(() => ({}));
-            if (response.status === 401 && body.code === 'EMPLOYEE_AUTH_REQUIRED') location.replace(loginUrl); if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用'); return body.data
+            if (response.status === 401 && body.code === 'EMPLOYEE_AUTH_REQUIRED') location.replace(loginUrl);
+            if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用');
+            return body.data
         };
         const employeeAccess = apiData('/api/employee/session').then(session => {
             if (!session.authenticated) {
@@ -150,18 +171,25 @@
         function renderKnowledge() {
             const q = search.value.trim().toLowerCase(),
                 items = q ? entries.filter(item => Object.values(item).join(' ').toLowerCase().includes(q)) : entries;
-            knowledge.innerHTML = items.length ? items.map(item => `<button class="knowledge-card" data-id="${item.id}"><span class="tag">${esc(item.category)}</span><h3>${esc(item.title)}</h3><p>${esc(item.summary)}</p></button>`).join('') : '<div class="empty">找不到相關條目。</div>'
+            knowledge.innerHTML = items.length ? items.map(item =>
+                `<button class="knowledge-card" data-id="${item.id}">
+                <span class="tag">${esc(item.category)}</span>
+                <h3>${esc(item.title)}</h3>
+                <p>${esc(item.summary)}</p></button>`
+            ).join('') : '<div class="empty">找不到相關條目。</div>'
         }
         function renderAttendance(attendance) {
             currentAttendance = attendance;
             if (attendance) {
                 clockResult.className = 'clock-result success-note';
-                clockResult.textContent = `打卡時間｜${new Date(attendance.clocked_at).toLocaleString('zh-TW')}`; makeupClock.hidden = true;
+                clockResult.textContent = `打卡時間｜${new Date(attendance.clocked_at).toLocaleString('zh-TW')}`;
+                makeupClock.hidden = true;
                 clockOutButton.disabled = attendance.action !== 'CLOCK_IN';
                 clockOutButton.textContent = attendance.action === 'CLOCK_OUT' ? '已完成下班打卡' : '打卡下班'
             } else {
                 clockResult.className = 'clock-result attendance-warning';
-                clockResult.textContent = '您尚未打卡'; makeupClock.hidden = false;
+                clockResult.textContent = '您尚未打卡';
+                makeupClock.hidden = false;
                 makeupClock.disabled = false; clockOutButton.disabled = true
             } employeeLeave.disabled = false
         }
@@ -191,7 +219,8 @@
                         'Content-Type': 'application/json', 'X-CSRF-Token': employeeCsrf
                     },
                     body: JSON.stringify({ action })
-                }); renderAttendance(attendance); if (action === 'CLOCK_OUT') {
+                }); renderAttendance(attendance);
+                if (action === 'CLOCK_OUT') {
                     clockResult.textContent = `打卡時間｜${new Date(attendance.clocked_at).toLocaleString('zh-TW')}，下班打卡完成`;
                     setTimeout(leaveSystem, 900)
                 }
@@ -215,10 +244,13 @@
             const employee = session.employee;
             employeeCsrf = session.csrf;
             employeeWelcome.textContent = `${employee.display_name}，歡迎進入工作台`;
-            employeeProfile.textContent = `${employee.employee_id}｜${employee.department}｜${employee.position}`; renderAttendance(session.attendance); await syncServerTime(); return Promise.all([apiData('/api/dashboard'), apiData('/api/knowledge'), apiData('/api/public')])
+            employeeProfile.textContent = `${employee.employee_id}｜${employee.department}｜${employee.position}`;
+            renderAttendance(session.attendance);
+            await syncServerTime();
+            return Promise.all([apiData('/api/dashboard'), apiData('/api/knowledge'), apiData('/api/public')])
         }).then(([dashboard, knowledgeItems, publicData]) => {
             entries = knowledgeItems;
-            announcement.textContent = publicData.settings.announcement || '今天也請留意幼兒安全與交接紀錄。';
+            announcement.textContent = publicData.settings.announcement || '今天也請留意交接紀錄。';
             metrics.innerHTML = dashboard.metrics.map((item, index) =>
                 `<article class="metric-card">
                 <span>0${index + 1}</span>
@@ -232,7 +264,7 @@
                         <small>${esc(item.campus)} 園區</small>                 
                     </div>
                 </div>`).join(''); renderKnowledge();
-            apiState.textContent = '園務資料已同步';
+            apiState.textContent = '資料已同步';
             apiState.classList.add('ok')
         }).catch(error => {
             apiState.textContent = '資料服務未連線';

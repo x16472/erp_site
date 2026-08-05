@@ -1,4 +1,4 @@
-"""官方網站、員工入口與受保護的 MIS 管理 API。"""
+"""官方網站、員工入口與受保護的 後台管理 API。"""
 
 from __future__ import annotations
 
@@ -181,7 +181,7 @@ class Handler(BaseHTTPRequestHandler):
     def require_admin(self, employee_session: dict | None = None) -> dict | None:
         session = self.session()
         if not session or (employee_session and session.get("employee_id") != employee_session["employee_id"]):
-            self.send_json({"error": "請先登入 MIS 管理區。", "code": "AUTH_REQUIRED"}, 401)
+            self.send_json({"error": "請先登入 後台管理區。", "code": "AUTH_REQUIRED"}, 401)
             return None
         return session
 
@@ -258,7 +258,6 @@ class Handler(BaseHTTPRequestHandler):
             "/api/operations": data.operations_process,
             "/api/departments": data.departments,
             "/api/branches": data.branches,
-            "/api/roles": data.permission_profiles,
             "/api/questions": data.questions,
             "/api/staff/attendance-options": data.attendance_staff_options,
             "/api/training": data.training_catalog,

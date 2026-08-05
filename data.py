@@ -75,12 +75,12 @@ def connect(read_only: bool = True, autocommit: bool = True):
 
 
 def admin_credentials() -> tuple[str, str]:
-    """取得 MIS 管理員帳密，只供後端比對，永不傳送至前端。"""
+    """取得 後台管理員帳密，只供後端比對，永不傳送至前端。"""
     cfg = _load_env()
     username = cfg.get("BackendWebAdminUser", "")
     password = cfg.get("BackendWebAdminPassword", "")
     if not username or not password:
-        raise DatabaseUnavailable(".env 尚未設定 MIS 管理員帳號密碼。")
+        raise DatabaseUnavailable(".env 尚未設定 後台管理員帳號密碼。")
     return username, password
 
 
@@ -117,6 +117,8 @@ def _quote_identifier(value: str) -> str:
 
 
 def _resolve_table(table_name: str) -> tuple[str, str]:
+    if table_name not in APPLICATION_TABLES:
+        raise ValueError("只允許查閱福祿貝爾應用資料表")
     matches = _fetch("""
         SELECT TABLE_SCHEMA AS [schema_name], TABLE_NAME AS [table_name]
         FROM INFORMATION_SCHEMA.TABLES
@@ -169,8 +171,8 @@ def _mask_value(column_name: str, value: Any, level: str | None = None) -> Any:
 
 
 def table_catalog() -> list[dict[str, Any]]:
-    """列出所有使用者資料表與實際筆數，不查閱資料列。"""
-    return _fetch("""
+    """只列出目前資料庫允許維護的 Frobel 應用資料表。"""
+    rows = _fetch("""
         SELECT s.name AS [schema], t.name AS [name],
                COALESCE(p.[row_count], 0) AS [row_count],
                COALESCE(c.[column_count], 0) AS [column_count]
@@ -178,8 +180,9 @@ def table_catalog() -> list[dict[str, Any]]:
         JOIN sys.schemas s ON s.schema_id = t.schema_id
         OUTER APPLY (SELECT SUM(rows) AS [row_count] FROM sys.partitions WHERE object_id=t.object_id AND index_id IN (0,1)) p
         OUTER APPLY (SELECT COUNT(*) AS [column_count] FROM sys.columns WHERE object_id=t.object_id) c
-        ORDER BY CASE WHEN t.name = N'ALLtable' THEN 0 ELSE 1 END, t.name
+        ORDER BY t.name
     """)
+    return [row for row in rows if row["schema"] == "dbo" and row["name"] in APPLICATION_TABLES]
 
 
 def table_data(table_name: str, page: int = 1, page_size: int = 20) -> dict[str, Any]:
@@ -222,20 +225,15 @@ def table_data(table_name: str, page: int = 1, page_size: int = 20) -> dict[str,
 
 
 def _count(table: str) -> int:
-    # table 僅能由程式內部白名單呼叫，不接受 API 傳入值。
-    allowed = {
-        "ALLtable", "分校資料", "學籍資料", "班別名稱", "繳費記錄",
-        "薪資表", "異動金額記錄", "繳費明細", "繳費項目", "繳費類別", "繳費班別",
-        "搭交通車況",
-    }
-    if table not in allowed:
+    """僅統計附圖列出的應用資料表，不接受其他資料庫表名。"""
+    if table not in APPLICATION_TABLES:
         raise ValueError("不允許查詢此資料表")
     return int(_fetch(f"SELECT COUNT_BIG(*) AS [筆數] FROM dbo.[{table}]")[0]["筆數"])
 
 
 def health() -> dict[str, Any]:
-    info = _fetch("SELECT DB_NAME() AS [資料庫], COUNT(*) AS [資料表數] FROM sys.tables")[0]
-    return {"status": "ok", "source": "mssql", "database": info["資料庫"], "table_count": info["資料表數"], "mode": "read-only"}
+    info = _fetch("SELECT DB_NAME() AS [資料庫]")[0]
+    return {"status": "ok", "source": "mssql", "database": info["資料庫"], "table_count": len(table_catalog()), "mode": "frobel-only"}
 
 
 DEFAULT_SITE_SETTINGS = {
@@ -287,135 +285,71 @@ def save_site_settings(settings: dict[str, str], actor: str) -> dict[str, str]:
 
 
 def public_overview() -> dict[str, Any]:
-    """官方網站可公開的設定與統計，不含園區及個人明細。"""
+    """官方網站可公開的設定與 Frobel 應用資料彙總。"""
     return {
         "settings": site_settings(),
         "stats": [
-            {"label": "園務據點", "value": _count("分校資料")},
-            {"label": "教學班級", "value": _count("班別名稱")},
-            {"label": "幼兒學籍", "value": _count("學籍資料")},
+            {"label": "在職教職員", "value": int(_fetch("SELECT COUNT_BIG(*) AS [count] FROM dbo.Frobel_Staff WHERE is_active=1")[0]["count"])},
+            {"label": "管理部門", "value": int(_fetch("SELECT COUNT_BIG(*) AS [count] FROM dbo.Frobel_Department WHERE is_active=1")[0]["count"])},
+            {"label": "教育文件", "value": int(_fetch("SELECT COUNT_BIG(*) AS [count] FROM dbo.Frobel_TrainingDocument WHERE is_active=1")[0]["count"])},
         ],
     }
 
 
 def dashboard() -> dict[str, Any]:
-    """回傳幼稚園園務總覽，只包含低敏感度彙總資訊。"""
+    """回傳只依附圖所列資料表產生的工作台彙總。"""
     return {
         "metrics": [
-            {"label": "幼兒學籍", "value": _count("學籍資料"), "unit": "筆", "tone": "green"},
-            {"label": "教學班級", "value": _count("班別名稱"), "unit": "班", "tone": "blue"},
-            {"label": "教職員資料", "value": _count("ALLtable"), "unit": "筆", "tone": "amber"},
-            {"label": "接送服務", "value": _count("搭交通車況"), "unit": "筆", "tone": "purple"},
+            {"label": "在職員工", "value": int(_fetch("SELECT COUNT_BIG(*) AS [count] FROM dbo.Frobel_Staff WHERE is_active=1")[0]["count"]), "unit": "位", "tone": "green"},
+            {"label": "本日打卡", "value": int(_fetch("SELECT COUNT_BIG(*) AS [count] FROM dbo.Frobel_Attendance WHERE work_date=CONVERT(date,SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time')")[0]["count"]), "unit": "筆", "tone": "blue"},
+            {"label": "待審日報", "value": int(_fetch("SELECT COUNT_BIG(*) AS [count] FROM dbo.Frobel_OperationSubmission WHERE status=N'待審核'")[0]["count"]), "unit": "筆", "tone": "amber"},
+            {"label": "教育文件", "value": int(_fetch("SELECT COUNT_BIG(*) AS [count] FROM dbo.Frobel_TrainingDocument WHERE is_active=1")[0]["count"]), "unit": "份", "tone": "purple"},
         ],
         "departments": departments(),
         "branches": branches(),
-        "classes": class_overview(),
-        "data_domains": data_domains(),
+        "classes": [],
+        "data_domains": [],
     }
 
 
 def departments() -> list[dict[str, Any]]:
     return _fetch("""
-        SELECT COALESCE(NULLIF(LTRIM(RTRIM([服務部門])), N''), N'尚未設定') AS [name],
-               COUNT_BIG(*) AS [count]
-        FROM dbo.ALLtable
-        GROUP BY COALESCE(NULLIF(LTRIM(RTRIM([服務部門])), N''), N'尚未設定')
-        ORDER BY [count] DESC, [name]
+        SELECT d.department_name AS [name],COUNT_BIG(s.employee_id) AS [count]
+        FROM dbo.Frobel_Department d
+        LEFT JOIN dbo.Frobel_Staff s ON s.department=d.department_name AND s.is_active=1
+        WHERE d.is_active=1
+        GROUP BY d.department_name
+        ORDER BY [count] DESC,[name]
     """)
 
 
 def branches() -> list[dict[str, Any]]:
     return _fetch("""
-        SELECT b.[分校代號] AS [code],
-               COALESCE(NULLIF(LTRIM(RTRIM(b.[簡稱])), N''), b.[分校代號]) AS [name],
-               COUNT(a.[員工識別碼]) AS [headcount]
-        FROM dbo.[分校資料] b
-        LEFT JOIN dbo.ALLtable a ON a.[分校代號] = b.[分校代號]
-        WHERE NULLIF(LTRIM(RTRIM(b.[分校代號])), N'') IS NOT NULL
-        GROUP BY b.[分校代號], b.[簡稱]
-        ORDER BY [headcount] DESC, [code]
-    """)
-
-
-def job_types() -> list[dict[str, Any]]:
-    return _fetch("""
-        SELECT [代號] AS [code], [職務類別] AS [name], COALESCE([人數], 0) AS [count]
-        FROM dbo.[職務類別]
-        WHERE NULLIF(LTRIM(RTRIM([職務類別])), N'') IS NOT NULL
-        ORDER BY [代號]
-    """)
-
-
-def class_overview() -> list[dict[str, Any]]:
-    """班級名稱與分校代號屬低敏感度園務資料。"""
-    return _fetch("""
-        SELECT [班別] AS [code], COALESCE(NULLIF(LTRIM(RTRIM([班別名稱])), N''), [班別]) AS [name],
-               COALESCE(NULLIF(LTRIM(RTRIM([分校代號])), N''), N'未指定') AS [campus]
-        FROM dbo.[班別名稱]
-        ORDER BY [分校代號], [班別]
+        SELECT campus_code AS [code],campus_code AS [name],COUNT_BIG(*) AS [headcount]
+        FROM dbo.Frobel_OperationSubmission
+        WHERE campus_code<>N''
+        GROUP BY campus_code
+        ORDER BY [headcount] DESC,[code]
     """)
 
 
 def operations_process() -> list[dict[str, Any]]:
-    """以資料表筆數呈現收費作業的資料生命週期。"""
-    definitions = [
-        ("收費規則", "繳費類別", "定義學費、餐點、活動與交通費的適用範圍"),
-        ("收費項目", "繳費項目", "維護托育服務項目與收費分類"),
-        ("班級套用", "繳費班別", "將學期收費規則套用到各班級"),
-        ("家長繳費", "繳費記錄", "建立繳費主檔並追蹤收款狀態"),
-        ("明細核對", "繳費明細", "核對學費、餐點、交通、減免與實繳差異"),
-    ]
-    return [
-        {"id": f"OP-{index:02d}", "stage": stage, "table": table, "count": _count(table), "description": description}
-        for index, (stage, table, description) in enumerate(definitions, 1)
-    ]
-
-
-def data_domains() -> list[dict[str, Any]]:
-    """資料域只回傳筆數，不讀取敏感明細。"""
-    return [
-        {"name": "幼兒學籍", "tables": 6, "records": _count("學籍資料"), "note": "學籍、班級、歷史與異動"},
-        {"name": "托育收費", "tables": 11, "records": _count("繳費記錄"), "note": "學費、餐點、交通與減免"},
-        {"name": "交通接送", "tables": 3, "records": _count("搭交通車況"), "note": "接送方式、車別與安全聯絡"},
-        {"name": "園務人事", "tables": 10, "records": _count("ALLtable"), "note": "教職員、部門、職務與薪酬"},
-    ]
+    """以營運分類與待審日報呈現目前可用的生命週期。"""
+    return _fetch("""
+        SELECT CONCAT(N'OP-',RIGHT(N'00'+CONVERT(nvarchar(2),c.display_order),2)) AS id,
+               c.category_code AS stage,N'Frobel_OperationSubmission' AS [table],
+               COUNT_BIG(s.submission_id) AS [count],
+               N'依營運分類彙整待審與已填報日報。' AS [description]
+        FROM dbo.Frobel_OperationCategory c
+        LEFT JOIN dbo.Frobel_OperationSubmission s ON s.category_code=c.category_code
+        GROUP BY c.category_code,c.display_order
+        ORDER BY c.display_order
+    """)
 
 
 def knowledge() -> list[dict[str, Any]]:
-    """從實際資料域建立可搜尋的內部資料百科。"""
-    domains = data_domains()
-    items = [
-        ("hr", "園務人事主檔", "園務人事", "教職員、部門、職稱與到職資訊的核心來源。", "ALLtable／人事基本資料", "畫面僅提供彙總資訊；個資與薪酬欄位不得直接開放。"),
-        ("campus", "分校與班級", "幼兒學籍", "描述園所據點、班別代碼與班級設定。", "分校資料／班別名稱", "分校代號是跨人事、學籍與收費資料的重要關聯鍵。"),
-        ("student", "幼兒學籍生命週期", "幼兒學籍", "涵蓋入園、班級、歷史資料與異動記錄。", "學籍資料／學籍歷史／學籍異動", "轉班、升級與離園應保留歷史軌跡。"),
-        ("payment", "托育收費流程", "托育收費", "從收費類別、項目、班別到繳費記錄與明細。", "繳費類別／繳費項目／繳費記錄", "學費、餐點、交通及減免需一併核對。"),
-        ("payroll", "教職員薪資與加給", "園務人事", "包含薪資等級、加給、保險與薪資結果。", "薪資等級／薪資表", "屬高度敏感資料，應採最小權限與完整稽核。"),
-        ("transport", "幼兒接送管理", "交通接送", "記錄接送車別、接送方式與安全聯絡資訊。", "搭交通車況／交通車別", "接送資訊只開放給有業務需要的園務人員。"),
-        ("governance", "兒少資料治理", "系統治理", "透過欄位白名單與唯讀連線保護幼兒及家長資料。", "API／權限矩陣／操作日誌", "前端不得直接連線資料庫，所有查詢都必須由後端控管。"),
-    ]
-    totals = {item["name"]: item["records"] for item in domains}
-    return [
-        {"id": row[0], "title": row[1], "category": row[2], "summary": row[3], "keywords": row[4], "detail": row[5], "related": f"目前資料量：{totals.get(row[2], 0):,} 筆（彙總）"}
-        for row in items
-    ]
-
-
-def permission_profiles() -> list[dict[str, Any]]:
-    """依實際職務類別產生最小權限示意，不視為正式授權設定。"""
-    profiles = {
-        "專職": {"人事名冊": "部門內唯讀", "班別資料": "檢視／維護", "學籍資料": "依職務申請", "薪資資料": "不可見"},
-        "兼職": {"個人資料": "本人唯讀", "班別資料": "授課班別唯讀", "學籍資料": "必要欄位唯讀", "薪資資料": "本人薪資單"},
-        "外包車": {"個人資料": "本人唯讀", "交通路線": "指派路線唯讀", "學籍資料": "不可見", "薪資資料": "不可見"},
-    }
-    notes = {
-        "專職": "跨部門查詢與匯出應另行申請並保留稽核記錄。",
-        "兼職": "權限應隨排課期間自動到期，避免長期保留。",
-        "外包車": "僅提供接送所需資訊，禁止下載完整學籍名冊。",
-    }
-    return [
-        {"id": str(row["code"]), "name": row["name"], "description": f"資料庫登錄人數：{row['count']} 人", "permissions": profiles.get(row["name"], {"園務資料": "依申請唯讀"}), "security_note": notes.get(row["name"], "採最小權限並定期盤點。")}
-        for row in job_types()
-    ]
+    """新資料庫未提供獨立知識主檔，工作台保留空結果等待後續建檔。"""
+    return []
 
 
 def _default_questions() -> list[dict[str, Any]]:

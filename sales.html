@@ -19,9 +19,9 @@
                 <a href="home.html">工作台</a>
                 <a class="active" href="sales.html">營運蒐集</a>
                 <a href="exam.html">教育訓練</a>
-                <a href="game.html">YouTube 直播</a>
-                <a href="staff.html">員工與出缺勤</a>
-                <a href="mis.html">MIS 管理</a>
+                <a href="game.html">YouTube</a>
+                <a href="staff.html">員工出缺勤</a>
+                <a href="mis.html">後台管理</a>
             </nav>
             <p class="portal-foot">OPERATION INPUT · 待審資料</p>
         </aside>
@@ -75,7 +75,7 @@
                                 </div>
                             </div>
                             <div class="success-note">只記錄彙總數量與園務摘要，不輸入幼兒、家長或教職員個資。</div>
-                            <p class="hint">資料會寫入網站專用待審資料表，由 MIS 管理員確認後再處理；不會直接修改既有園務資料表。</p>
+                            <p class="hint">資料會寫入網站專用待審資料表，由 後台管理員確認後再處理；不會直接修改既有園務資料表。</p>
                             <div id="lastSubmission"></div>
                         </aside>
                     </div>
@@ -98,12 +98,87 @@
     </div>
     <div class="toast" id="toast" role="status"></div>
     <script>
-        const apiFetch = (path, options = {}) => fetch(path, { credentials: 'include', ...options }); const operationForm = document.querySelector('#operationForm'), campus = document.querySelector('#campus'), process = document.querySelector('#process'), apiState = document.querySelector('#apiState'), formStatus = document.querySelector('#formStatus'), lastSubmission = document.querySelector('#lastSubmission'), toast = document.querySelector('#toast'), salesTabs = document.querySelector('#salesTabs'); const esc = value => { const n = document.createElement('div'); n.textContent = value ?? ''; return n.innerHTML }; const number = value => new Intl.NumberFormat('zh-TW').format(value); const loginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`; let employeeCsrf = '';
-        const request = async (path, options = {}) => { const response = await apiFetch(path, options), body = await response.json().catch(() => ({})); if (response.status === 401) { location.replace(loginUrl); throw new Error('需要員工驗證') } if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用'); return body.data };
-        const employeeAccess = request('/api/employee/session').then(session => { if (!session.authenticated) { location.replace(loginUrl); throw new Error('需要員工驗證') } employeeCsrf = session.csrf; return session });
-        employeeAccess.then(() => Promise.all([request('/api/branches'), request('/api/operations'), request('/api/time')])).then(([branches, processItems, time]) => { operationForm.date.value = time.current_time.slice(0, 10); campus.innerHTML = '<option value="">請選擇園區</option>' + branches.map(item => `<option value="${esc(item.code)}">${esc(item.name)}</option>`).join(''); process.innerHTML = processItems.map(item => `<div class="process-node"><span>${item.id}</span><div><b>${esc(item.stage)}</b><small>${esc(item.description)}</small></div><em>${number(item.count)} 筆</em></div>`).join(''); apiState.textContent = '園務服務已連線'; apiState.classList.add('ok') }).catch(() => { apiState.textContent = '資料服務未連線' });
-        operationForm.onsubmit = async event => { event.preventDefault(); formStatus.className = ''; formStatus.textContent = '送出中…'; const payload = Object.fromEntries(new FormData(operationForm)); payload.count = Number(payload.count); try { await employeeAccess; const body = await request('/api/operations/submit', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': employeeCsrf }, body: JSON.stringify(payload) }); formStatus.className = 'success-note'; formStatus.textContent = `${body.id} 已送交 MIS 待審。`; lastSubmission.innerHTML = `<div class="submission-card"><header><b>${esc(body.category)}</b><span class="tag">待審核</span></header><p>${esc(body.campus)} · ${esc(body.date)} · ${number(body.count)} 筆</p></div>`; operationForm.reset(); operationForm.date.value = payload.date; toast.textContent = '園務日報已寫入待審資料表'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2200) } catch (error) { formStatus.className = 'error-note'; formStatus.textContent = error.message } };
-        salesTabs.onclick = event => { const button = event.target.closest('[data-panel]'); if (!button) return; salesTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button)); document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel)) };
+        const apiFetch = (path, options = {}) => fetch(path, {
+            credentials: 'include', ...options
+        });
+        const operationForm = document.querySelector('#operationForm'),
+            campus = document.querySelector('#campus'),
+            process = document.querySelector('#process'),
+            apiState = document.querySelector('#apiState'),
+            formStatus = document.querySelector('#formStatus'),
+            lastSubmission = document.querySelector('#lastSubmission'),
+            toast = document.querySelector('#toast'),
+            salesTabs = document.querySelector('#salesTabs');
+        const esc = value => {
+            const n = document.createElement('div');
+            n.textContent = value ?? '';
+            return n.innerHTML
+        }; const number = value => new Intl.NumberFormat('zh-TW').format(value);
+        const loginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`;
+        let employeeCsrf = '';
+        const request = async (path, options = {}) => {
+            const response = await apiFetch(path, options),
+                body = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+                location.replace(loginUrl);
+                throw new Error('需要員工驗證')
+            } if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用');
+            return body.data
+        };
+        const employeeAccess = request('/api/employee/session').then(session => {
+            if (!session.authenticated) {
+                location.replace(loginUrl);
+                throw new Error('需要員工驗證')
+            } employeeCsrf = session.csrf; return session
+        });
+        employeeAccess.then(() => Promise.all([request('/api/branches'),
+        request('/api/operations'), request('/api/time')])).then(([branches, processItems, time]) => {
+            operationForm.date.value = time.current_time.slice(0, 10);
+            campus.innerHTML = '<option value="">請選擇園區</option>' + branches.map(item =>
+                `<option value="${esc(item.code)}">${esc(item.name)}</option>`).join('');
+            process.innerHTML = processItems.map(item =>
+                `<div class="process-node"><span>${item.id}</span>
+                    <div>
+                        <b>${esc(item.stage)}</b>
+                        <small>${esc(item.description)}</small>
+                    </div><em>${number(item.count)} 筆</em>
+                </div>`).join('');
+            apiState.textContent = '園務服務已連線';
+            apiState.classList.add('ok')
+        }).catch(() => { apiState.textContent = '資料服務未連線' });
+        operationForm.onsubmit = async event => {
+            event.preventDefault();
+            formStatus.className = '';
+            formStatus.textContent = '送出中…';
+            const payload = Object.fromEntries(new FormData(operationForm));
+            payload.count = Number(payload.count);
+            try {
+                await employeeAccess;
+                const body = await request('/api/operations/submit', {
+                    method: 'POST', headers: {
+                        'Content-Type': 'application/json', 'X-CSRF-Token': employeeCsrf
+                    }, body: JSON.stringify(payload)
+                });
+                formStatus.className = 'success-note';
+                formStatus.textContent = `${body.id} 已送交 MIS 待審。`;
+                lastSubmission.innerHTML = `<div class="submission-card"><header>
+                    <b>${esc(body.category)}</b><span class="tag">待審核</span></header>
+                    <p>${esc(body.campus)} · ${esc(body.date)} · ${number(body.count)} 筆</p></div>`;
+                operationForm.reset();
+                operationForm.date.value = payload.date;
+                toast.textContent = '園務日報已寫入待審資料表';
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2200)
+            } catch (error) {
+                formStatus.className = 'error-note';
+                formStatus.textContent = error.message
+            }
+        };
+        salesTabs.onclick = event => {
+            const button = event.target.closest('[data-panel]');
+            if (!button) return;
+            salesTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button)); document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel))
+        };
     </script>
 </body>
 

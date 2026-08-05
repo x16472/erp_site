@@ -821,8 +821,9 @@ body[data-theme="forest"] .hero-copy-public h1 span {
 
 .quick-links {
     display: grid;
+    /*修改數值，下個連結就會自動換行到第二行*/
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px
+    gap: 10px;
 }
 
 .quick-link {
