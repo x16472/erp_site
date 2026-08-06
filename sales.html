@@ -46,9 +46,9 @@
                             </div>
                             <form id="operationForm">
                                 <div class="form-grid"><label class="field"><span>日期</span><input type="date"
-                                            name="date" required></label><label class="field"><span>園區</span><select
+                                            name="date" required></label><label class="field"><span>區域</span><select
                                             name="campus" id="campus" required>
-                                            <option value="">載入園區中…</option>
+                                            <option value="">載入區域中…</option>
                                         </select></label><label class="field"><span>資料類別</span><select name="category"
                                             required>
                                             <option>出勤</option>
@@ -134,7 +134,7 @@
         employeeAccess.then(() => Promise.all([request('/api/branches'),
         request('/api/operations'), request('/api/time')])).then(([branches, processItems, time]) => {
             operationForm.date.value = time.current_time.slice(0, 10);
-            campus.innerHTML = '<option value="">請選擇園區</option>' + branches.map(item =>
+            campus.innerHTML = '<option value="">請選擇區域</option>' + branches.map(item =>
                 `<option value="${esc(item.code)}">${esc(item.name)}</option>`).join('');
             process.innerHTML = processItems.map(item =>
                 `<div class="process-node"><span>${item.id}</span>
@@ -143,7 +143,7 @@
                         <small>${esc(item.description)}</small>
                     </div><em>${number(item.count)} 筆</em>
                 </div>`).join('');
-            apiState.textContent = '園務服務已連線';
+            apiState.textContent = '服務已連線';
             apiState.classList.add('ok')
         }).catch(() => { apiState.textContent = '資料服務未連線' });
         operationForm.onsubmit = async event => {
