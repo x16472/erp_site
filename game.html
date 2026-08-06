@@ -4,23 +4,29 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>YouTube｜福祿貝爾營運中心</title>
+    <title>YouTube｜菲爾銀盾營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="portal-shell">
         <aside class="portal-sidebar">
-            <a class="portal-brand" href="home.html"><img src="static/appicon.png"
-                    alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>員工入口網站</small></span></a>
-            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
-                    href="exam.html">教育訓練</a><a class="active" href="game.html">YouTube</a><a
-                    href="staff.html">員工出缺勤</a><a href="mis.html">後台管理</a></nav>
+            <a class="portal-brand" href="home.html">
+                <span><b>菲爾銀盾</b><small>員工入口網站</small>
+                </span></a>
+            <nav class="portal-nav" aria-label="內部系統導覽">
+                <a href="home.html">工作台</a>
+                <a href="sales.html">營運蒐集</a>
+                <a href="exam.html">教育訓練</a>
+                <a class="active" href="game.html">YouTube</a>
+                <a href="staff.html">員工出缺勤</a>
+                <a href="mis.html">後台管理</a>
+            </nav>
             <p class="portal-foot">YOUTUBE LIVE · 內部使用</p>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <div><span class="top-kicker">YOUTUBE LIVE LOUNGE</span>
+                <div><span class="top-kicker">YOUTUBE LIVE</span>
                     <h1>YouTube休息站</h1>
                 </div>
                 <span class="api-state ok" id="playerState">播放器就緒</span>
@@ -28,32 +34,35 @@
             <div class="portal-content">
                 <section class="portal-card youtube-control">
                     <div class="card-head">
-                        <div><span class="eyebrow">VIDEO SOURCE</span>
+                        <div><span class="eyebrow">YOUTUBE PLAYER </span>
                             <h2>貼上 YouTube 網址</h2>
-                            <p>支援一般影片、直播、Shorts、分享短網址及嵌入網址。<br>如果不能貼就是頻道主有擋嵌入影片</p>
+                            <p>支援一般影片、直播、Shorts、分享短網址及嵌入網址，<br>如果不能貼，推測是？該頻道主有禁止於其他網站嵌入影片。</p>
                         </div>
                     </div>
                     <form id="youtubeForm" class="youtube-form">
-                        <label class="field" for="youtubeUrl"><span>YouTube 網址</span><input id="youtubeUrl" name="url"
-                                type="url" inputmode="url" autocomplete="url"
-                                value="https://www.youtube.com/watch?v=fxnjjVyMd7g"
+                        <label class="field" for="youtubeUrl"><span>YouTube 網址</span>
+                            <input id="youtubeUrl" name="url" type="url" inputmode="url" autocomplete="url"
+                                value="https://www.youtube.com/watch?v=ESjUACajP8c"
                                 placeholder="https://www.youtube.com/watch?v=..." required></label>
                         <button class="btn" type="submit">轉換並播放</button>
                     </form>
-                    <p class="hint" id="youtubeStatus" aria-live="polite">正在由後端確認測試影片並取得標題…</p>
+                    <p class="hint" id="youtubeStatus" aria-live="polite">正在確認測試影片並取得標題…</p>
                 </section>
 
                 <section class="portal-card youtube-stage">
-                    <div class="youtube-player"> <iframe id="youtubePlayer" title="YouTube播放器" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> </div>
+                    <div class="youtube-player">
+                        <iframe id="youtubePlayer" title="YouTube播放器" frameborder="0" allow="accelerometer;
+                          autoplay; clipboard-write; encrypted-media; gyroscope;
+                              picture-in-picture;
+                              web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+                        </iframe>
+                    </div>
                     <div class="youtube-meta">
                         <div><span class="eyebrow">NOW PLAYING</span>
                             <h2 id="videoTitle">正在取得影片資訊…</h2>
-                        </div><a class="btn secondary" id="openYoutube"
-                            href="https://www.youtube.com/watch?v=fxnjjVyMd7g" target="_blank"
-                            rel="noopener noreferrer">在 YouTube 開啟</a>
-                    </div>
+                        </div>
+                        <a class="btn secondary" id="openYoutube" href="https://www.youtube.com/watch?v=fxnjjVyMd7g"
+                            target="_blank" rel="noopener noreferrer">YouTube 開啟</a>
                 </section>
             </div>
         </main>

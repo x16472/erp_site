@@ -553,7 +553,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def send_not_found(self) -> None:
         body = ("<!doctype html><html lang=\"zh-TW\"><meta charset=\"utf-8\"><title>找不到頁面</title>"
-                "<body><h1>404</h1><p>找不到指定的頁面。</p><a href=\"/\">返回福祿貝爾首頁</a></body></html>").encode("utf-8")
+                "<body><h1>404</h1><p>找不到指定的頁面。</p><a href=\"/\">返回菲爾銀盾首頁</a></body></html>").encode("utf-8")
         self.send_response(404, "Not Found")
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -566,7 +566,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="啟動福祿貝爾營運中心")
+    parser = argparse.ArgumentParser(description="啟動菲爾銀盾營運中心")
     parser.add_argument("--host", default=os.environ.get("FROBEL_HOST", "0.0.0.0"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("FROBEL_PORT", "80")))
     parser.add_argument("--skip-doc-sync", action="store_true", help="略過啟動時的教育文件同步")
@@ -579,7 +579,7 @@ def main() -> None:
         except (training_documents.DocumentImportError, data.DatabaseUnavailable) as exc:
             print(f"教育訓練文件暫時無法同步：{exc}")
     server = ApplicationServer((args.host, args.port), Handler)
-    print(f"福祿貝爾營運中心：http://{args.host}:{args.port}")
+    print(f"菲爾銀盾營運中心：http://{args.host}:{args.port}")
     if args.host == "0.0.0.0":
         try:
             addresses = sorted({item[4][0] for item in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)})

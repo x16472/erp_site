@@ -4,24 +4,27 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>員工相關入口｜福祿貝爾營運中心</title>
+    <title>員工相關入口｜菲爾銀盾營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="employee-access-page">
     <main class="employee-access-shell">
         <section class="employee-access-brand">
-            <img src="static/appicon.png" alt="福祿貝爾標誌">
+            <img src="static/appicon.png" alt="菲爾銀盾標誌">
             <span class="top-kicker">FROBEL OPERATIONS</span>
             <h1>員工相關入口</h1>
             <p>匯聚你工作所需一切，通往事業與福利的入口。</p>
             <a href="index.html">返回官方網站</a>
         </section>
         <section class="employee-access-card">
-            <div class="live-clock access-time"><small>目前時間</small><strong id="accessClock">--:--:--</strong></div>
+            <div class="live-clock access-time"><small>目前時間</small>
+                <strong id="accessClock">--:--:--</strong>
+            </div>
             <form id="accessForm">
-                <label class="field"><span>員工編號</span><input name="employee_id" autocomplete="username" maxlength="20"
-                        pattern="[A-Za-z0-9_-]+" placeholder="例如 K001" required autofocus></label>
+                <label class="field"><span>員工編號</span>
+                    <input name="employee_id" autocomplete="username" maxlength="20" pattern="[A-Za-z0-9_-]+"
+                        placeholder="例如 K001" required autofocus></label>
                 <div class="clock-actions">
                     <button class="btn" name="mode" value="CLOCK_IN" type="submit">上班打卡並進入</button>
                     <button class="btn secondary" name="mode" value="ACCESS_ONLY" type="submit">不打卡進入系統</button>

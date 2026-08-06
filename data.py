@@ -118,7 +118,7 @@ def _quote_identifier(value: str) -> str:
 
 def _resolve_table(table_name: str) -> tuple[str, str]:
     if table_name not in APPLICATION_TABLES:
-        raise ValueError("只允許查閱福祿貝爾應用資料表")
+        raise ValueError("只允許查閱菲爾銀盾應用資料表")
     matches = _fetch("""
         SELECT TABLE_SCHEMA AS [schema_name], TABLE_NAME AS [table_name]
         FROM INFORMATION_SCHEMA.TABLES
@@ -239,8 +239,8 @@ def health() -> dict[str, Any]:
 DEFAULT_SITE_SETTINGS = {
     "theme": "ocean",
     "hero_title": "在愛與探索中，陪孩子長成自己的模樣",
-    "hero_subtitle": "福祿貝爾以遊戲、自然與生活經驗為核心，讓每個孩子在安全而有溫度的環境裡主動學習。",
-    "announcement": "歡迎！這是福祿貝爾的日常。",
+    "hero_subtitle": "菲爾銀盾以遊戲、自然與生活經驗為核心，讓每個孩子在安全而有溫度的環境裡主動學習。",
+    "announcement": "歡迎！這是菲爾銀盾的日常。",
 }
 
 

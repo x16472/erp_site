@@ -24,6 +24,13 @@ CACHE_DIR = SOURCE_DIR / ".converted"
 CONVERSION_TIMEOUT_SECONDS = 300
 SECTION_LENGTH = 2600
 SYNC_LOCK = threading.Lock()
+# 目的是「精簡＋方便未來擴充關鍵字」，用資料驅動的寫法會更乾淨、更易維護
+_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "財務行政": ("會計", "財務", "出納"),
+    "教學職掌": ("教師", "老師", "教學", "班", "研發", "安親", "科任"),
+    "交通安全": ("車輛", "交通"),
+    "人事行政": ("人事",),
+}
 
 
 class DocumentImportError(RuntimeError):
@@ -98,29 +105,29 @@ def _convert_with_word(legacy: list[Path]) -> None:
         )
 
     script = r"""
-$ErrorActionPreference = 'Stop'
-$source = $env:FROBEL_DOC_SOURCE
-$targetRoot = $env:FROBEL_DOC_TARGET
-$word = New-Object -ComObject Word.Application
-$word.Visible = $false
-$word.DisplayAlerts = 0}
-try {
-    Get-ChildItem -LiteralPath $source -File | Where-Object { $_.Extension -ieq '.doc' } | ForEach-Object {
-        $target = Join-Path $targetRoot ($_.BaseName + '.docx')
-        if (-not (Test-Path -LiteralPath $target) -or $_.LastWriteTimeUtc -gt (Get-Item -LiteralPath $target).LastWriteTimeUtc) {
-            $opened = $word.Documents.Open($_.FullName, $false, $true)
-            try { $opened.SaveAs2($target, 16) } finally { $opened.Close($false) }
+    $ErrorActionPreference = 'Stop'
+    $source = $env:DOC_CONVERT_SOURCE_DIR
+    $targetRoot = $env:DOC_CONVERT_TARGET_DIR
+    $word = New-Object -ComObject Word.Application
+    $word.Visible = $false
+    $word.DisplayAlerts = 0
+    try {
+        Get-ChildItem -LiteralPath $source -File -Filter '*.doc' | ForEach-Object {
+            $target = Join-Path $targetRoot ($_.BaseName + '.docx')
+            if (-not (Test-Path -LiteralPath $target) -or $_.LastWriteTimeUtc -gt (Get-Item -LiteralPath $target).LastWriteTimeUtc) {
+                $opened = $word.Documents.Open($_.FullName, $false, $true)
+                try { $opened.SaveAs2($target, 16) } finally { $opened.Close($false) }
+            }
         }
+    } finally {
+        $word.Quit()
+        [void][Runtime.InteropServices.Marshal]::ReleaseComObject($word)
     }
-} finally {
-    $word.Quit()
-    [void][Runtime.InteropServices.Marshal]::ReleaseComObject($word)
-}
-"""
-    
+    """
+
     environment = os.environ.copy()
-    environment["FROBEL_DOC_SOURCE"] = str(SOURCE_DIR)
-    environment["FROBEL_DOC_TARGET"] = str(CACHE_DIR)
+    environment["DOC_CONVERT_SOURCE_DIR"] = str(SOURCE_DIR)
+    environment["DOC_CONVERT_TARGET_DIR"] = str(CACHE_DIR)
     result = _run_conversion(
         [powershell, "-NoProfile", "-NonInteractive", "-Command", script],
         environment,
@@ -130,10 +137,6 @@ try {
         detail = (result.stderr or result.stdout or "Microsoft Word 轉換失敗").strip()
         incomplete = f"；未完成：{', '.join(missing[:3])}" if missing else ""
         raise DocumentImportError(f"{detail[-400:]}{incomplete}")
-
-
-
-    
 
 
 def _convert_legacy_documents() -> None:
@@ -150,16 +153,11 @@ def _convert_legacy_documents() -> None:
     else:
         _convert_with_word(legacy)
 
-
+# 用來辨識內文的函式
 def _category(file_name: str) -> str:
-    if any(word in file_name for word in ("會計", "財務", "出納")):
-        return "財務行政"
-    if any(word in file_name for word in ("教師", "老師", "教學", "班", "研發", "安親", "科任")):
-        return "教學職掌"
-    if any(word in file_name for word in ("車輛", "交通")):
-        return "交通安全"
-    if "人事" in file_name:
-        return "人事行政"
+    for category, keywords in _CATEGORY_KEYWORDS.items():
+        if any(keyword in file_name for keyword in keywords):
+            return category
     return "園務行政"
 
 
@@ -268,7 +266,7 @@ def sync_training_library(*, ensure_schema: bool = True) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="匯入福祿貝爾教育訓練 Word 文件")
+    parser = argparse.ArgumentParser(description="匯入菲爾銀盾教育訓練 Word 文件")
     parser.add_argument("--sync", action="store_true", help="擷取後寫入 SQL Server")
     args = parser.parse_args()
     try:

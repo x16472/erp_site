@@ -1750,13 +1750,22 @@ body[data-theme="forest"] .hero-copy-public h1 span {
 }
 
 .employee-access-brand img {
-    width: 155px;
-    height: 110px;
-    border-radius: 22px;
-    object-fit: cover;
-    background: #fff;
-    box-shadow: 0 20px 50px #071b2d55
+    max-width: 155px;
+    /*限制最大寬度，避免原圖過大撐破版面*/
+    height: auto;
+    /*寬度縮放時，高度自動依比例縮放*/
+    object-fit: contain;
+    /*核心：確保整張圖片完整顯示，絕不裁切*/
+    border-radius: 0;
+    /*移除 22px 的圓角（去背圖不需要圓角邊框）*/
+    border: none !important;
+    /*強制移除所有可能的實體邊框*/
+    box-shadow: none;
+    /*核心：移除陰影（原本的陰影在去背圖上會變成一圈方框*/
+    background: transparent !important;
+    /*確保背景透明*/
 }
+
 
 .employee-access-brand .top-kicker {
     margin-top: 30px;

@@ -4,34 +4,43 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>員工出缺勤｜福祿貝爾營運中心</title>
+    <title>員工出缺勤｜菲爾銀盾營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="portal-shell">
         <aside class="portal-sidebar">
-            <a class="portal-brand" href="home.html"><img src="static/appicon.png"
-                    alt="福祿貝爾標誌"><span><b>福祿貝爾</b><small>MIS 員工管理</small></span></a>
-            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
-                    href="exam.html">教育訓練</a><a href="game.html">YouTube</a><a class="active"
-                    href="staff.html">員工出缺勤</a><a href="mis.html">後台管理</a></nav>
+            <a class="portal-brand" href="home.html">
+                <span><b>菲爾銀盾</b>
+                    <small>MIS 員工管理</small></span></a>
+            <nav class="portal-nav" aria-label="內部系統導覽">
+                <a href="home.html">工作台</a>
+                <a href="sales.html">營運蒐集</a>
+                <a href="exam.html">教育訓練</a>
+                <a href="game.html">YouTube</a>
+                <a class="active" href="staff.html">員工出缺勤</a>
+                <a href="mis.html">後台管理</a>
+            </nav>
             <p class="portal-foot">ADMIN ONLY · 需管理員登入</p>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <div><span class="top-kicker">STAFF MANAGEMENT</span>
+                <div>
+                    <span class="top-kicker">STAFF MANAGEMENT</span>
                     <h1>員工出缺勤</h1>
-                </div><span class="api-state" id="apiState">檢查登入狀態</span>
+                </div>
+                <span class="api-state" id="apiState">檢查登入狀態</span>
             </header>
             <section class="login-shell" id="loginShell">
-                <form class="login-card" id="loginForm"><img src="static/appicon.png" alt="福祿貝爾標誌">
-                    <h2>後台管理員登入</h2>
-                    <p>員工主檔及出缺勤僅供授權管理人員維護。</p><label class="field"><span>管理員帳號</span><input name="username"
-                            autocomplete="username" required></label><label class="field"
-                        style="margin-top:12px"><span>密碼</span><input name="password" type="password"
-                            autocomplete="current-password" required></label><button class="btn" type="submit"
-                        style="width:100%;margin-top:20px">安全登入</button>
+                <form class="login-card" id="loginForm">
+                    <h2>管理員登入</h2>
+                    <p>員工主檔及出缺勤僅供授權管理人員維護。</p>
+                    <label class="field"><span>管理員帳號</span>
+                        <input name="username" autocomplete="username" required></label>
+                    <label class="field" style="margin-top:12px"><span>密碼</span>
+                        <input name="password" type="password" autocomplete="current-password" required></label>
+                    <button class="btn" type="submit" style="width:100%;margin-top:20px">驗證後登入</button>
                     <p id="loginStatus" aria-live="polite"></p>
                 </form>
             </section>
@@ -44,9 +53,11 @@
                     <div><span class="hint" id="adminName"></span> <button class="btn secondary" id="logoutButton"
                             type="button">登出</button></div>
                 </div>
-                <nav class="admin-tabs" id="staffTabs"><button class="active"
-                        data-panel="staffPanel">員工資料</button><button data-panel="departmentPanel">部門維護</button><button
-                        data-panel="attendancePanel">打卡紀錄</button></nav>
+                <nav class="admin-tabs" id="staffTabs">
+                    <button class="active" data-panel="staffPanel">員工資料</button>
+                    <button data-panel="departmentPanel">部門維護</button>
+                    <button data-panel="attendancePanel">打卡紀錄</button>
+                </nav>
                 <section class="admin-panel active" id="staffPanel">
                     <div class="portal-grid staff-maintenance">
                         <form class="portal-card narrow" id="staffForm">
@@ -55,31 +66,44 @@
                                     <h2>新增或更新員工</h2>
                                 </div>
                             </div>
-                            <label class="field primary-key-field"><span>員工編號（建立後不可變更）</span><input name="employee_id"
-                                    maxlength="20" pattern="[A-Za-z0-9_-]+" required></label>
-                            <label class="field"><span>姓名</span><input name="display_name" maxlength="50"
-                                    required></label>
-                            <div class="form-grid"><label class="field"><span>性別</span><select name="gender" required>
+                            <label class="field primary-key-field">
+                                <span>員工編號（建立後不可變更）</span>
+                                <input name="employee_id" maxlength="10" pattern="[A-Za-z0-9_-]+" required>
+                            </label>
+                            <label class="field"><span>姓名</span>
+                                <input name="display_name" maxlength="50" required></label>
+                            <div class="form-grid">
+                                <label class="field">
+                                    <span>性別</span>
+                                    <select name="gender" required>
                                         <option value="">請選擇性別</option>
                                         <option value="男">男</option>
                                         <option value="女">女</option>
                                         <option value="其他">其他</option>
-                                    </select></label><label class="field"><span>年齡</span><input name="age" type="number"
-                                        min="16" max="100" step="1" required></label></div>
-                            <label class="field"><span>部門</span><select name="department" id="staffDepartment" required>
+                                    </select></label><label class="field">
+                                    <span>年齡</span>
+                                    <input name="age" type="number" min="18" max="100" step="1" required>
+                                </label>
+                            </div>
+                            <label class="field"><span>部門</span>
+                                <select name="department" id="staffDepartment" required>
                                     <option value="">請先維護部門</option>
                                 </select></label>
-                            <label class="field"><span>職位</span><input name="position" maxlength="50" required></label>
-                            <label class="field"><span>個性特質</span><textarea name="traits"
-                                    maxlength="200"></textarea></label>
-                            <label class="field"><span>背景簡述</span><textarea name="biography"
-                                    maxlength="1000"></textarea></label>
-                            <label class="field photo-upload"><span>個人照片（JPEG、PNG、WebP，最大 5 MB）</span><input
-                                    name="photo" id="staffPhoto" type="file"
-                                    accept="image/jpeg,image/png,image/webp"><small>上傳後會自動改成員工編號作為檔名。</small></label>
+                            <label class="field"><span>職位</span>
+                                <input name="position" maxlength="50" required></label>
+                            <label class="field"><span>個性特質</span>
+                                <textarea name="traits" maxlength="200"></textarea></label>
+                            <label class="field"><span>背景簡述</span>
+                                <textarea name="biography" maxlength="1000"></textarea></label>
+                            <label class="field photo-upload"><span>個人照片（JPEG、PNG、WebP，最大 5 MB）</span>
+                                <input name="photo" id="staffPhoto" type="file"
+                                    accept="image/jpeg,image/png,image/webp">
+                                <small>上傳後會自動改成員工編號作為檔名。</small></label>
                             <img class="staff-photo-preview" id="photoPreview" src="static/appicon.png" alt="員工照片預覽">
-                            <div class="actions"><button class="btn" type="submit">儲存員工資料</button><button
-                                    class="btn secondary" id="resetStaff" type="button">新增另一位</button></div>
+                            <div class="actions">
+                                <button class="btn" type="submit">儲存員工資料</button>
+                                <button class="btn secondary" id="resetStaff" type="button">新增另一位</button>
+                            </div>
                             <p id="staffStatus" aria-live="polite"></p>
                         </form>
                         <section class="portal-card wide">
@@ -104,10 +128,11 @@
                                     <p>員工表單只會顯示啟用中的部門。</p>
                                 </div>
                             </div>
-                            <input name="id" type="hidden"><label class="field"><span>部門名稱</span><input name="name"
-                                    maxlength="50" required></label>
-                            <div class="actions"><button class="btn" type="submit">儲存部門</button><button
-                                    class="btn secondary" id="resetDepartment" type="button">新增另一個部門</button></div>
+                            <input name="id" type="hidden"><label class="field"><span>部門名稱</span>
+                                <input name="name" maxlength="50" required></label>
+                            <div class="actions"><button class="btn" type="submit">儲存部門</button>
+                                <button class="btn secondary" id="resetDepartment" type="button">新增另一個部門</button>
+                            </div>
                             <p id="departmentStatus" aria-live="polite"></p>
                         </form>
                         <section class="portal-card wide">
@@ -130,11 +155,16 @@
                             <p>依日期與員工篩選資料庫中的上、下班紀錄。</p>
                         </div>
                     </div>
-                    <form class="attendance-filter" id="filterForm"><label class="field"><span>日期</span><input
-                                name="date" type="date"></label><label class="field"><span>員工</span><select
-                                name="employee_id" id="employeeFilter">
+                    <form class="attendance-filter" id="filterForm"><label class="field">
+                            <span>日期</span>
+                            <input name="date" type="date"></label>
+                        <label class="field">
+                            <span>員工</span>
+                            <select name="employee_id" id="employeeFilter">
                                 <option value="">全部員工</option>
-                            </select></label><button class="btn" type="submit">查詢</button></form>
+                            </select></label>
+                        <button class="btn" type="submit">查詢</button>
+                    </form>
                     <div class="metric-grid attendance-metrics">
                         <article class="metric-card">
                             <p>目前結果</p><strong id="recordCount">0</strong> 筆
@@ -223,10 +253,19 @@
             return item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/appicon.png'
         }
         function renderStaff() {
-            staffList.innerHTML = staffItems.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><img src="${photoUrl(item)}" alt="${esc(item.display_name)}"><div><b>${esc(item.employee_id)}｜${esc(item.display_name)}</b><small>${esc(item.department)} · ${esc(item.position)}${item.is_active ? '' : ' · 已停用'}</small></div><div class="btn-group"><button class="btn secondary" data-edit="${esc(item.employee_id)}">編輯</button>${item.is_active ? `<button class="btn secondary" data-disable="${esc(item.employee_id)}">停用</button>` : ''}</div></article>`).join('') || '<div class="empty">目前沒有員工資料。</div>'; employeeFilter.innerHTML = '<option value="">全部員工</option>' + staffItems.filter(item => item.is_active).map(item => `<option value="${esc(item.employee_id)}">${esc(item.employee_id)}｜${esc(item.display_name)}</option>`).join(''); staffList.querySelectorAll('img').forEach(image => image.addEventListener('error', () => image.src = 'static/appicon.png', { once: true }))
+            staffList.innerHTML = staffItems.map(item =>
+                `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><img src="${photoUrl(item)}" alt="${esc(item.display_name)}">
+                <div><b>${esc(item.employee_id)}｜${esc(item.display_name)}</b>
+                    <small>${esc(item.department)} · ${esc(item.position)}${item.is_active ? '' : ' · 已停用'}</small></div>
+                    <div class="btn-group"><button class="btn secondary" data-edit="${esc(item.employee_id)}">編輯</button>
+                        ${item.is_active ? `<button class="btn secondary" data-disable="${esc(item.employee_id)}">停用</button>` : ''}</div></article>`).join('') || '<div class="empty">目前沒有員工資料。</div>';
+            employeeFilter.innerHTML = '<option value="">全部員工</option>' + staffItems.filter(item => item.is_active).map(item =>
+                `<option value="${esc(item.employee_id)}">${esc(item.employee_id)}｜${esc(item.display_name)}</option>`).join('');
+            staffList.querySelectorAll('img').forEach(image => image.addEventListener('error', () => image.src = 'static/appicon.png', { once: true }))
         }
         async function loadStaff() {
-            staffItems = await request('/api/admin/staff'); renderStaff()
+            staffItems = await request('/api/admin/staff');
+            renderStaff()
         }
         function renderDepartments() {
             staffDepartment.innerHTML = '<option value="">請選擇部門</option>' + departmentItems.filter(item => item.is_active).map(item => `<option value="${esc(item.name)}">${esc(item.name)}</option>`).join(''); departmentList.innerHTML = departmentItems.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><div><b>${esc(item.name)}</b><small>${item.staff_count} 位在職員工${item.is_active ? '' : ' · 已停用'}</small></div><div class="btn-group"><button class="btn secondary" data-department-edit="${item.id}">編輯</button>${item.is_active ? `<button class="btn secondary" data-department-disable="${item.id}">停用</button>` : ''}</div></article>`).join('') || '<div class="empty">目前沒有部門資料。</div>'
@@ -300,10 +339,92 @@
                 staffStatus.textContent = error.message
             } finally { submitter.disabled = false }
         };
-        staffTabs.onclick = event => { const button = event.target.closest('[data-panel]'); if (!button) return; staffTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button)); document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel)) };
-        departmentList.onclick = async event => { const edit = event.target.closest('[data-department-edit]'), disable = event.target.closest('[data-department-disable]'); if (edit) { const item = departmentItems.find(row => row.id === Number(edit.dataset.departmentEdit)); if (item) { departmentForm.elements.id.value = item.id; departmentForm.elements.name.value = item.name; departmentForm.elements.name.focus() } } if (disable && confirm('確定停用此部門？')) { await request('/api/admin/departments', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({ id: Number(disable.dataset.departmentDisable) }) }); await loadDepartments() } };
-        departmentForm.onsubmit = async event => { event.preventDefault(); departmentStatus.textContent = '儲存中…'; const payload = Object.fromEntries(new FormData(departmentForm)); payload.id = Number(payload.id || 0); try { await request('/api/admin/departments', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(payload) }); departmentForm.reset(); await Promise.all([loadDepartments(), loadStaff()]); departmentStatus.className = 'success-note'; departmentStatus.textContent = '部門資料已更新。' } catch (error) { departmentStatus.className = 'error-note'; departmentStatus.textContent = error.message } };
-        resetDepartment.onclick = () => { departmentForm.reset(); departmentStatus.textContent = ''; departmentForm.elements.name.focus() }; resetStaff.onclick = resetStaffForm; filterForm.onsubmit = event => { event.preventDefault(); loadAttendance() }; loginForm.onsubmit = async event => { event.preventDefault(); loginStatus.textContent = '驗證中…'; try { const session = await request('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm))) }); loginForm.reset(); loginStatus.textContent = ''; await showConsole(session) } catch (error) { loginStatus.className = 'error-note'; loginStatus.textContent = error.message } }; logoutButton.onclick = async () => { await request('/api/admin/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); csrf = ''; showLogin() }; request('/api/employee/session').then(session => { if (!session.authenticated) { location.replace(loginUrl); return null } return request('/api/admin/session') }).then(session => session && (session.authenticated ? showConsole(session) : showLogin())).catch(error => { if (!location.pathname.endsWith('employee-login.html')) showLogin() });
+        staffTabs.onclick = event => {
+            const button = event.target.closest('[data-panel]');
+            if (!button) return;
+            staffTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button)); document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel))
+        };
+        departmentList.onclick = async event => {
+            const edit = event.target.closest('[data-department-edit]'),
+                disable = event.target.closest('[data-department-disable]');
+            if (edit) {
+                const item = departmentItems.find(row => row.id === Number(edit.dataset.departmentEdit));
+                if (item) {
+                    departmentForm.elements.id.value = item.id;
+                    departmentForm.elements.name.value = item.name;
+                    departmentForm.elements.name.focus()
+                }
+            }
+            if (disable && confirm('確定停用此部門？')) {
+                await request('/api/admin/departments', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                    body: JSON.stringify({ id: Number(disable.dataset.departmentDisable) })
+                }); await loadDepartments()
+            }
+        };
+        departmentForm.onsubmit = async event => {
+            event.preventDefault();
+            departmentStatus.textContent = '儲存中…';
+            const payload = Object.fromEntries(new FormData(departmentForm));
+            payload.id = Number(payload.id || 0); try {
+                await request('/api/admin/departments', {
+                    method: 'POST', headers: {
+                        'Content-Type': 'application/json', 'X-CSRF-Token': csrf
+                    },
+                    body: JSON.stringify(payload)
+                }); departmentForm.reset();
+                await Promise.all([loadDepartments(), loadStaff()]);
+                departmentStatus.className = 'success-note';
+                departmentStatus.textContent = '部門資料已更新。'
+            } catch (error) {
+                departmentStatus.className = 'error-note';
+                departmentStatus.textContent = error.message
+            }
+        };
+        resetDepartment.onclick = () => {
+            departmentForm.reset();
+            departmentStatus.textContent = '';
+            departmentForm.elements.name.focus()
+        };
+        resetStaff.onclick = resetStaffForm;
+        filterForm.onsubmit = event => {
+            event.preventDefault();
+            loadAttendance()
+        };
+        loginForm.onsubmit = async event => {
+            event.preventDefault();
+            loginStatus.textContent = '驗證中…';
+            try {
+                const session = await request('/api/admin/login', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Object.fromEntries(new FormData(loginForm)))
+                });
+                loginForm.reset();
+                loginStatus.textContent = '';
+                await showConsole(session)
+            } catch (error) {
+                loginStatus.className = 'error-note';
+                loginStatus.textContent = error.message
+            }
+        };
+        logoutButton.onclick = async () => {
+            await request('/api/admin/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: '{}'
+            }); csrf = ''; showLogin()
+        };
+        request('/api/employee/session').then(session => {
+            if (!session.authenticated) {
+                location.replace(loginUrl);
+                return null
+            } return request('/api/admin/session')
+        }).then(session => session && (session.authenticated ? showConsole(session) : showLogin())).catch(error => {
+            if (!location.pathname.endsWith('employee-login.html')) showLogin()
+        });
     </script>
 </body>
 

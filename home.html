@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>員工入口｜營運中心</title>
+    <title>菲爾銀盾｜營運中心｜員工入口</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,15 +12,16 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <img src="static/appicon.png" alt="福祿貝爾標誌">
-                <span><b>福祿貝爾</b>
+                <span><b>菲爾銀盾</b>
                     <small>員工入口網站</small>
                 </span>
             </a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a class="active" href="home.html">工作台</a>
-                <a href="sales.html">營運資料</a><a href="exam.html">教育訓練</a>
-                <a href="game.html">YouTube</a><a href="staff.html">員工出缺勤</a>
+                <a href="sales.html">營運資料</a>
+                <a href="exam.html">教育訓練</a>
+                <a href="game.html">YouTube</a>
+                <a href="staff.html">員工出缺勤</a>
                 <a href="mis.html">後台管理</a>
             </nav>
             <p class="portal-foot">EMPLOYEE PORTAL · 內部使用</p>
@@ -34,9 +35,9 @@
             <div class="portal-content">
                 <section class="portal-welcome">
                     <div>
-                        <span class="eyebrow" style="color:#8edcff">TODAY AT FROEBEL</span>
+                        <span class="eyebrow" style="color:#8edcff">Today at Silver Shield</span>
                         <h2>歡迎，今天也是美好的一天</h2>
-                        <p id="announcement">讀取園務公告中…</p>
+                        <p id="announcement">讀取公告中…</p>
                     </div>
                 </section>
                 <section class="clock-panel">
@@ -66,12 +67,15 @@
                             </div>
                         </div>
                         <div class="quick-links">
-                            <a class="quick-link" href="sales.html"><b>資訊需求單</b>
+                            <a class="quick-link" href="sales.html">
+                                <b>資訊需求單</b>
                                 <small>填寫需求單</small></a>
-                            <a class="quick-link" href="exam.html"><b>教育訓練</b>
-                                <small>在工作空檔進行研習</small></a>
+                            <a class="quick-link" href="exam.html">
+                                <b>教育訓練</b>
+                                <small>在職研習區</small></a>
                             <a class="quick-link" href="index.html" target="_blank" rel="noopener">
-                                <b>官方網站</b><small>另開視窗查看目前公開版面</small></a>
+                                <b>官方網站</b>
+                                <small>另開視窗查看目前前台網站</small></a>
                         </div>
                     </section>
                     <section class="portal-card narrow">
@@ -96,7 +100,7 @@
                         <div class="card-head">
                             <div><span class="eyebrow">KNOWLEDGE SEARCH</span>
                                 <h2>相關知識快速檢索</h2>
-                                <p>搜尋學籍、班級、收費、接送與資料保護說明。</p>
+                                <p>搜尋相關敏感資訊與資料保護說明。</p>
                             </div>
                             <article class="metric-card">
                                 <p>正在載入統計數據…</p>
@@ -108,7 +112,7 @@
                             <span>⌕</span>
                         </div>
                         <div class="knowledge-grid" id="knowledge">
-                            <div class="empty">正在載入知識條目…</div>
+                            <div class="empty">正在載入條目…</div>
                         </div>
                     </section>
                 </div>
@@ -116,7 +120,8 @@
         </main>
     </div>
     <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal-box"><button class="close" aria-label="關閉">×</button>
+        <div class="modal-box">
+            <button class="close" aria-label="關閉">×</button>
             <span class="tag" id="modalCategory"></span>
             <h2 id="modalTitle"></h2>
             <p class="hint" id="modalSummary"></p>
@@ -190,7 +195,8 @@
                 clockResult.className = 'clock-result attendance-warning';
                 clockResult.textContent = '您尚未打卡';
                 makeupClock.hidden = false;
-                makeupClock.disabled = false; clockOutButton.disabled = true
+                makeupClock.disabled = false;
+                clockOutButton.disabled = true
             } employeeLeave.disabled = false
         }
         async function syncServerTime() {

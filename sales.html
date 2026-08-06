@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>營運資料蒐集｜福祿貝爾營運中心</title>
+    <title>營運資料蒐集｜菲爾銀盾營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,8 +12,7 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <img src="static/appicon.png" alt="福祿貝爾標誌">
-                <span><b>福祿貝爾</b> <small>員工入口網站</small></span>
+                <span><b>菲爾銀盾</b> <small>員工入口網站</small></span>
             </a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
@@ -28,21 +27,21 @@
         <main class="portal-main">
             <header class="portal-topbar">
                 <div><span class="top-kicker">OPERATION COLLECTION</span>
-                    <h1>園務資料蒐集</h1>
+                    <h1>資料蒐集</h1>
                 </div><span class="api-state" id="apiState">準備填報</span>
             </header>
             <div class="portal-content">
                 <nav class="admin-tabs" id="salesTabs">
-                    <button class="active" data-panel="reportPanel">新增園務日報</button><button
-                        data-panel="lifecyclePanel">托育收費資料生命週期</button>
+                    <button class="active" data-panel="reportPanel">新增需求單</button><button
+                        data-panel="lifecyclePanel">相關資料彙總</button>
                 </nav>
                 <section class="admin-panel active" id="reportPanel">
                     <div class="portal-grid">
                         <section class="portal-card wide">
                             <div class="card-head">
                                 <div><span class="eyebrow">DAILY REPORT</span>
-                                    <h2>新增園務日報</h2>
-                                    <p>填寫出勤、班級、接送、收費、設備或餐點數量；送出後進入 MIS 待審佇列。</p>
+                                    <h2>新增需求單</h2>
+                                    <p>填寫需求單；送出後進入管理審閱佇列。</p>
                                 </div>
                             </div>
                             <form id="operationForm">
@@ -53,16 +52,16 @@
                                         </select></label><label class="field"><span>資料類別</span><select name="category"
                                             required>
                                             <option>出勤</option>
-                                            <option>班級</option>
-                                            <option>接送</option>
-                                            <option>收費</option>
                                             <option>設備</option>
+                                            <option>應收</option>
+                                            <option>應付</option>
+                                            <option>場地</option>
                                             <option>餐點</option>
                                             <option>其他</option>
                                         </select></label><label class="field"><span>數量</span><input type="number"
                                             name="count" min="0" max="9999" value="0" required></label><label
                                         class="field full"><span>備註</span><textarea name="note" maxlength="200"
-                                            placeholder="只填寫作業摘要，請勿輸入幼兒姓名、電話或其他個資。"></textarea></label></div>
+                                            placeholder="只填寫作業摘要，請勿輸入個人資料、敏感資訊及其他個資。"></textarea></label></div>
                                 <div class="actions"><button class="btn" type="submit">送交 MIS 審核</button><button
                                         class="btn secondary" type="reset">清除</button></div>
                                 <p id="formStatus" aria-live="polite"></p>
@@ -84,7 +83,7 @@
                     <section class="portal-card full">
                         <div class="card-head">
                             <div><span class="eyebrow">PAYMENT FLOW</span>
-                                <h2>托育收費資料生命週期</h2>
+                                <h2>相關資料彙總</h2>
                                 <p>即時讀取相關 SQL Server 資料表筆數，協助理解收費資料如何流動。</p>
                             </div>
                         </div>
@@ -101,7 +100,8 @@
         const apiFetch = (path, options = {}) => fetch(path, {
             credentials: 'include', ...options
         });
-        const operationForm = document.querySelector('#operationForm'),
+        const
+            operationForm = document.querySelector('#operationForm'),
             campus = document.querySelector('#campus'),
             process = document.querySelector('#process'),
             apiState = document.querySelector('#apiState'),
@@ -177,7 +177,8 @@
         salesTabs.onclick = event => {
             const button = event.target.closest('[data-panel]');
             if (!button) return;
-            salesTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button)); document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel))
+            salesTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
+            document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel))
         };
     </script>
 </body>
