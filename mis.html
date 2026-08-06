@@ -11,11 +11,16 @@
 <body>
     <div class="portal-shell">
         <aside class="portal-sidebar">
-            <a class="portal-brand" href="home.html"><img src="static/appicon.png"
-                    alt="菲爾銀盾標誌"><span><b>菲爾銀盾</b><small>後台管理區</small></span></a>
-            <nav class="portal-nav" aria-label="內部系統導覽"><a href="home.html">工作台</a><a href="sales.html">營運蒐集</a><a
-                    href="exam.html">教育訓練</a><a href="game.html">YouTube</a><a href="staff.html">員工出缺勤</a><a
-                    class="active" href="mis.html">後台管理</a></nav>
+            <a class="portal-brand" href="home.html">
+                <span><b>菲爾銀盾</b><small>後台管理區</small></span></a>
+            <nav class="portal-nav" aria-label="內部系統導覽">
+                <a href="home.html">工作台</a>
+                <a href="sales.html">營運蒐集</a>
+                <a href="exam.html">教育訓練</a>
+                <a href="game.html">YouTube</a>
+                <a href="staff.html">員工出缺勤</a>
+                <a class="active" href="mis.html">後台管理</a>
+            </nav>
             <p class="portal-foot">ADMIN ONLY · 需管理員登入</p>
         </aside>
         <main class="portal-main">
@@ -27,11 +32,13 @@
             <section class="login-shell" id="loginShell">
                 <form class="login-card" id="loginForm">
                     <h2>管理員登入</h2>
-                    <p>網站設定、資料表查閱與待審資料，<br>僅供授權管理員使用。</p><label class="field"><span>管理員帳號</span><input name="username"
-                            autocomplete="username" required></label><label class="field"
-                        style="margin-top:12px"><span>密碼</span><input name="password" type="password"
-                            autocomplete="current-password" required></label><button class="btn" type="submit"
-                        style="width:100%;margin-top:20px">驗證後登入</button>
+                    <p>網站設定、資料表查閱與待審資料，<br>僅供授權管理員使用。</p>
+                    <label class="field"><span>管理員帳號</span>
+                        <input name="username" autocomplete="username" required></label>
+                    <label class="field" style="margin-top:12px">
+                        <span>密碼</span>
+                        <input name="password" type="password" autocomplete="current-password" required></label>
+                    <button class="btn" type="submit" style="width:100%;margin-top:20px">驗證後登入</button>
                     <p id="loginStatus" aria-live="polite"></p>
                 </form>
             </section>
@@ -43,10 +50,12 @@
                             <p>登入者：<span id="adminName"></span></p>
                         </div><button class="btn secondary" id="logoutButton">登出</button>
                     </div>
-                    <nav class="admin-tabs" id="adminTabs"><button class="active"
-                            data-panel="settingsPanel">官方網站設定</button><button
-                            data-panel="dataPanel">資料表查閱</button><button data-panel="queuePanel">待審佇列</button><button
-                            data-panel="trainingPanel">教育文件</button><button data-panel="questionPanel">題庫維護</button>
+                    <nav class="admin-tabs" id="adminTabs">
+                        <button class="active" data-panel="settingsPanel">官方網站設定</button>
+                        <button data-panel="dataPanel">資料表查閱</button>
+                        <button data-panel="queuePanel">待審佇列</button>
+                        <button data-panel="trainingPanel">教育文件</button>
+                        <button data-panel="questionPanel">題庫維護</button>
                     </nav>
                     <section class="admin-panel active" id="settingsPanel">
                         <div class="portal-grid">
@@ -61,15 +70,16 @@
                                             <option value="ocean">海洋藍</option>
                                             <option value="sunrise">晨光橙</option>
                                             <option value="forest">森林綠</option>
-                                        </select></label><label class="field full"><span>首頁主標題</span><input
-                                            name="hero_title" maxlength="60" required></label><label
-                                        class="field full"><span>首頁說明</span><textarea name="hero_subtitle"
-                                            maxlength="180" required></textarea></label><label
-                                        class="field full"><span>最新公告</span><input name="announcement"
-                                            maxlength="160"></label></div>
-                                <div class="actions"><button class="btn" type="submit">儲存並發布設定</button><a
-                                        class="btn secondary" href="index.html" target="_blank"
-                                        rel="noopener">查看官方網站</a></div>
+                                        </select></label><label class="field full">
+                                        <span>首頁主標題</span><input name="hero_title" maxlength="60" required></label>
+                                    <label class="field full"><span>首頁說明</span>
+                                        <textarea name="hero_subtitle" maxlength="180" required></textarea></label>
+                                    <label class="field full"><span>最新公告</span>
+                                        <input name="announcement" maxlength="160"></label>
+                                </div>
+                                <div class="actions"><button class="btn" type="submit">儲存並發布設定</button>
+                                    <a class="btn secondary" href="index.html" target="_blank" rel="noopener">查看官方網站</a>
+                                </div>
                                 <p id="settingsStatus" aria-live="polite"></p>
                             </form>
                             <aside class="portal-card narrow">
@@ -78,7 +88,8 @@
                                         <h2>首頁預覽</h2>
                                     </div>
                                 </div>
-                                <div class="settings-preview" id="settingsPreview"><span>菲爾銀盾幼稚園</span>
+                                <div class="settings-preview" id="settingsPreview">
+                                    <span>菲爾銀盾幼稚園</span>
                                     <h2 id="previewTitle">首頁標題</h2>
                                     <p id="previewSubtitle">首頁說明</p>
                                 </div>
@@ -87,8 +98,8 @@
                     </section>
                     <section class="admin-panel" id="dataPanel">
                         <div class="admin-data-layout">
-                            <aside class="catalog-pane"><label class="field"><span>搜尋資料表</span><input id="catalogSearch"
-                                        type="search"></label>
+                            <aside class="catalog-pane"><label class="field"><span>搜尋資料表</span>
+                                    <input id="catalogSearch" type="search"></label>
                                 <div class="catalog-list" id="catalog">
                                     <div class="empty">載入中…</div>
                                 </div>
@@ -111,8 +122,9 @@
                                     </table>
                                 </div>
                                 <div class="pager"><span id="pageInfo">第 1 頁</span>
-                                    <div><button class="btn secondary" id="prevPage">上一頁</button> <button
-                                            class="btn secondary" id="nextPage">下一頁</button></div>
+                                    <div><button class="btn secondary" id="prevPage">上一頁</button>
+                                        <button class="btn secondary" id="nextPage">下一頁</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -127,14 +139,18 @@
                         </div>
                         <div class="review-workspace">
                             <aside class="review-people">
-                                <div class="review-pane-title"><span>員工列表</span><small>依員工編號排列</small></div>
+                                <div class="review-pane-title">
+                                    <span>員工列表</span>
+                                    <small>依員工編號排列</small>
+                                </div>
                                 <div class="review-person-list" id="staffList">
                                     <div class="empty">載入中…</div>
                                 </div>
                             </aside>
                             <section class="review-events">
                                 <div class="review-event-head">
-                                    <div><span class="eyebrow">EMPLOYEE REQUESTS</span>
+                                    <div>
+                                        <span class="eyebrow">EMPLOYEE REQUESTS</span>
                                         <h3 id="queueTitle">全部申請事件</h3>
                                     </div><span class="tag" id="queueCount">0 筆</span>
                                 </div>
@@ -165,22 +181,31 @@
                                         <h2>新增或更新題目</h2>
                                     </div>
                                 </div>
-                                <input name="id" type="hidden"><label class="field"><span>關聯文件</span><select
-                                        name="document_id" id="questionDocument">
+                                <input name="id" type="hidden">
+                                <label class="field"><span>關聯文件</span>
+                                    <select name="document_id" id="questionDocument">
                                         <option value="">不指定文件</option>
-                                    </select></label>
-                                <label class="field"><span>題目分類</span><input name="category" maxlength="50"
-                                        required></label>
-                                <label class="field"><span>題目</span><textarea name="question" maxlength="500"
-                                        required></textarea></label>
-                                <label class="field"><span>選項（每行一個，2 至 6 個）</span><textarea name="options" rows="6"
-                                        required></textarea></label>
-                                <label class="field"><span>正確答案序號</span><input name="answer" type="number" min="1"
-                                        max="6" step="1" required></label>
-                                <label class="field"><span>答案解說</span><textarea name="explanation" maxlength="1000"
-                                        required></textarea></label>
-                                <div class="actions"><button class="btn" type="submit">儲存題目</button><button
-                                        class="btn secondary" id="resetQuestion" type="button">新增另一題</button></div>
+                                    </select>
+                                </label>
+                                <label class="field"><span>題目分類</span>
+                                    <input name="category" maxlength="50" required>
+                                </label>
+                                <label class="field"><span>題目</span>
+                                    <textarea name="question" maxlength="500" required></textarea>
+                                </label>
+                                <label class="field"><span>選項（每行一個，2 至 6 個）</span>
+                                    <textarea name="options" rows="6" required></textarea>
+                                </label>
+                                <label class="field"><span>正確答案序號</span>
+                                    <input name="answer" type="number" min="1" max="6" step="1" required>
+                                </label>
+                                <label class="field"><span>答案解說</span>
+                                    <textarea name="explanation" maxlength="1000" required></textarea>
+                                </label>
+                                <div class="actions">
+                                    <button class="btn" type="submit">儲存題目</button>
+                                    <button class="btn secondary" id="resetQuestion" type="button">新增另一題</button>
+                                </div>
                                 <p id="questionStatus" aria-live="polite"></p>
                             </form>
                             <section class="portal-card wide">
@@ -211,25 +236,44 @@
             if (!response.ok) throw new Error(body.error || '操作失敗'); return body.data
         }
         function showLogin() {
-            loginShell.hidden = false; adminConsole.hidden = true;
+            loginShell.hidden = false;
+            adminConsole.hidden = true;
             apiState.textContent = '需要管理員登入'
         }
         function showAdmin(session) {
-            loginShell.hidden = true; adminConsole.hidden = false;
-            adminName.textContent = session.username; csrf = session.csrf;
+            loginShell.hidden = true;
+            adminConsole.hidden = false;
+            adminName.textContent = session.username;
+            csrf = session.csrf;
             apiState.textContent = '管理員已登入';
             apiState.classList.add('ok');
             loadAdmin()
         }
         async function loadAdmin() {
             try {
-                const [settings, catalogData, submissionData, staff, documents, questionItems] = await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'), request('/api/admin/submissions'), request('/api/admin/staff'), request('/api/admin/training/documents'), request('/api/admin/training/questions')]); settingsForm.theme.value = settings.theme; settingsForm.hero_title.value = settings.hero_title; settingsForm.hero_subtitle.value = settings.hero_subtitle; settingsForm.announcement.value = settings.announcement || ''; updatePreview(); tables = catalogData; staffItems = staff; submissions = submissionData; trainingDocuments = documents; trainingQuestions = questionItems; renderCatalog(); renderQueue(); renderTrainingDocuments();
+                const [settings, catalogData, submissionData, staff, documents, questionItems] = await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'),
+                request('/api/admin/submissions'),
+                request('/api/admin/staff'),
+                request('/api/admin/training/documents'),
+                request('/api/admin/training/questions')]);
+                settingsForm.theme.value = settings.theme;
+                settingsForm.hero_title.value = settings.hero_title;
+                settingsForm.hero_subtitle.value = settings.hero_subtitle;
+                settingsForm.announcement.value = settings.announcement || '';
+                updatePreview(); tables = catalogData; staffItems = staff;
+                submissions = submissionData; trainingDocuments = documents;
+                trainingQuestions = questionItems;
+                renderCatalog();
+                renderQueue();
+                renderTrainingDocuments();
                 renderQuestions()
             } catch (error) { toast.textContent = error.message; toast.classList.add('show') }
         }
         loginForm.onsubmit = async event => {
-            event.preventDefault(); loginStatus.className = '';
-            loginStatus.textContent = '驗證中…'; try {
+            event.preventDefault();
+            loginStatus.className = '';
+            loginStatus.textContent = '驗證中…';
+            try {
                 const session = await request('/api/admin/login', {
                     method: 'POST', headers: {
                         'Content-Type': 'application/json'
@@ -403,7 +447,8 @@
         questionForm.onsubmit = async event => {
             event.preventDefault(); const values = Object.fromEntries(new FormData(questionForm));
             const payload = {
-                ...values, id: Number(values.id || 0), document_id: Number(values.document_id || 0) || null,
+                ...values, id: Number(values.id || 0),
+                document_id: Number(values.document_id || 0) || null,
                 options: values.options.split(/\r?\n/).map(value => value.trim()).filter(Boolean),
                 answer: Number(values.answer) - 1
             };
@@ -432,15 +477,20 @@
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}'
                 });
                 trainingDocuments = await request('/api/admin/training/documents'); renderTrainingDocuments();
-                syncStatus.className = 'success-note'; syncStatus.textContent = `已同步 ${result.documents} 份教育文件。`
+                syncStatus.className = 'success-note';
+                syncStatus.textContent = `已同步 ${result.documents} 份教育文件。`
             } catch (error) {
-                syncStatus.className = 'error-note'; syncStatus.textContent = error.message
+                syncStatus.className = 'error-note';
+                syncStatus.textContent = error.message
             } finally {
                 syncTraining.disabled = false
             }
         };
         request('/api/employee/session').then(session => {
-            if (!session.authenticated) { location.replace(employeeLoginUrl); return null } return request('/api/admin/session')
+            if (!session.authenticated) {
+                location.replace(employeeLoginUrl);
+                return null
+            } return request('/api/admin/session')
         }).then(session => session && (session.authenticated ? showAdmin(session) : showLogin())).catch(showLogin);
     </script>
 </body>
