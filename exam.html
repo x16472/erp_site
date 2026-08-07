@@ -92,7 +92,12 @@
             } if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用');
             return body.data
         };
-        const employeeAccess = request('/api/employee/session').then(session => { if (!session.authenticated) { location.replace(loginUrl); throw new Error('需要員工驗證') } return session });
+        const employeeAccess = request('/api/employee/session').then(session => {
+            if (!session.authenticated) {
+                location.replace(loginUrl);
+                throw new Error('需要員工驗證')
+            } return session
+        });
         const esc = value => {
             const node = document.createElement('div');
             node.textContent = value ?? '';
@@ -121,7 +126,11 @@
         function renderDocuments() {
             const keyword = documentSearch.value.trim().toLowerCase(),
                 category = categoryFilter.value;
-            const items = documents.filter(item => (!category || item.category === category) && (!keyword || `${item.title} ${item.category} ${item.file_name}`.toLowerCase().includes(keyword))); documentGrid.innerHTML = items.length ? items.map(item => `<button class="training-card" data-document="${item.id}"><span class="tag">${esc(item.category)}</span><h3>${esc(item.title)}</h3><p>${item.section_count} 個查閱段落</p><small>${esc(item.file_name)}</small></button>`).join('') : '<div class="empty">找不到符合條件的教育文件。</div>'
+            const items = documents.filter(item => (!category || item.category === category) && (!keyword || `${item.title} ${item.category} ${item.file_name}`.toLowerCase().includes(keyword)));
+            documentGrid.innerHTML = items.length ? items.map(item =>
+                `<button class="training-card" data-document="${item.id}"><span class="tag">${esc(item.category)}</span>
+                <h3>${esc(item.title)}</h3><p>${item.section_count} 個查閱段落</p><small>${esc(item.file_name)}</small>
+                </button>`).join('') : '<div class="empty">找不到符合條件的教育文件。</div>'
         }
         async function openDocument(id) {
             readerSections.innerHTML = '<div class="empty">正在讀取文件內容…</div>';
@@ -133,7 +142,10 @@
                 readerCategory.textContent = item.category;
                 readerTitle.textContent = item.title;
                 readerFile.textContent = item.file_name;
-                readerSections.innerHTML = item.sections.map((section, index) => `<details class="training-section" ${index === 0 ? 'open' : ''}><summary><span>${String(index + 1).padStart(2, '0')}</span>${esc(section.heading)}</summary><div>${esc(section.content).replace(/\n/g, '<br>')}</div></details>`).join('') || '<div class="empty">此文件沒有可顯示的段落。</div>'; window.scrollTo({ top: 0, behavior: 'smooth' })
+                readerSections.innerHTML = item.sections.map((section, index) =>
+                    `<details class="training-section" ${index === 0 ? 'open' : ''}><summary><span>${String(index + 1).padStart(2, '0')}</span>
+                    ${esc(section.heading)}</summary><div>${esc(section.content).replace(/\n/g, '<br>')}</div></details>`).join('') || '<div class="empty">此文件沒有可顯示的段落。</div>';
+                window.scrollTo({ top: 0, behavior: 'smooth' })
             } catch (error) { readerSections.innerHTML = `<div class="error-note">${esc(error.message)}</div>` }
         }
         documentSearch.oninput = renderDocuments;
@@ -148,7 +160,8 @@
         examTabs.onclick = event => {
             const button = event.target.closest('[data-panel]');
             if (!button) return;
-            examTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button)); document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel))
+            examTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
+            document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel))
         };
 
         function resetQuiz() {
@@ -196,7 +209,8 @@
 
         employeeAccess.then(() => Promise.all([request('/api/training'),
         request('/api/questions')])).then(([documentItems, questionItems]) => {
-            documents = documentItems; questions = questionItems;
+            documents = documentItems;
+            questions = questionItems;
             const categories = [...new Set(documents.map(item => item.category))];
             categoryFilter.innerHTML = '<option value="">全部分類</option>' +
                 categories.map(category => `<option value="${esc(category)}">${esc(category)}</option>`).join('');

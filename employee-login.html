@@ -18,7 +18,8 @@
             <a href="index.html">返回官方網站</a>
         </section>
         <section class="employee-access-card">
-            <div class="live-clock access-time"><small>目前時間</small>
+            <div class="live-clock access-time">
+                <small>目前時間</small>
                 <strong id="accessClock">--:--:--</strong>
             </div>
             <form id="accessForm">
@@ -35,7 +36,8 @@
         </section>
     </main>
     <script>
-        const form = document.querySelector('#accessForm'),
+        const
+            form = document.querySelector('#accessForm'),
             statusBox = document.querySelector('#accessStatus'),
             clock = document.querySelector('#accessClock'),
             buttons = [...form.querySelectorAll('button[type="submit"]')];

@@ -227,12 +227,56 @@
     <div class="toast" id="toast" role="status"></div>
     <script>
         const employeeLoginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`;
-        let csrf = '', tables = [], staffItems = [], submissions = [], selectedEmployee = '', selectedCategory = '', selectedTable = '', currentPage = 1, totalRows = 0, pageSize = 20; const loginShell = document.querySelector('#loginShell'), adminConsole = document.querySelector('#adminConsole'), apiState = document.querySelector('#apiState'), adminName = document.querySelector('#adminName'), settingsForm = document.querySelector('#settingsForm'), settingsPreview = document.querySelector('#settingsPreview'), toast = document.querySelector('#toast'), loginForm = document.querySelector('#loginForm'), loginStatus = document.querySelector('#loginStatus'), logoutButton = document.querySelector('#logoutButton'), adminTabs = document.querySelector('#adminTabs'), previewTitle = document.querySelector('#previewTitle'), previewSubtitle = document.querySelector('#previewSubtitle'), settingsStatus = document.querySelector('#settingsStatus'), catalogSearch = document.querySelector('#catalogSearch'), catalog = document.querySelector('#catalog'), dataTitle = document.querySelector('#dataTitle'), dataBody = document.querySelector('#dataBody'), dataMeta = document.querySelector('#dataMeta'), dataHead = document.querySelector('#dataHead'), pageInfo = document.querySelector('#pageInfo'), prevPage = document.querySelector('#prevPage'), nextPage = document.querySelector('#nextPage'), submissionList = document.querySelector('#submissionList'), staffList = document.querySelector('#staffList'), queueFilters = document.querySelector('#queueFilters'), queueTitle = document.querySelector('#queueTitle'), queueCount = document.querySelector('#queueCount'), syncTraining = document.querySelector('#syncTraining'), syncStatus = document.querySelector('#syncStatus'); const esc = value => { const n = document.createElement('div'); n.textContent = value ?? ''; return n.innerHTML }; const number = value => new Intl.NumberFormat('zh-TW').format(value);
+        let csrf = '', tables = [], staffItems = [], submissions = [], selectedEmployee = '', selectedCategory = '', selectedTable = '', currentPage = 1, totalRows = 0, pageSize = 20;
+        const loginShell = document.querySelector('#loginShell'),
+            adminConsole = document.querySelector('#adminConsole'),
+            apiState = document.querySelector('#apiState'),
+            adminName = document.querySelector('#adminName'),
+            settingsForm = document.querySelector('#settingsForm'),
+            settingsPreview = document.querySelector('#settingsPreview'),
+            toast = document.querySelector('#toast'),
+            loginForm = document.querySelector('#loginForm'),
+            loginStatus = document.querySelector('#loginStatus'),
+            logoutButton = document.querySelector('#logoutButton'),
+            adminTabs = document.querySelector('#adminTabs'),
+            previewTitle = document.querySelector('#previewTitle'),
+            previewSubtitle = document.querySelector('#previewSubtitle'),
+            settingsStatus = document.querySelector('#settingsStatus'),
+            catalogSearch = document.querySelector('#catalogSearch'),
+            catalog = document.querySelector('#catalog'),
+            dataTitle = document.querySelector('#dataTitle'),
+            dataBody = document.querySelector('#dataBody'),
+            dataMeta = document.querySelector('#dataMeta'),
+            dataHead = document.querySelector('#dataHead'),
+            pageInfo = document.querySelector('#pageInfo'),
+            prevPage = document.querySelector('#prevPage'),
+            nextPage = document.querySelector('#nextPage'),
+            submissionList = document.querySelector('#submissionList'),
+            staffList = document.querySelector('#staffList'),
+            queueFilters = document.querySelector('#queueFilters'),
+            queueTitle = document.querySelector('#queueTitle'),
+            queueCount = document.querySelector('#queueCount'),
+            syncTraining = document.querySelector('#syncTraining'),
+            syncStatus = document.querySelector('#syncStatus');
+        const esc = value => {
+            const n = document.createElement('div');
+            n.textContent = value ?? ''; return n.innerHTML
+        };
+        const number = value => new Intl.NumberFormat('zh-TW').format(value);
         let trainingDocuments = [], trainingQuestions = [];
-        const trainingDocumentList = document.querySelector('#trainingDocumentList'), questionForm = document.querySelector('#questionForm'), questionDocument = document.querySelector('#questionDocument'), questionList = document.querySelector('#questionList'), questionStatus = document.querySelector('#questionStatus'), resetQuestion = document.querySelector('#resetQuestion');
+        const trainingDocumentList = document.querySelector('#trainingDocumentList'),
+            questionForm = document.querySelector('#questionForm'),
+            questionDocument = document.querySelector('#questionDocument'),
+            questionList = document.querySelector('#questionList'),
+            questionStatus = document.querySelector('#questionStatus'),
+            resetQuestion = document.querySelector('#resetQuestion');
         async function request(url, options = {}) {
-            const response = await fetch(url, { credentials: 'include', ...options }), body = await response.json().catch(() => ({}));
-            if (response.status === 401 && body.code === 'EMPLOYEE_AUTH_REQUIRED') location.replace(employeeLoginUrl);
+            const response = await fetch(url, {
+                credentials: 'include', ...options
+            }),
+                body = await response.json().catch(() => ({}));
+            if (response.status === 401 && body.code === 'EMPLOYEE_AUTH_REQUIRED')
+                location.replace(employeeLoginUrl);
             if (!response.ok) throw new Error(body.error || '操作失敗'); return body.data
         }
         function showLogin() {
@@ -251,11 +295,12 @@
         }
         async function loadAdmin() {
             try {
-                const [settings, catalogData, submissionData, staff, documents, questionItems] = await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'),
-                request('/api/admin/submissions'),
-                request('/api/admin/staff'),
-                request('/api/admin/training/documents'),
-                request('/api/admin/training/questions')]);
+                const [settings, catalogData, submissionData, staff, documents, questionItems] =
+                    await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'),
+                    request('/api/admin/submissions'),
+                    request('/api/admin/staff'),
+                    request('/api/admin/training/documents'),
+                    request('/api/admin/training/questions')]);
                 settingsForm.theme.value = settings.theme;
                 settingsForm.hero_title.value = settings.hero_title;
                 settingsForm.hero_subtitle.value = settings.hero_subtitle;
@@ -310,7 +355,10 @@
             event.preventDefault(); settingsStatus.className = '';
             settingsStatus.textContent = '儲存中…'; try {
                 await request('/api/admin/settings', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(Object.fromEntries(new FormData(settingsForm)))
+                    method: 'POST', headers: {
+                        'Content-Type': 'application/json', 'X-CSRF-Token': csrf
+                    },
+                    body: JSON.stringify(Object.fromEntries(new FormData(settingsForm)))
                 });
                 settingsStatus.className = 'success-note';
                 settingsStatus.textContent = '設定已寫入 SQL Server 並發布。'
@@ -320,7 +368,13 @@
             }
         };
         function renderCatalog() {
-            const q = catalogSearch.value.trim().toLowerCase(), items = tables.filter(item => item.name.toLowerCase().includes(q)); catalog.innerHTML = items.map(item => `<button class="catalog-item ${item.name === selectedTable ? 'active' : ''}" data-table="${esc(item.name)}"><span>${esc(item.name)}</span><small>${number(item.row_count)} 筆</small></button>`).join('') || '<div class="empty">找不到資料表</div>'
+            const q = catalogSearch.value.trim().toLowerCase(),
+                items = tables.filter(item => item.name.toLowerCase().includes(q));
+            catalog.innerHTML = items.map(item =>
+                `<button class="catalog-item ${item.name === selectedTable ? 'active' : ''}" data-table="${esc(item.name)}">
+                <span>${esc(item.name)}</span>
+                <small>${number(item.row_count)} 筆</small>
+                </button>`).join('') || '<div class="empty">找不到資料表</div>'
         } catalogSearch.oninput = renderCatalog; catalog.onclick = event => {
             const button = event.target.closest('[data-table]'); if (button) loadTable(button.dataset.table, 1)
         };
@@ -332,25 +386,35 @@
                 const result = await request(`/api/admin/table?name=${encodeURIComponent(name)}&page=${page}&page_size=${pageSize}`);
                 totalRows = result.total;
                 dataMeta.textContent = `${result.columns.length} 欄 · ${number(result.total)} 筆 · 唯讀遮罩`;
-                dataHead.innerHTML = `<tr>${result.columns.map(column => `<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`; dataBody.innerHTML = result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column => `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`; const totalPages = Math.max(1, Math.ceil(result.total / result.page_size)); pageInfo.textContent = `第 ${page} / ${totalPages} 頁`; prevPage.disabled = page <= 1; nextPage.disabled = page >= totalPages
+                dataHead.innerHTML = `<tr>${result.columns.map(column => `<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`;
+                dataBody.innerHTML = result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column => `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`;
+                const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
+                pageInfo.textContent = `第 ${page} / ${totalPages} 頁`;
+                prevPage.disabled = page <= 1;
+                nextPage.disabled = page >= totalPages
             } catch (error) { dataBody.innerHTML = `<tr><td>${esc(error.message)}</td></tr>` }
         }
         prevPage.onclick = () => currentPage > 1 && loadTable(selectedTable, currentPage - 1);
         nextPage.onclick = () => currentPage * pageSize < totalRows && loadTable(selectedTable, currentPage + 1);
         function renderQueue() {
-            const counts = new Map(); submissions.forEach(item => { if (item.submitted_by) counts.set(item.submitted_by, (counts.get(item.submitted_by) || 0) + 1) });
+            const counts = new Map(); submissions.forEach(item => {
+                if (item.submitted_by) counts.set(item.submitted_by,
+                    (counts.get(item.submitted_by) || 0) + 1)
+            });
 
             staffList.innerHTML = `<button class="review-person ${selectedEmployee === '' ? 'active' : ''}" data-employee=""><span class="review-avatar">ALL</span><div><b>全部員工</b><small>顯示所有待審事件</small></div><em>${number(submissions.length)}</em></button>` + staffItems.map(item => `<button class="review-person ${selectedEmployee === item.employee_id ? 'active' : ''}" data-employee="${esc(item.employee_id)}"><img src="${item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/appicon.png'}" alt=""><div><b>${esc(item.employee_id)}｜${esc(item.display_name)}</b><small>${esc(item.department)} · ${esc(item.position)}</small></div><em>${number(counts.get(item.employee_id) || 0)}</em></button>`).join(''); staffList.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/appicon.png' }, { once: true })); const categories = [...new Set(submissions.map(item => item.category))]; queueFilters.innerHTML = `<button class="${selectedCategory === '' ? 'active' : ''}" data-category="">全部事件</button>` + categories.map(category => `<button class="${selectedCategory === category ? 'active' : ''}" data-category="${esc(category)}">${esc(category)}</button>`).join(''); const employee = staffItems.find(item => item.employee_id === selectedEmployee); const items = submissions.filter(item => (!selectedEmployee || item.submitted_by === selectedEmployee) && (!selectedCategory || item.category === selectedCategory)); queueTitle.textContent = `${employee ? `${employee.display_name}的` : ''}${selectedCategory || '全部'}申請事件`; queueCount.textContent = `${number(items.length)} 筆`; submissionList.innerHTML = items.length ? items.map(item => `<button class="review-event-card submission-card" data-submission="${esc(item.id)}" data-employee="${esc(item.submitted_by || '')}" data-category="${esc(item.category)}"><header><b>${esc(item.category)} · ${esc(item.campus)}</b><span class="tag">${esc(item.status)}</span></header><p>${esc(item.date)} · ${number(item.count)} 筆 · ${esc(item.note || '無備註')}</p><footer><span>${esc(item.submitted_by || '未記錄')}｜${esc(item.submitted_by_name || '未記錄建立者')}</span><small>${esc(item.submitted_at)}</small></footer></button>`).join('') : '<div class="empty">目前沒有符合條件的待審事項。</div>'
         }
         staffList.onclick = event => {
             const button = event.target.closest('[data-employee]');
-            if (!button) return; selectedEmployee = button.dataset.employee;
+            if (!button) return;
+            selectedEmployee = button.dataset.employee;
             selectedCategory = '';
             renderQueue()
         };
         queueFilters.onclick = event => {
             const button = event.target.closest('[data-category]');
-            if (!button) return; selectedCategory = button.dataset.category;
+            if (!button) return;
+            selectedCategory = button.dataset.category;
             renderQueue()
         };
         submissionList.onclick = event => {
@@ -445,16 +509,21 @@
         };
         //儲存/新增題目表單提交
         questionForm.onsubmit = async event => {
-            event.preventDefault(); const values = Object.fromEntries(new FormData(questionForm));
+            event.preventDefault();
+            const values = Object.fromEntries(new FormData(questionForm));
             const payload = {
                 ...values, id: Number(values.id || 0),
                 document_id: Number(values.document_id || 0) || null,
                 options: values.options.split(/\r?\n/).map(value => value.trim()).filter(Boolean),
                 answer: Number(values.answer) - 1
             };
-            questionStatus.textContent = '儲存中…'; try {
+            questionStatus.textContent = '儲存中…';
+            try {
                 await request('/api/admin/training/question', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(payload)
+                    method: 'POST', headers: {
+                        'Content-Type': 'application/json', 'X-CSRF-Token': csrf
+                    },
+                    body: JSON.stringify(payload)
                 });
                 questionForm.reset();
                 trainingQuestions = await request('/api/admin/training/questions');
@@ -472,11 +541,14 @@
             questionForm.elements.category.focus()
         };
         syncTraining.onclick = async () => {
-            syncTraining.disabled = true; syncStatus.textContent = '正在轉換並同步 Word 文件…'; try {
+            syncTraining.disabled = true;
+            syncStatus.textContent = '正在轉換並同步 Word 文件…';
+            try {
                 const result = await request('/api/admin/training/sync', {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}'
                 });
-                trainingDocuments = await request('/api/admin/training/documents'); renderTrainingDocuments();
+                trainingDocuments = await request('/api/admin/training/documents');
+                renderTrainingDocuments();
                 syncStatus.className = 'success-note';
                 syncStatus.textContent = `已同步 ${result.documents} 份教育文件。`
             } catch (error) {
