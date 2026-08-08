@@ -16,7 +16,7 @@
                 </span></a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
-                <a href="sales.html">營運資料</a>
+                <a href="sales.html">營運蒐集</a>
                 <a href="exam.html">教育訓練</a>
                 <a class="active" href="game.html">YouTube</a>
                 <a href="staff.html">員工出缺勤</a>
@@ -70,15 +70,7 @@
 
     <script>
         const DEFAULT_URL = 'https://www.youtube.com/watch?v=fxnjjVyMd7g';
-        const
-            youtubeForm = document.querySelector('#youtubeForm'),
-            youtubeUrl = document.querySelector('#youtubeUrl'),
-            youtubePlayer = document.querySelector('#youtubePlayer'),
-            youtubeStatus = document.querySelector('#youtubeStatus'),
-            playerState = document.querySelector('#playerState'),
-            videoTitle = document.querySelector('#videoTitle'),
-            openYoutube = document.querySelector('#openYoutube'),
-            submitButton = youtubeForm.querySelector('button[type="submit"]');
+        const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoTitle = document.querySelector('#videoTitle'), openYoutube = document.querySelector('#openYoutube'), submitButton = youtubeForm.querySelector('button[type="submit"]');
         const loginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`;
         const employeeAccess = fetch('/api/employee/session', {
             credentials: 'include'
