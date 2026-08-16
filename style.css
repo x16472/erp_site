@@ -532,27 +532,27 @@ img {
     margin: 7px 0
 }
 
-body[data-theme="sunrise"] .public-hero {
+body[data-theme="medal"] .public-hero {
     background: linear-gradient(135deg, #fff9ef 0%, #fff0e8 100%)
 }
 
-body[data-theme="sunrise"] .hero-card {
+body[data-theme="medal"] .hero-card {
     background: linear-gradient(145deg, #e99a45, #b95c51)
 }
 
-body[data-theme="sunrise"] .hero-copy-public h1 span {
+body[data-theme="medal"] .hero-copy-public h1 span {
     color: #c65e42
 }
 
-body[data-theme="forest"] .public-hero {
+body[data-theme="steel"] .public-hero {
     background: linear-gradient(135deg, #f3faf5 0%, #edf6ed 100%)
 }
 
-body[data-theme="forest"] .hero-card {
+body[data-theme="steel"] .hero-card {
     background: linear-gradient(145deg, #4f9671, #245d53)
 }
 
-body[data-theme="forest"] .hero-copy-public h1 span {
+body[data-theme="steel"] .hero-copy-public h1 span {
     color: #34795f
 }
 
@@ -1112,11 +1112,11 @@ body[data-theme="forest"] .hero-copy-public h1 span {
     color: #fff
 }
 
-.settings-preview.sunrise {
+.settings-preview.medal {
     background: linear-gradient(125deg, #aa4f39, #f2a441)
 }
 
-.settings-preview.forest {
+.settings-preview.steel {
     background: linear-gradient(125deg, #285c52, #46a67c)
 }
 
@@ -1127,7 +1127,7 @@ body[data-theme="forest"] .hero-copy-public h1 span {
 
 .admin-data-layout {
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-columns: 400px minmax(0, 1fr);
     min-height: 540px;
     border: 1px solid var(--line);
     border-radius: 16px;
@@ -1135,14 +1135,14 @@ body[data-theme="forest"] .hero-copy-public h1 span {
 }
 
 .catalog-pane {
-    padding: 14px;
-    background: #f7f8f8;
-    border-right: 1px solid var(--line)
+    padding: 10%;
+    background: #ffffff;
+    border-right: 15px solid var(--line)
 }
 
 .catalog-pane input {
     width: 100%;
-    padding: 9px;
+    padding: 20px;
     border: 1px solid var(--line);
     border-radius: 9px
 }
@@ -1360,7 +1360,7 @@ body[data-theme="forest"] .hero-copy-public h1 span {
     font-size: 18px
 }
 
-/*教職團隊、打卡與教育訓練*/
+/*專業團隊、打卡與內部營運手冊*/
 .staff-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1830,7 +1830,7 @@ body[data-theme="forest"] .hero-copy-public h1 span {
 }
 
 .public-hero:after {
-    content: "FROEBEL";
+    content: "SILVER SHIELD";
     position: absolute;
     left: max(24px, 7vw);
     bottom: -42px;
@@ -2512,5 +2512,208 @@ body[data-theme="forest"] .hero-copy-public h1 span {
 
     .attendance-session-actions .btn:first-child:not([hidden]) {
         grid-column: auto
+    }
+}
+
+/* 銀盾共同體企業主題：統一公開網站與內部入口的沉穩品牌色。 */
+:root {
+    --silver-shield-navy: #101b2d;
+    --silver-shield-blue: #244a73;
+    --silver-shield-red: #8f2634;
+    --silver-shield-silver: #c8ced6;
+    --silver-shield-gold: #c79b42
+}
+
+/* 公開首頁使用深色企業主視覺，避免舊版童趣漸層。 */
+.public-body {
+    background: #f4f5f6;
+    color: var(--silver-shield-navy)
+}
+
+.public-header {
+    border-bottom-color: #ffffff1f;
+    background: #101b2df2;
+    box-shadow: 0 12px 32px #07101d26
+}
+
+.public-logo b,
+.public-nav a:not(.btn) {
+    color: #f7f8fa
+}
+
+.public-logo small {
+    color: #aeb9c8;
+    letter-spacing: .16em
+}
+
+.public-logo img {
+    border: 1px solid #ffffff30;
+    border-radius: 8px
+}
+
+.public-nav a:not(.btn):hover {
+    color: #e1bd71
+}
+
+.public-hero,
+body[data-theme="medal"] .public-hero,
+body[data-theme="steel"] .public-hero {
+    min-height: 720px;
+    background:
+        radial-gradient(circle at 80% 10%, #41658f55 0, transparent 35%),
+        linear-gradient(120deg, #101b2d 0%, #172b43 56%, #27394f 100%);
+    color: #fff
+}
+
+.public-hero:before {
+    border-color: #c8ced61f;
+    border-radius: 0;
+    transform: rotate(20deg)
+}
+
+.hero-copy-public h1 {
+    letter-spacing: -.035em
+}
+
+.hero-copy-public h1 span,
+body[data-theme="medal"] .hero-copy-public h1 span,
+body[data-theme="steel"] .hero-copy-public h1 span {
+    color: #d8b66e
+}
+
+.hero-copy-public p {
+    color: #c2cad5
+}
+
+.announcement {
+    border-color: #ffffff24;
+    background: #ffffff0d;
+    color: #e4e9ef
+}
+
+.hero-stage {
+    min-height: 530px
+}
+
+.hero-card,
+body[data-theme="medal"] .hero-card,
+body[data-theme="steel"] .hero-card {
+    inset: 38px 22px 18px 70px;
+    border: 1px solid #ffffff2e;
+    border-radius: 18px;
+    background:
+        linear-gradient(145deg, #17283ac7, #31465dc7),
+        url("static/appicon.png") center / min(65%, 360px) no-repeat;
+    box-shadow: 0 32px 70px #050a1266
+}
+
+.hero-card:after {
+    border-color: var(--silver-shield-red);
+    opacity: .8
+}
+
+.floating-note {
+    border: 1px solid #d5dae1;
+    border-radius: 8px;
+    background: #f8f9fa;
+    box-shadow: 0 22px 48px #050a1242
+}
+
+.floating-note b {
+    color: var(--silver-shield-navy);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 20px
+}
+
+.public-stats {
+    border: 1px solid #dfe3e8;
+    border-radius: 10px;
+    box-shadow: 0 20px 45px #0e1a2a18
+}
+
+.public-stat {
+    border-right-color: #dfe3e8
+}
+
+.philosophy-card,
+.day-item {
+    border-radius: 10px
+}
+
+.philosophy-card {
+    border-top: 3px solid var(--silver-shield-blue)
+}
+
+.business-sector-section {
+    background: #e8ebef
+}
+
+.sector-card {
+    min-height: 260px;
+    border: 1px solid #d2d7de;
+    border-top: 4px solid var(--silver-shield-red);
+    box-shadow: 0 12px 28px #1020380d
+}
+
+.sector-card:nth-child(even) {
+    border-top-color: var(--silver-shield-blue)
+}
+
+.sector-card time {
+    color: var(--silver-shield-red);
+    letter-spacing: .08em
+}
+
+.sector-card h3 {
+    margin-top: 22px;
+    font-size: 25px
+}
+
+.cta-banner {
+    border: 1px solid #ffffff1c;
+    border-radius: 12px;
+    background: linear-gradient(120deg, #101b2d, #244a73)
+}
+
+.public-footer {
+    background: #0b1422
+}
+
+/* 內部系統沿用相同企業色，確保官方網站與工作入口一致。 */
+.portal-sidebar {
+    background: linear-gradient(180deg, #101b2d, #172b43)
+}
+
+.portal-nav a.active,
+.portal-nav a:hover {
+    border-color: #ffffff22;
+    background: #ffffff12
+}
+
+@media(max-width:980px) {
+    .mobile-menu {
+        color: #fff
+    }
+
+    .public-nav {
+        background: #101b2d
+    }
+
+    .hero-card {
+        inset: 20px
+    }
+}
+
+@media(max-width:680px) {
+    .public-hero {
+        min-height: auto
+    }
+
+    .hero-stage {
+        min-height: 360px
+    }
+
+    .sector-card {
+        min-height: 0
     }
 }

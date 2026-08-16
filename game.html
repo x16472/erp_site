@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>YouTube｜菲爾銀盾營運中心</title>
+    <title>企業培訓影音｜銀盾共同體營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,31 +12,31 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <span><b>菲爾銀盾</b><small>員工入口網站</small>
+                <span><b>銀盾共同體</b><small>員工入口網站</small>
                 </span></a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
-                <a href="sales.html">營運資料</a>
-                <a href="exam.html">教育訓練</a>
-                <a class="active" href="game.html">YouTube</a>
+                <a href="sales.html">營運日報</a>
+                <a href="exam.html">內部營運手冊</a>
+                <a class="active" href="game.html">培訓影音</a>
                 <a href="staff.html">員工出缺勤</a>
                 <a href="mis.html">後台管理</a>
             </nav>
-            <p class="portal-foot">YOUTUBE LIVE · 內部使用</p>
+            <p class="portal-foot">TRAINING MEDIA · 內部使用</p>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <div><span class="top-kicker">YOUTUBE LIVE</span>
-                    <h1>YouTube休息站</h1>
+                <div><span class="top-kicker">TRAINING MEDIA</span>
+                    <h1>企業培訓影音</h1>
                 </div>
                 <span class="api-state ok" id="playerState">播放器就緒</span>
             </header>
             <div class="portal-content">
                 <section class="portal-card youtube-control">
                     <div class="card-head">
-                        <div><span class="eyebrow">YOUTUBE PLAYER </span>
-                            <h2>貼上 YouTube 網址</h2>
-                            <p>支援一般影片、直播、Shorts、分享短網址及嵌入網址，<br>如果不能貼，推測是？該頻道主有禁止於其他網站嵌入影片。</p>
+                        <div><span class="eyebrow">INTERNAL BROADCAST</span>
+                            <h2>載入培訓或宣導影音</h2>
+                            <p>支援 YouTube 一般影片、直播、Shorts、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。</p>
                         </div>
                     </div>
                     <form id="youtubeForm" class="youtube-form">
@@ -70,15 +70,7 @@
 
     <script>
         const DEFAULT_URL = 'https://www.youtube.com/watch?v=fxnjjVyMd7g';
-        const
-            youtubeForm = document.querySelector('#youtubeForm'),
-            youtubeUrl = document.querySelector('#youtubeUrl'),
-            youtubePlayer = document.querySelector('#youtubePlayer'),
-            youtubeStatus = document.querySelector('#youtubeStatus'),
-            playerState = document.querySelector('#playerState'),
-            videoTitle = document.querySelector('#videoTitle'),
-            openYoutube = document.querySelector('#openYoutube'),
-            submitButton = youtubeForm.querySelector('button[type="submit"]');
+        const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoTitle = document.querySelector('#videoTitle'), openYoutube = document.querySelector('#openYoutube'), submitButton = youtubeForm.querySelector('button[type="submit"]');
         const loginUrl = `employee-login.html?next=${encodeURIComponent(location.pathname)}`;
         const employeeAccess = fetch('/api/employee/session', {
             credentials: 'include'
@@ -111,7 +103,7 @@
                 videoTitle.textContent = video.title;
                 openYoutube.href = video.watch_url;
                 youtubeUrl.value = video.watch_url;
-                if (remember) localStorage.setItem('frobelYoutubeVideo', video.watch_url);
+                if (remember) localStorage.setItem('silverShieldTrainingVideo', video.watch_url);
                 youtubeStatus.className = 'hint success-note';
                 youtubeStatus.textContent = '後端已驗證網址並取得 YouTube 影片標題。';
                 playerState.textContent = '播放器已更新';
@@ -128,7 +120,7 @@
             event.preventDefault();
             resolveVideo(youtubeUrl.value);
         });
-        const savedUrl = localStorage.getItem('frobelYoutubeVideo');
+        const savedUrl = localStorage.getItem('silverShieldTrainingVideo');
         resolveVideo(savedUrl || DEFAULT_URL, false);
     </script>
 </body>

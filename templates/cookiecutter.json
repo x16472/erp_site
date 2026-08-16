@@ -1,7 +1,7 @@
 {
-  "project_name": "菲爾銀盾營運中心",
-  "project_slug": "frobel_operation_center",
-  "project_description": "串接 SQL Server 的幼稚園官網、員工入口與管理平台",
+  "project_name": "銀盾共同體營運中心",
+  "project_slug": "silver_shield_operation_center",
+  "project_description": "串接 SQL Server 的企業入口、員工工作台與管理平台",
   "author_name": "Phoenix",
   "language": "zh-TW",
   "timezone": "Asia/Taipei",
@@ -11,12 +11,12 @@
   "permission_page": "mis.html",
   "exam_page": "exam.html",
   "game_page": "game.html",
-  "navigation_title": "菲爾銀盾營運中心",
+  "navigation_title": "銀盾共同體營運中心",
   "primary_color": "#3b82f6",
   "sidebar_color": "#1e293b",
   "background_color": "#f4f6f9",
   "font_family": "Microsoft JhengHei, Arial, sans-serif",
-  "local_storage_prefix": "frobel",
+  "local_storage_prefix": "silver_shield",
   "include_knowledge_search": [
     "yes",
     "no"

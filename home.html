@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>菲爾銀盾｜營運中心｜員工入口</title>
+    <title>銀盾共同體｜營運中心｜員工入口</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,15 +12,15 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <span><b>菲爾銀盾</b>
+                <span><b>銀盾共同體</b>
                     <small>員工入口網站</small>
                 </span>
             </a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a class="active" href="home.html">工作台</a>
                 <a href="sales.html">營運資料</a>
-                <a href="exam.html">教育訓練</a>
-                <a href="game.html">YouTube</a>
+                <a href="exam.html">內部營運手冊</a>
+                <a href="game.html">培訓影音</a>
                 <a href="staff.html">員工出缺勤</a>
                 <a href="mis.html">後台管理</a>
             </nav>
@@ -30,7 +30,7 @@
             <header class="portal-topbar">
                 <div><span class="top-kicker">EMPLOYEE PORTAL</span>
                     <h1>員工工作台</h1>
-                </div><span class="api-state" id="apiState">正在同步園務資料</span>
+                </div><span class="api-state" id="apiState">正在同步營運資料</span>
             </header>
             <div class="portal-content">
                 <section class="portal-welcome">
@@ -42,7 +42,7 @@
                 </section>
                 <section class="clock-panel">
                     <div>
-                        <span class="eyebrow">Wellcome</span>
+                        <span class="eyebrow">WELCOME</span>
                         <h2 id="employeeWelcome">正在驗證員工身分</h2>
                         <p id="employeeProfile">正在確認員工資料。</p>
                     </div>
@@ -68,11 +68,11 @@
                         </div>
                         <div class="quick-links">
                             <a class="quick-link" href="sales.html">
-                                <b>資訊需求單</b>
-                                <small>填寫需求單</small></a>
+                                <b>營運日報</b>
+                                <small>填寫據點與作業摘要</small></a>
                             <a class="quick-link" href="exam.html">
-                                <b>教育訓練</b>
-                                <small>在職研習區</small></a>
+                                <b>內部營運手冊</b>
+                                <small>查閱營運SOP文件</small></a>
                             <a class="quick-link" href="index.html" target="_blank" rel="noopener">
                                 <b>官方網站</b>
                                 <small>另開視窗查看目前前台網站</small></a>
@@ -84,11 +84,11 @@
                                 <h2>快捷入口</h2>
                                 <div class="quick-links">
                                     <a class="quick-link" href="exam.html">
-                                        <b>教育訓練</b>
-                                        <small>進行研習</small></a>
+                                        <b>內部營運手冊</b>
+                                        <small>查閱SOP與完成檢核</small></a>
                                     <a class="quick-link" href="game.html">
-                                        <b>YouTube</b>
-                                        <small>喘口氣吧</small></a>
+                                        <b>培訓影音</b>
+                                        <small>觀看內部宣導內容</small></a>
                                     <a class="quick-link" href="index.html" target="_blank" rel="noopener">
                                         <b>官方網站</b>
                                         <small>另開視窗</small></a>
@@ -102,9 +102,9 @@
                                 <h2>相關知識快速檢索</h2>
                                 <p>搜尋相關敏感資訊與資料保護說明。</p>
                             </div>
-                            <article class="metric-card">
-                                <p>正在載入統計數據…</p>
-                            </article>
+                            <div class="metric-grid" id="metrics">
+                                <article class="metric-card"><p>正在載入統計數據…</p></article>
+                            </div>
                         </div>
                         <div class="search-box">
                             <label class="sr-only" for="search">搜尋知識</label>
@@ -152,7 +152,6 @@
             knowledge = document.querySelector('#knowledge'),
             announcement = document.querySelector('#announcement'),
             metrics = document.querySelector('#metrics'),
-            classes = document.querySelector('#classes'),
             apiState = document.querySelector('#apiState'),
             modal = document.querySelector('#modal'),
             modalCategory = document.querySelector('#modalCategory'),
@@ -263,13 +262,7 @@
                 <p>${esc(item.label)}</p>
                 <strong>${number(item.value)}</strong>
                 ${esc(item.unit)}</article>`).join('');
-            classes.innerHTML = dashboard.classes.map(item =>
-                `<div class="class-row"><span>${esc(item.code)}</span>
-                    <div>
-                        <b>${esc(item.name)}</b>
-                        <small>${esc(item.campus)} 園區</small>                 
-                    </div>
-                </div>`).join(''); renderKnowledge();
+            renderKnowledge();
             apiState.textContent = '資料已同步';
             apiState.classList.add('ok')
         }).catch(error => {

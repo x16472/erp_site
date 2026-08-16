@@ -4,50 +4,50 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>教育訓練｜菲爾銀盾營運中心</title>
+    <title>內部營運手冊｜銀盾共同體營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="portal-shell">
         <aside class="portal-sidebar">
-            <a class="portal-brand" href="home.html"><span><b>菲爾銀盾</b>
+            <a class="portal-brand" href="home.html"><span><b>銀盾共同體</b>
                     <small>員工入口網站</small></span></a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
-                <a href="sales.html">營運資料</a>
-                <a class="active" href="exam.html">教育訓練</a>
-                <a href="game.html">YouTube</a>
+                <a href="sales.html">營運日報</a>
+                <a class="active" href="exam.html">內部營運手冊</a>
+                <a href="game.html">培訓影音</a>
                 <a href="staff.html">員工出缺勤</a>
                 <a href="mis.html">後台管理</a>
             </nav>
-            <p class="portal-foot">EMPLOYEE TRAINING · 內部使用</p>
+            <p class="portal-foot">OPERATIONS HANDBOOK · 內部使用</p>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <div><span class="top-kicker">EMPLOYEE TRAINING</span>
-                    <h1>教育訓練中心</h1>
-                </div><span class="api-state" id="apiState">載入教育資料</span>
+                <div><span class="top-kicker">OPERATIONS HANDBOOK</span>
+                    <h1>內部營運手冊中心</h1>
+                </div><span class="api-state" id="apiState">載入營運資料</span>
             </header>
             <div class="portal-content">
-                <nav class="admin-tabs" id="examTabs"><button class="active" data-panel="libraryPanel">職掌、SOP
-                        與教師手冊</button><button data-panel="quizPanel">即時抽考</button></nav>
+                <nav class="admin-tabs" id="examTabs"><button class="active" data-panel="libraryPanel">營運SOP文件</button><button
+                        data-panel="quizPanel">商業營運規範與工安檢核</button></nav>
                 <section class="admin-panel active" id="libraryPanel">
                     <section id="libraryView">
                         <div class="card-head">
                             <div><span class="eyebrow">TRAINING LIBRARY</span>
-                                <h2>職掌、SOP 與教師手冊</h2>
+                                <h2>營運SOP與作業手冊</h2>
                                 <p>從內部 Word 文件整理而成，可依職務分類或關鍵字快速查閱。</p>
                             </div>
                         </div>
                         <div class="training-toolbar"><label class="search-box"><span
-                                    class="sr-only">搜尋教育文件</span><input id="documentSearch" type="search"
+                                    class="sr-only">搜尋營運SOP文件</span><input id="documentSearch" type="search"
                                     placeholder="搜尋文件名稱或職務分類…"></label><label class="field"><span
                                     class="sr-only">文件分類</span><select id="categoryFilter">
                                     <option value="">全部分類</option>
                                 </select></label></div>
                         <div class="training-grid" id="documentGrid">
-                            <div class="empty">正在整理教育文件…</div>
+                            <div class="empty">正在整理營運SOP文件…</div>
                         </div>
                     </section>
                     <section class="training-reader" id="readerView" hidden>
@@ -65,8 +65,8 @@
                     <section class="portal-card full training-quiz">
                         <div class="card-head">
                             <div><span class="eyebrow">QUICK CHECK</span>
-                                <h2>測驗內容</h2>
-                                <p>題庫存放於教育訓練資料表，完成後可立即查看解說。</p>
+                                <h2>商業營運規範與工安檢核</h2>
+                                <p>題庫由資料庫即時提供，完成後可立即查看規範解說。</p>
                             </div><button class="btn secondary" id="restart" type="button">重新作答</button>
                         </div>
                         <div class="progress"><span id="bar" style="width:0"></span></div>
@@ -130,7 +130,7 @@
             documentGrid.innerHTML = items.length ? items.map(item =>
                 `<button class="training-card" data-document="${item.id}"><span class="tag">${esc(item.category)}</span>
                 <h3>${esc(item.title)}</h3><p>${item.section_count} 個查閱段落</p><small>${esc(item.file_name)}</small>
-                </button>`).join('') : '<div class="empty">找不到符合條件的教育文件。</div>'
+                </button>`).join('') : '<div class="empty">找不到符合條件的營運SOP文件。</div>'
         }
         async function openDocument(id) {
             readerSections.innerHTML = '<div class="empty">正在讀取文件內容…</div>';
@@ -138,7 +138,7 @@
             readerView.hidden = false;
             try {
                 await employeeAccess;
-                const item = await request(`/api/training/document?id=${encodeURIComponent(id)}`);
+                const item = await request(`/api/manuals/document?id=${encodeURIComponent(id)}`);
                 readerCategory.textContent = item.category;
                 readerTitle.textContent = item.title;
                 readerFile.textContent = item.file_name;
@@ -207,8 +207,8 @@
             } if (event.target.id === 'next') { at++; renderQuiz() }
         }; restart.onclick = resetQuiz;
 
-        employeeAccess.then(() => Promise.all([request('/api/training'),
-        request('/api/questions')])).then(([documentItems, questionItems]) => {
+        employeeAccess.then(() => Promise.all([request('/api/manuals'),
+        request('/api/compliance/questions')])).then(([documentItems, questionItems]) => {
             documents = documentItems;
             questions = questionItems;
             const categories = [...new Set(documents.map(item => item.category))];
@@ -216,11 +216,11 @@
                 categories.map(category => `<option value="${esc(category)}">${esc(category)}</option>`).join('');
             renderDocuments();
             renderQuiz();
-            apiState.textContent = `已載入 ${documents.length} 份教育文件`;
+            apiState.textContent = `已載入 ${documents.length} 份營運SOP文件`;
             apiState.classList.add('ok')
         }).catch(() => {
-            apiState.textContent = '教育資料服務未連線';
-            documentGrid.innerHTML = '<div class="error-note">無法讀取教育文件。</div>';
+            apiState.textContent = '營運資料服務未連線';
+            documentGrid.innerHTML = '<div class="error-note">無法讀取營運SOP文件。</div>';
             quiz.innerHTML = '<div class="error-note">題庫載入失敗。</div>'
         });
     </script>

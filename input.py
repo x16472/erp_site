@@ -13,12 +13,17 @@ from datetime import date
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-ALLOWED_CATEGORIES = {"出勤", "班級", "接送", "收費", "設備", "餐點", "其他"}
-ALLOWED_THEMES = {"ocean", "sunrise", "forest"}
+ALLOWED_CATEGORIES = {"出勤", "業務進度", "物流調度", "帳務", "設備", "餐飲服務", "其他"}
+ALLOWED_THEMES = {"shield", "medal", "steel"}
 ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
 ALLOWED_ACCESS_MODES = {"CLOCK_IN", "ACCESS_ONLY"}
 ALLOWED_GENDERS = {"男", "女", "其他"}
 MAX_STAFF_PHOTO_BYTES = 5 * 1024 * 1024
+PRIVATE_NOTE_PATTERN = re.compile(
+    r"(身分證|居留證|姓名|電話|手機|地址|電子郵件|e-?mail|"
+    r"\b[A-Z][12]\d{8}\b|\b09\d{8}\b|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,})",
+    re.IGNORECASE,
+)
 
 
 class InputError(ValueError):
@@ -50,21 +55,24 @@ def validate_operation(payload: dict[str, Any]) -> dict[str, Any]:
         date.fromisoformat(operation_date)
     except ValueError as exc:
         raise InputError("日期格式不正確") from exc
-    campus = _text(payload.get("campus"), "園區代號", 12).upper()
+    campus = _text(payload.get("campus"), "營運據點代號", 12).upper()
     if not re.fullmatch(r"[A-Z0-9_-]+", campus):
-        raise InputError("園區代號格式不正確")
+        raise InputError("營運據點代號格式不正確")
     try:
         count = int(payload.get("count", 0))
     except (TypeError, ValueError) as exc:
         raise InputError("數量必須是整數") from exc
     if count < 0 or count > 9999:
         raise InputError("數量必須介於 0 到 9999")
+    note = _text(payload.get("note"), "備註", 200, required=False)
+    if PRIVATE_NOTE_PATTERN.search(note):
+        raise InputError("備註不得包含可辨識個人的姓名、證件、電話、地址或電子郵件")
     return {
         "date": operation_date,
         "campus": campus,
         "category": category,
         "count": count,
-        "note": _text(payload.get("note"), "備註", 200, required=False),
+        "note": note,
     }
 
 
@@ -105,7 +113,7 @@ def validate_staff(payload: dict[str, Any]) -> dict[str, Any]:
                     raise InputError("年齡必須介於 16 到 100")
                 result[field] = age
             case "department":
-                result[field] = _text(payload.get(field), "部門", 50)
+                result[field] = _text(payload.get(field), "部門", 5)
             case "position":
                 result[field] = _text(payload.get(field), "職位", 50)
     result["traits"] = _text(payload.get("traits"), "個性特質", 200, required=False)
@@ -120,20 +128,20 @@ def validate_department(payload: dict[str, Any]) -> dict[str, Any]:
         raise InputError("部門編號不正確") from exc
     if department_id < 0:
         raise InputError("部門編號不正確")
-    return {"id": department_id, "name": _text(payload.get("name"), "部門名稱", 50)}
+    return {"id": department_id, "name": _text(payload.get("name"), "部門名稱", 5)}
 
 
-def validate_training_document_state(payload: dict[str, Any]) -> dict[str, Any]:
+def validate_operations_manual_state(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         document_id = int(payload.get("id"))
     except (TypeError, ValueError) as exc:
-        raise InputError("教育文件編號不正確") from exc
+        raise InputError("營運SOP文件編號不正確") from exc
     if document_id <= 0 or not isinstance(payload.get("is_active"), bool):
-        raise InputError("教育文件狀態不正確")
+        raise InputError("營運SOP文件狀態不正確")
     return {"id": document_id, "is_active": payload["is_active"]}
 
 
-def validate_training_question(payload: dict[str, Any]) -> dict[str, Any]:
+def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         question_id = int(payload.get("id") or 0)
         document_id = int(payload.get("document_id") or 0) or None
