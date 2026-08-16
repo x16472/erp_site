@@ -384,11 +384,7 @@
         async function loadTable(name, page) {
             selectedTable = name; currentPage = page; renderCatalog();
             const catalogItem = tables.find(item => item.name === name);
-<<<<<<< HEAD
             dataTitle.textContent = catalogItem?.display_name || name;//維持現狀的三元判斷式
-=======
-            dataTitle.textContent = catalogItem?.display_name || name;
->>>>>>> 72a379df4a9f4b79647c236ca46725c0cf9a6ca4
             dataBody.innerHTML = '<tr><td>查詢中…</td></tr>';
             try {
                 const result = await request(`/api/admin/table?name=${encodeURIComponent(name)}&page=${page}&page_size=${pageSize}`);
