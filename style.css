@@ -183,7 +183,7 @@ img {
     height: 48px;
     border-radius: 13px;
     object-fit: cover;
-    background: #fff
+    background: transparent
 }
 
 .public-logo b {
@@ -376,7 +376,7 @@ img {
 
 .public-stat b {
     font-size: 34px;
-    color: var(--navy)
+    color: var(--navy);
 }
 
 .public-stat span {
@@ -386,7 +386,7 @@ img {
 }
 
 .public-section {
-    max-width: 1220px;
+    max-width: 1420px;
     margin: auto;
     padding: 95px 30px
 }
@@ -1931,7 +1931,7 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 }
 
 .day-section .eyebrow {
-    color: #8edcff
+    color: #2e30319c
 }
 
 .day-item {
@@ -1972,6 +1972,24 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 .team-toolbar>span {
     color: var(--muted);
     font-size: 13px
+}
+
+#industries {
+    /* 強制蓋掉 .day-section 的白底，換成與網頁頂部一致的深藍色 */
+    background: #0f172a !important;
+
+    /* 讓區域內的文字（如描述段落）預設變成淺色 */
+    color: #e2e8f0;
+}
+
+/* 確保大標題在深色背景下是純白色 */
+#industries h2 {
+    color: #ffffff !important;
+}
+
+/* 確保小標題的 eyebrow 亮藍色有正確顯示 */
+#industries .eyebrow {
+    color: #8fdcff !important;
 }
 
 .cta-banner {
@@ -2650,13 +2668,14 @@ body[data-theme="steel"] .hero-card {
 
 .sector-card {
     min-height: 260px;
-    border: 1px solid #d2d7de;
+    border: 1px solid #910202b2;
     border-top: 4px solid var(--silver-shield-red);
-    box-shadow: 0 12px 28px #1020380d
+    box-shadow: 0 12px 28px #77777777
 }
 
 .sector-card:nth-child(even) {
-    border-top-color: var(--silver-shield-blue)
+    border-top-color: var(--silver-shield-blue);
+    background-color: #616161;
 }
 
 .sector-card time {

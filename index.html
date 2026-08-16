@@ -81,7 +81,7 @@
         <section class="day-section business-sector-section" id="industries">
             <div class="public-section">
                 <div class="section-intro">
-                    <div><span class="eyebrow">OPERATIONS &amp; INDUSTRIES</span>
+                    <div><span class="eyebrow" style="color:#8fdcff"></span>OPERATIONS &amp; INDUSTRIES</span>
                         <h2>四大產業據點，共構完整營運鏈</h2>
                     </div>
                     <p>從共同體治理、顧客服務、生產製造到原料取得，各據點彼此支援並共享專業資源。</p>
@@ -108,7 +108,7 @@
         </section>
         <section class="public-section" id="team">
             <div class="section-intro">
-                <div><span class="eyebrow">MEET OUR TEAM</span>
+                <div><span class="eyebrow" style="color:#8fdcff">MEET OUR TEAM</span>
                     <h2>專業後勤團隊，成為客戶最強力的支柱</h2>
                 </div>
                 <p>從營運、製造、財務、資訊、福利到後勤，各領域夥伴以專業能力支援客戶與共同體事業。</p>
@@ -200,7 +200,8 @@
                         <h3>${esc(item.display_name)}</h3>
                         <b>${esc(item.position)}</b><p>${esc(item.traits || '以專業支援共同體營運')}</p>
                     </div>
-                </article>`).join('') || '<div class="empty">此部門目前沒有可公開的專業團隊資料。</div>'; staffGrid.querySelectorAll('img').forEach(image => image.addEventListener('error', () => { image.src = 'static/appicon.png' }, { once: true }))
+                </article>`).join('') || '<div class="empty">此部門目前沒有可公開的專業團隊資料。</div>'; staffGrid.querySelectorAll('img').forEach(image => image.addEventListener('error',
+                        () => { image.src = 'static/appicon.png' }, { once: true }))
         }
         async function loadStaff() {
             staffGrid.innerHTML = '<div class="empty">正在整理專業團隊…</div>';
