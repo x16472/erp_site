@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>後台管理區｜菲爾銀盾營運中心</title>
+    <title>後台管理區｜銀盾共同體營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,12 +12,12 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <span><b>菲爾銀盾</b><small>後台管理區</small></span></a>
+                <span><b>銀盾共同體</b><small>後台管理區</small></span></a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
-                <a href="sales.html">營運資料</a>
-                <a href="exam.html">教育訓練</a>
-                <a href="game.html">YouTube</a>
+                <a href="sales.html">營運日報</a>
+                <a href="exam.html">內部營運手冊</a>
+                <a href="game.html">培訓影音</a>
                 <a href="staff.html">員工出缺勤</a>
                 <a class="active" href="mis.html">後台管理</a>
             </nav>
@@ -46,7 +46,7 @@
                 <div class="portal-content">
                     <div class="card-head">
                         <div><span class="eyebrow">ADMIN CONSOLE</span>
-                            <h2>園務系統管理</h2>
+                            <h2>營運系統管理</h2>
                             <p>登入者：<span id="adminName"></span></p>
                         </div><button class="btn secondary" id="logoutButton">登出</button>
                     </div>
@@ -54,7 +54,7 @@
                         <button class="active" data-panel="settingsPanel">官方網站設定</button>
                         <button data-panel="dataPanel">資料表查閱</button>
                         <button data-panel="queuePanel">待審佇列</button>
-                        <button data-panel="trainingPanel">教育文件</button>
+                        <button data-panel="trainingPanel">營運SOP文件</button>
                         <button data-panel="questionPanel">題庫維護</button>
                     </nav>
                     <section class="admin-panel active" id="settingsPanel">
@@ -63,13 +63,13 @@
                                 <div class="card-head">
                                     <div><span class="eyebrow">PUBLIC WEBSITE</span>
                                         <h2>官方網站版面設定</h2>
-                                        <p>儲存後會寫入網站專屬設定表，不會修改既有園務資料表。</p>
+                                        <p>儲存後會寫入 Company_WebSettings，不會修改其他營運資料表。</p>
                                     </div>
                                 </div>
                                 <div class="form-grid"><label class="field"><span>視覺主題</span><select name="theme">
-                                            <option value="ocean">海洋藍</option>
-                                            <option value="sunrise">晨光橙</option>
-                                            <option value="forest">森林綠</option>
+                                            <option value="shield">銀盾藍</option>
+                                            <option value="medal">勳章紅</option>
+                                            <option value="steel">鋼鐵灰</option>
                                         </select></label><label class="field full">
                                         <span>首頁主標題</span><input name="hero_title" maxlength="60" required></label>
                                     <label class="field full"><span>首頁說明</span>
@@ -89,7 +89,7 @@
                                     </div>
                                 </div>
                                 <div class="settings-preview" id="settingsPreview">
-                                    <span>菲爾銀盾幼稚園</span>
+                                    <span>銀盾共同體</span>
                                     <h2 id="previewTitle">首頁標題</h2>
                                     <p id="previewSubtitle">首頁說明</p>
                                 </div>
@@ -98,7 +98,9 @@
                     </section>
                     <section class="admin-panel" id="dataPanel">
                         <div class="admin-data-layout">
-                            <aside class="catalog-pane"><label class="field"><span>搜尋資料表</span>
+                            <aside class="catalog-pane">
+                                <label class="field">
+                                    <span>搜尋資料表</span>
                                     <input id="catalogSearch" type="search"></label>
                                 <div class="catalog-list" id="catalog">
                                     <div class="empty">載入中…</div>
@@ -164,9 +166,9 @@
                     <section class="admin-panel" id="trainingPanel">
                         <div class="queue-head">
                             <div><span class="eyebrow">TRAINING FILES</span>
-                                <h2>教育文件維護</h2>
-                                <p>同步 `data/exam` 的 Word 文件，並控制前台是否顯示。</p>
-                            </div><button class="btn" id="syncTraining" type="button">同步教育文件</button>
+                                <h2>營運SOP文件維護</h2>
+                                <p>同步 `data/exam` 的 Word 文件，並控制員工入口是否顯示。</p>
+                            </div><button class="btn" id="syncTraining" type="button">同步營運SOP文件</button>
                         </div>
                         <p id="syncStatus" aria-live="polite"></p>
                         <div class="staff-admin-list" id="trainingDocumentList">
@@ -211,7 +213,7 @@
                             <section class="portal-card wide">
                                 <div class="card-head">
                                     <div><span class="eyebrow">QUESTION BANK</span>
-                                        <h2>園務安全知識題庫</h2>
+                                        <h2>商業營運規範與工安題庫</h2>
                                     </div>
                                 </div>
                                 <div class="staff-admin-list" id="questionList">
@@ -263,7 +265,7 @@
             n.textContent = value ?? ''; return n.innerHTML
         };
         const number = value => new Intl.NumberFormat('zh-TW').format(value);
-        let trainingDocuments = [], trainingQuestions = [];
+        let operationsManuals = [], complianceQuestions = [];
         const trainingDocumentList = document.querySelector('#trainingDocumentList'),
             questionForm = document.querySelector('#questionForm'),
             questionDocument = document.querySelector('#questionDocument'),
@@ -299,15 +301,15 @@
                     await Promise.all([request('/api/admin/settings'), request('/api/admin/catalog'),
                     request('/api/admin/submissions'),
                     request('/api/admin/staff'),
-                    request('/api/admin/training/documents'),
-                    request('/api/admin/training/questions')]);
+                    request('/api/admin/manuals/documents'),
+                    request('/api/admin/compliance/questions')]);
                 settingsForm.theme.value = settings.theme;
                 settingsForm.hero_title.value = settings.hero_title;
                 settingsForm.hero_subtitle.value = settings.hero_subtitle;
                 settingsForm.announcement.value = settings.announcement || '';
                 updatePreview(); tables = catalogData; staffItems = staff;
-                submissions = submissionData; trainingDocuments = documents;
-                trainingQuestions = questionItems;
+                submissions = submissionData; operationsManuals = documents;
+                complianceQuestions = questionItems;
                 renderCatalog();
                 renderQueue();
                 renderTrainingDocuments();
@@ -368,11 +370,12 @@
             }
         };
         function renderCatalog() {
+            //20260816第379行「<small>${esc(item.name)} ·」的這個刪掉，顯示上就不擁擠，也更美觀
             const q = catalogSearch.value.trim().toLowerCase(),
-                items = tables.filter(item => item.name.toLowerCase().includes(q));
+                items = tables.filter(item => `${item.name} ${item.display_name || ''}`.toLowerCase().includes(q));
             catalog.innerHTML = items.map(item =>
                 `<button class="catalog-item ${item.name === selectedTable ? 'active' : ''}" data-table="${esc(item.name)}">
-                <span>${esc(item.name)}</span>
+                <span>${esc(item.display_name || item.name)}</span>
                 <small>${number(item.row_count)} 筆</small>
                 </button>`).join('') || '<div class="empty">找不到資料表</div>'
         } catalogSearch.oninput = renderCatalog; catalog.onclick = event => {
@@ -380,14 +383,17 @@
         };
         async function loadTable(name, page) {
             selectedTable = name; currentPage = page; renderCatalog();
-            dataTitle.textContent = name;
+            const catalogItem = tables.find(item => item.name === name);
+            dataTitle.textContent = catalogItem?.display_name || name;//維持現狀的三元判斷式
             dataBody.innerHTML = '<tr><td>查詢中…</td></tr>';
             try {
                 const result = await request(`/api/admin/table?name=${encodeURIComponent(name)}&page=${page}&page_size=${pageSize}`);
                 totalRows = result.total;
                 dataMeta.textContent = `${result.columns.length} 欄 · ${number(result.total)} 筆 · 唯讀遮罩`;
                 dataHead.innerHTML = `<tr>${result.columns.map(column => `<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`;
-                dataBody.innerHTML = result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column => `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`;
+                dataBody.innerHTML = result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column =>
+                    `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') :
+                    `<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`;
                 const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
                 pageInfo.textContent = `第 ${page} / ${totalPages} 頁`;
                 prevPage.disabled = page <= 1;
@@ -424,14 +430,14 @@
             selectedCategory = button.dataset.category;
             renderQueue()
         };
-        /*渲染「教育訓練文件」清單，並同步更新「新增/編輯題目」表單中的文件下拉選單（questionDocument）。依賴的全域狀態：trainingDocuments（陣列）*/
+        /* 渲染營運SOP文件，並同步更新題目表單的文件選單。 */
         function renderTrainingDocuments() {
             //將每筆文件轉成一張卡片（article）
             //is_active 為 false 時，卡片加上 inactive class（樣式變灰/降低顯示優先度）
             //顯示標題、分類、段落數、原始檔名，並在停用時附加「已停用」文字
             //按鈕依目前啟用狀態顯示「停用」或「啟用」，並透過 data-* 屬性
             //傳遞文件id與「點擊後應該切換成的目標狀態」(data-active)
-            trainingDocumentList.innerHTML = trainingDocuments.map(item => `<article class="staff-admin-card training-document-card ${item.is_active ? '' : 'inactive'}">
+            trainingDocumentList.innerHTML = operationsManuals.map(item => `<article class="staff-admin-card training-document-card ${item.is_active ? '' : 'inactive'}">
             <div>
                 <b>${esc(item.title)}</b>
                 <small>${esc(item.category)} · ${item.section_count} 段 · ${esc(item.file_name)}${item.is_active ? '' : ' · 已停用'}</small>
@@ -439,13 +445,13 @@
             <button class="btn secondary compact-action" data-document-state="${item.id}" data-active="${item.is_active ? 'false' : 'true'}">
                 ${item.is_active ? '停用' : '啟用'}
             </button>
-        </article>`).join('') || '<div class="empty">目前沒有教育文件。</div>';
+        </article>`).join('') || '<div class="empty">目前沒有營運SOP文件。</div>';
             questionDocument.innerHTML = '<option value="">不指定文件</option>' +
-                trainingDocuments.map(item =>
+                operationsManuals.map(item =>
                     `<option value="${item.id}">${esc(item.title)}</option>`
                 ).join('');
         }
-        /*renderQuestions渲染「訓練測驗題目」清單。依賴的全域狀態：trainingQuestions（陣列）*/
+        /* 渲染商業規範與工安檢核題目。 */
         function renderQuestions() {
             //將每筆題目轉成一張卡片（article）
             //is_active 為 false 時，卡片加上 inactive class
@@ -453,7 +459,7 @@
             //索引轉為人類可讀的第幾個選項）
             //「編輯」按鈕永遠顯示；「停用」按鈕只在題目目前為啟用狀態時才顯示
             //（已停用的題目不需要再提供停用操作）
-            questionList.innerHTML = trainingQuestions.map(item => `<article class="staff-admin-card question-card ${item.is_active ? '' : 'inactive'}">
+            questionList.innerHTML = complianceQuestions.map(item => `<article class="staff-admin-card question-card ${item.is_active ? '' : 'inactive'}">
             <div>
                 <b class="question-title" title="${esc(item.category)}｜${esc(item.question)}">${esc(item.category)}｜${esc(item.question)}</b>
                 <small>${item.options.length} 個選項 · 答案 ${item.answer + 1}${item.is_active ? '' : ' · 已停用'}</small>
@@ -467,7 +473,7 @@
         }
         trainingDocumentList.onclick = async event => {
             const button = event.target.closest('[data-document-state]');
-            if (!button) return; await request('/api/admin/training/document', {
+            if (!button) return; await request('/api/admin/manuals/document', {
                 method: 'POST', headers: {
                     'Content-Type': 'application/json', 'X-CSRF-Token': csrf
                 }, body: JSON.stringify({
@@ -476,14 +482,14 @@
                 })
             });
             //重新載入並渲染文件
-            trainingDocuments = await request('/api/admin/training/documents');
+            operationsManuals = await request('/api/admin/manuals/documents');
             renderTrainingDocuments()
         };
         questionList.onclick = async event => {
             const edit = event.target.closest('[data-question-edit]'),
                 disable = event.target.closest('[data-question-disable]');
             if (edit) {
-                const item = trainingQuestions.find(row => row.id === Number(edit.dataset.questionEdit));
+                const item = complianceQuestions.find(row => row.id === Number(edit.dataset.questionEdit));
                 //點擊編輯：將資料填入表單
                 if (item) {
                     questionForm.elements.id.value = item.id;
@@ -498,12 +504,12 @@
             }
             //點擊停用：刪除/停用題目
             if (disable && confirm('確定停用此題目？')) {
-                await request('/api/admin/training/question', {
+                await request('/api/admin/compliance/question', {
                     method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
                     //重新載入並渲染題目
                     body: JSON.stringify({ id: Number(disable.dataset.questionDisable) })
                 });
-                trainingQuestions = await request('/api/admin/training/questions');
+                complianceQuestions = await request('/api/admin/compliance/questions');
                 renderQuestions()
             }
         };
@@ -519,14 +525,14 @@
             };
             questionStatus.textContent = '儲存中…';
             try {
-                await request('/api/admin/training/question', {
+                await request('/api/admin/compliance/question', {
                     method: 'POST', headers: {
                         'Content-Type': 'application/json', 'X-CSRF-Token': csrf
                     },
                     body: JSON.stringify(payload)
                 });
                 questionForm.reset();
-                trainingQuestions = await request('/api/admin/training/questions');
+                complianceQuestions = await request('/api/admin/compliance/questions');
                 renderQuestions();
                 questionStatus.className = 'success-note';
                 questionStatus.textContent = '題目已儲存。'
@@ -544,13 +550,13 @@
             syncTraining.disabled = true;
             syncStatus.textContent = '正在轉換並同步 Word 文件…';
             try {
-                const result = await request('/api/admin/training/sync', {
+                const result = await request('/api/admin/manuals/sync', {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}'
                 });
-                trainingDocuments = await request('/api/admin/training/documents');
+                operationsManuals = await request('/api/admin/manuals/documents');
                 renderTrainingDocuments();
                 syncStatus.className = 'success-note';
-                syncStatus.textContent = `已同步 ${result.documents} 份教育文件。`
+                syncStatus.textContent = `已同步 ${result.documents} 份營運SOP文件。`
             } catch (error) {
                 syncStatus.className = 'error-note';
                 syncStatus.textContent = error.message
