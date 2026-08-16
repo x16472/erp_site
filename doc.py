@@ -1,4 +1,4 @@
-"""教育訓練 Word 文件的轉換、文字擷取與資料庫同步。
+"""營運SOP Word 文件的轉換、文字擷取與資料庫同步。
 舊版*.doc優先使用 LibreOffice 無介面轉成快取*.docx；
 若本機沒有LibreOffice，才在 Windows使用 Microsoft Word COM。原始文件永遠不會被修改。
 """
@@ -26,15 +26,16 @@ SECTION_LENGTH = 2600
 SYNC_LOCK = threading.Lock()
 # 目的是「精簡＋方便未來擴充關鍵字」，用資料驅動的寫法會更乾淨、更易維護
 _CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "財務行政": ("會計", "財務", "出納"),
-    "教學職掌": ("教師", "老師", "教學", "班", "研發", "安親", "科任"),
-    "交通安全": ("車輛", "交通"),
-    "人事行政": ("人事",),
+    "財務行政": ("會計", "財務", "出納", "帳務", "稅務"),
+    "商務營運": ("業務", "合約", "客戶", "銷售", "專案", "營運"),
+    "工安健康": ("安全", "健康", "醫療", "衛生", "消防", "急救", "礦場"),
+    "生產製造": ("工藝", "鍛造", "裁縫", "製程", "品質", "設備", "倉儲"),
+    "人事行政": ("人事", "招募", "福利", "考勤"),
 }
 
 
 class DocumentImportError(RuntimeError):
-    """教育文件無法轉換、擷取或同步時使用的安全例外。"""
+    """營運SOP文件無法轉換、擷取或同步時使用的安全例外。"""
 
 
 def _word_files(suffix: str) -> list[Path]:
@@ -78,7 +79,7 @@ def _run_conversion(command: list[str], environment: dict[str, str] | None = Non
 
 
 def _convert_with_libreoffice(executable: str, legacy: list[Path]) -> None:
-    with tempfile.TemporaryDirectory(prefix="frobel-lo-") as profile:
+    with tempfile.TemporaryDirectory(prefix="silver-shield-lo-") as profile:
         command = [
             executable,
             "--headless",
@@ -158,7 +159,7 @@ def _category(file_name: str) -> str:
     for category, keywords in _CATEGORY_KEYWORDS.items():
         if any(keyword in file_name for keyword in keywords):
             return category
-    return "園務行政"
+    return "共同體行政"
 
 
 def _looks_like_heading(text: str, style_name: str) -> bool:
@@ -187,7 +188,7 @@ def _extract_sections(path: Path) -> list[dict[str, str]]:
             if rows:
                 blocks.append(("\n".join(rows), "表格"))
     except Exception as exc:
-        raise DocumentImportError(f"無法讀取教育文件：{path.name}") from exc
+        raise DocumentImportError(f"無法讀取營運SOP文件：{path.name}") from exc
 
     title = path.stem
     sections: list[dict[str, str]] = []
@@ -219,7 +220,7 @@ def _extract_sections(path: Path) -> list[dict[str, str]]:
     return sections or [{"heading": "文件內容", "content": "此文件目前沒有可擷取的文字內容。"}]
 
 
-def read_training_documents() -> list[dict[str, Any]]:
+def read_operations_manuals() -> list[dict[str, Any]]:
     """讀取 ``data/exam`` 的 Word 文件，回傳可寫入資料庫的結構。"""
     if not SOURCE_DIR.is_dir():
         return []
@@ -241,7 +242,7 @@ def read_training_documents() -> list[dict[str, Any]]:
             stat = source.stat()
             sections = _extract_sections(readable)
         except OSError as exc:
-            raise DocumentImportError(f"無法存取教育文件：{source.name}") from exc
+            raise DocumentImportError(f"無法存取營運SOP文件：{source.name}") from exc
         result.append(
             {
                 "file_name": source.name,
@@ -255,29 +256,29 @@ def read_training_documents() -> list[dict[str, Any]]:
     return result
 
 
-def sync_training_library(*, ensure_schema: bool = True) -> int:
+def sync_operations_manuals(*, ensure_schema: bool = True) -> int:
     """將文件同步至網站專用資料表，並避免多個請求同時執行轉檔。"""
     import data
 
     with SYNC_LOCK:
         if ensure_schema:
             data.ensure_application_schema()
-        return data.upsert_training_documents(read_training_documents())
+        return data.upsert_operations_manuals(read_operations_manuals())
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="匯入菲爾銀盾教育訓練 Word 文件")
+    parser = argparse.ArgumentParser(description="匯入銀盾共同體營運SOP Word 文件")
     parser.add_argument("--sync", action="store_true", help="擷取後寫入 SQL Server")
     args = parser.parse_args()
     try:
         if args.sync:
-            print(f"已同步 {sync_training_library()} 份教育訓練文件。")
+            print(f"已同步 {sync_operations_manuals()} 份營運SOP文件。")
         else:
-            documents = read_training_documents()
+            documents = read_operations_manuals()
             sections = sum(len(item["sections"]) for item in documents)
             print(f"已讀取 {len(documents)} 份文件，共 {sections} 個段落區塊。")
     except DocumentImportError as exc:
-        raise SystemExit(f"教育文件處理失敗：{exc}") from exc
+        raise SystemExit(f"營運SOP文件處理失敗：{exc}") from exc
 
 
 if __name__ == "__main__":

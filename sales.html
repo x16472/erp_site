@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>營運資料蒐集｜菲爾銀盾營運中心</title>
+    <title>營運資料蒐集｜銀盾共同體營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,13 +12,13 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <span><b>菲爾銀盾</b> <small>員工入口網站</small></span>
+                <span><b>銀盾共同體</b> <small>員工入口網站</small></span>
             </a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
-                <a class="active" href="sales.html">營運蒐集</a>
-                <a href="exam.html">教育訓練</a>
-                <a href="game.html">YouTube</a>
+                <a class="active" href="sales.html">營運日報</a>
+                <a href="exam.html">內部營運手冊</a>
+                <a href="game.html">培訓影音</a>
                 <a href="staff.html">員工出缺勤</a>
                 <a href="mis.html">後台管理</a>
             </nav>
@@ -32,16 +32,16 @@
             </header>
             <div class="portal-content">
                 <nav class="admin-tabs" id="salesTabs">
-                    <button class="active" data-panel="reportPanel">新增需求單</button><button
-                        data-panel="lifecyclePanel">相關資料彙總</button>
+                    <button class="active" data-panel="reportPanel">新增營運日報</button><button
+                        data-panel="lifecyclePanel">商業合約與帳務生命週期</button>
                 </nav>
                 <section class="admin-panel active" id="reportPanel">
                     <div class="portal-grid">
                         <section class="portal-card wide">
                             <div class="card-head">
                                 <div><span class="eyebrow">DAILY REPORT</span>
-                                    <h2>新增需求單</h2>
-                                    <p>填寫需求單；送出後進入管理審閱佇列。</p>
+                                    <h2>新增營運日報</h2>
+                                    <p>填寫據點作業摘要；送出後進入管理審閱佇列。</p>
                                 </div>
                             </div>
                             <form id="operationForm">
@@ -52,11 +52,11 @@
                                         </select></label><label class="field"><span>資料類別</span><select name="category"
                                             required>
                                             <option>出勤</option>
+                                            <option>業務進度</option>
+                                            <option>物流調度</option>
+                                            <option>帳務</option>
                                             <option>設備</option>
-                                            <option>應收</option>
-                                            <option>應付</option>
-                                            <option>場地</option>
-                                            <option>餐點</option>
+                                            <option>餐飲服務</option>
                                             <option>其他</option>
                                         </select></label><label class="field"><span>數量</span><input type="number"
                                             name="count" min="0" max="9999" value="0" required></label><label
@@ -73,8 +73,8 @@
                                     <h2>填報提醒</h2>
                                 </div>
                             </div>
-                            <div class="success-note">只記錄彙總數量與園務摘要，不輸入幼兒、家長或教職員個資。</div>
-                            <p class="hint">資料會寫入網站專用待審資料表，由 後台管理員確認後再處理；不會直接修改既有園務資料表。</p>
+                            <div class="success-note">只記錄彙總數量與營運摘要，嚴禁輸入任何可辨識個人的隱私資訊。</div>
+                            <p class="hint">資料會寫入專用待審資料表，由後台管理員確認後再處理；不會直接修改其他營運資料。</p>
                             <div id="lastSubmission"></div>
                         </aside>
                     </div>
@@ -82,13 +82,13 @@
                 <section class="admin-panel" id="lifecyclePanel">
                     <section class="portal-card full">
                         <div class="card-head">
-                            <div><span class="eyebrow">PAYMENT FLOW</span>
-                                <h2>相關資料彙總</h2>
-                                <p>即時讀取相關 SQL Server 資料表筆數，協助理解收費資料如何流動。</p>
+                            <div><span class="eyebrow">CONTRACT &amp; ACCOUNTING FLOW</span>
+                                <h2>商業合約與帳務生命週期</h2>
+                                <p>即時彙整營運分類與待審紀錄，呈現合約、帳務及執行事項的處理狀態。</p>
                             </div>
                         </div>
                         <div class="process-list" id="process">
-                            <div class="empty">正在讀取收費流程…</div>
+                            <div class="empty">正在讀取營運流程…</div>
                         </div>
                     </section>
                 </section>
@@ -151,6 +151,13 @@
             formStatus.className = '';
             formStatus.textContent = '送出中…';
             const payload = Object.fromEntries(new FormData(operationForm));
+            const privatePattern = /(身分證|居留證|姓名|電話|手機|地址|電子郵件|e-?mail|\b[A-Z][12]\d{8}\b|\b09\d{8}\b|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,})/i;
+            if (privatePattern.test(payload.note || '')) {
+                formStatus.className = 'error-note';
+                formStatus.textContent = '備註不得包含可辨識個人的姓名、證件、電話、地址或電子郵件。';
+                operationForm.elements.note.focus();
+                return
+            }
             payload.count = Number(payload.count);
             try {
                 await employeeAccess;
@@ -166,7 +173,7 @@
                     <p>${esc(body.campus)} · ${esc(body.date)} · ${number(body.count)} 筆</p></div>`;
                 operationForm.reset();
                 operationForm.date.value = payload.date;
-                toast.textContent = '園務日報已寫入待審資料表';
+                toast.textContent = '營運日報已寫入待審資料表';
                 toast.classList.add('show');
                 setTimeout(() => toast.classList.remove('show'), 2200)
             } catch (error) {

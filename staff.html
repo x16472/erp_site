@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>員工出缺勤｜菲爾銀盾營運中心</title>
+    <title>員工出缺勤｜銀盾共同體營運中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,13 +12,13 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <span><b>菲爾銀盾</b>
+                <span><b>銀盾共同體</b>
                     <small>MIS 員工管理</small></span></a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
-                <a href="sales.html">營運蒐集</a>
-                <a href="exam.html">教育訓練</a>
-                <a href="game.html">YouTube</a>
+                <a href="sales.html">營運日報</a>
+                <a href="exam.html">內部營運手冊</a>
+                <a href="game.html">培訓影音</a>
                 <a class="active" href="staff.html">員工出缺勤</a>
                 <a href="mis.html">後台管理</a>
             </nav>
@@ -128,8 +128,8 @@
                                     <p>員工表單只會顯示啟用中的部門。</p>
                                 </div>
                             </div>
-                            <input name="id" type="hidden"><label class="field"><span>部門名稱</span>
-                                <input name="name" maxlength="50" required></label>
+                            <input name="id" type="hidden"><label class="field"><span>部門名稱（最多 5 個字）</span>
+                                <input name="name" maxlength="5" required></label>
                             <div class="actions"><button class="btn" type="submit">儲存部門</button>
                                 <button class="btn secondary" id="resetDepartment" type="button">新增另一個部門</button>
                             </div>

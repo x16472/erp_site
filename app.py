@@ -23,7 +23,7 @@ from urllib.request import Request, urlopen
 from typing import Any
 
 import data
-import doc as training_documents
+import doc as operations_manuals
 import input as user_input
 
 ROOT = Path(__file__).parent.resolve()
@@ -63,7 +63,7 @@ def youtube_metadata(item: dict[str, str]) -> dict[str, str]:
         return cached
     query = urlencode({"url": item["watch_url"], "format": "json"})
     endpoint = "https://www.youtube.com/oembed?" + query
-    request = Request(endpoint, headers={"User-Agent": "FrobelOperations/1.0"})
+    request = Request(endpoint, headers={"User-Agent": "SilverShieldOperations/1.0"})
     try:
         with urlopen(request, timeout=6) as response:
             payload = json.loads(response.read(65536).decode("utf-8"))
@@ -111,7 +111,7 @@ class ApplicationServer(ThreadingHTTPServer):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "FrobelOperations/1.0"
+    server_version = "SilverShieldOperations/1.0"
 
     def security_headers(self) -> None:
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -152,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def session(self) -> dict | None:
         cookie = SimpleCookie(self.headers.get("Cookie", ""))
-        token = cookie.get("frobel_admin")
+        token = cookie.get("silver_shield_admin")
         if not token:
             return None
         now = time.time()
@@ -166,7 +166,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def employee_session(self) -> dict | None:
         cookie = SimpleCookie(self.headers.get("Cookie", ""))
-        token = cookie.get("frobel_employee")
+        token = cookie.get("silver_shield_employee")
         if not token:
             return None
         now = time.time()
@@ -258,9 +258,9 @@ class Handler(BaseHTTPRequestHandler):
             "/api/operations": data.operations_process,
             "/api/departments": data.departments,
             "/api/branches": data.branches,
-            "/api/questions": data.questions,
+            "/api/compliance/questions": data.compliance_questions,
             "/api/staff/attendance-options": data.attendance_staff_options,
-            "/api/training": data.training_catalog,
+            "/api/manuals": data.operations_manual_catalog,
         }
         if parsed.path in employee_routes:
             try:
@@ -272,12 +272,12 @@ class Handler(BaseHTTPRequestHandler):
             except data.DatabaseUnavailable as exc:
                 return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
-        if parsed.path == "/api/training/document":
+        if parsed.path == "/api/manuals/document":
             try:
                 if not self.require_employee():
                     return
                 document_id = int(parse_qs(parsed.query).get("id", ["0"])[0])
-                return self.send_json({"data": data.training_document(document_id)})
+                return self.send_json({"data": data.operations_manual_document(document_id)})
             except ValueError as exc:
                 return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
             except data.DatabaseUnavailable as exc:
@@ -322,10 +322,10 @@ class Handler(BaseHTTPRequestHandler):
                     if day:
                         date.fromisoformat(day)
                     return self.send_json({"data": data.attendance_records(day, query.get("employee_id", [""])[0].upper())})
-                if parsed.path == "/api/admin/training/documents":
-                    return self.send_json({"data": data.training_documents_admin()})
-                if parsed.path == "/api/admin/training/questions":
-                    return self.send_json({"data": data.training_questions_admin()})
+                if parsed.path == "/api/admin/manuals/documents":
+                    return self.send_json({"data": data.operations_manuals_admin()})
+                if parsed.path == "/api/admin/compliance/questions":
+                    return self.send_json({"data": data.compliance_questions_admin()})
             except ValueError as exc:
                 return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
             except data.DatabaseUnavailable as exc:
@@ -396,20 +396,20 @@ class Handler(BaseHTTPRequestHandler):
                 if parsed.path == "/api/admin/departments":
                     department = user_input.validate_department(self.read_json())
                     return self.send_json({"data": data.save_department(department, session["username"])})
-                if parsed.path == "/api/admin/training/sync":
-                    documents = training_documents.sync_training_library(ensure_schema=False)
+                if parsed.path == "/api/admin/manuals/sync":
+                    documents = operations_manuals.sync_operations_manuals(ensure_schema=False)
                     return self.send_json({"data": {"documents": documents}})
-                if parsed.path == "/api/admin/training/document":
-                    item = user_input.validate_training_document_state(self.read_json())
-                    return self.send_json({"data": data.set_training_document_state(item["id"], item["is_active"])})
-                if parsed.path == "/api/admin/training/question":
-                    item = user_input.validate_training_question(self.read_json())
-                    return self.send_json({"data": data.save_training_question(item)})
+                if parsed.path == "/api/admin/manuals/document":
+                    item = user_input.validate_operations_manual_state(self.read_json())
+                    return self.send_json({"data": data.set_operations_manual_state(item["id"], item["is_active"])})
+                if parsed.path == "/api/admin/compliance/question":
+                    item = user_input.validate_compliance_question(self.read_json())
+                    return self.send_json({"data": data.save_compliance_question(item)})
         except user_input.InputError as exc:
             return self.send_json({"error": str(exc), "code": "INVALID_INPUT"}, 400)
         except ValueError as exc:
             return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
-        except (data.DatabaseUnavailable, training_documents.DocumentImportError) as exc:
+        except (data.DatabaseUnavailable, operations_manuals.DocumentImportError) as exc:
             return self.send_json({"error": str(exc), "code": "SERVICE_UNAVAILABLE"}, 503)
         except ExternalServiceUnavailable as exc:
             return self.send_json({"error": str(exc), "code": "EXTERNAL_SERVICE_UNAVAILABLE"}, 503)
@@ -417,7 +417,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self) -> None:
         parsed = urlparse(self.path)
-        allowed_paths = {"/api/admin/staff", "/api/admin/departments", "/api/admin/training/question"}
+        allowed_paths = {"/api/admin/staff", "/api/admin/departments", "/api/admin/compliance/question"}
         if parsed.path not in allowed_paths:
             return self.send_json({"error": "此路徑不接受刪除。"}, 405)
         try:
@@ -447,7 +447,7 @@ class Handler(BaseHTTPRequestHandler):
                     question_id = int(payload.get("id"))
                 except (TypeError, ValueError) as exc:
                     raise user_input.InputError("題目編號不正確") from exc
-                result = data.deactivate_training_question(question_id)
+                result = data.deactivate_compliance_question(question_id)
             return self.send_json({"data": result})
         except user_input.InputError as exc:
             return self.send_json({"error": str(exc), "code": "INVALID_INPUT"}, 400)
@@ -477,7 +477,7 @@ class Handler(BaseHTTPRequestHandler):
         with SESSION_LOCK:
             LOGIN_ATTEMPTS.pop(client, None)
             SESSIONS[token] = {"username": username, "employee_id": employee_session["employee_id"], "csrf": csrf, "expires": now + SESSION_TTL}
-        cookie = f"frobel_admin={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={SESSION_TTL}"
+        cookie = f"silver_shield_admin={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={SESSION_TTL}"
         return self.send_json({"data": {"authenticated": True, "username": username, "csrf": csrf}}, headers={"Set-Cookie": cookie})
 
     def employee_login(self) -> None:
@@ -515,27 +515,27 @@ class Handler(BaseHTTPRequestHandler):
         with SESSION_LOCK:
             EMPLOYEE_LOGIN_ATTEMPTS.pop(client, None)
             EMPLOYEE_SESSIONS[token] = session
-        cookie = f"frobel_employee={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={SESSION_TTL}"
+        cookie = f"silver_shield_employee={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={SESSION_TTL}"
         return self.send_json({"data": {"authenticated": True, "employee": employee, "attendance": attendance, "access_mode": item["mode"], "csrf": csrf}}, headers={"Set-Cookie": cookie})
 
     def employee_logout(self) -> None:
         cookie = SimpleCookie(self.headers.get("Cookie", ""))
-        token = cookie.get("frobel_employee")
-        admin_token = cookie.get("frobel_admin")
+        token = cookie.get("silver_shield_employee")
+        admin_token = cookie.get("silver_shield_admin")
         if token:
             with SESSION_LOCK:
                 EMPLOYEE_SESSIONS.pop(token.value, None)
                 if admin_token:
                     SESSIONS.pop(admin_token.value, None)
-        return self.send_json({"data": {"authenticated": False}}, headers={"Set-Cookie": "frobel_employee=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"})
+        return self.send_json({"data": {"authenticated": False}}, headers={"Set-Cookie": "silver_shield_employee=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"})
 
     def admin_logout(self) -> None:
         cookie = SimpleCookie(self.headers.get("Cookie", ""))
-        token = cookie.get("frobel_admin")
+        token = cookie.get("silver_shield_admin")
         if token:
             with SESSION_LOCK:
                 SESSIONS.pop(token.value, None)
-        return self.send_json({"data": {"authenticated": False}}, headers={"Set-Cookie": "frobel_admin=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"})
+        return self.send_json({"data": {"authenticated": False}}, headers={"Set-Cookie": "silver_shield_admin=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"})
 
     def send_file(self, path: Path) -> None:
         if not path.is_file():
@@ -553,7 +553,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def send_not_found(self) -> None:
         body = ("<!doctype html><html lang=\"zh-TW\"><meta charset=\"utf-8\"><title>找不到頁面</title>"
-                "<body><h1>404</h1><p>找不到指定的頁面。</p><a href=\"/\">返回菲爾銀盾首頁</a></body></html>").encode("utf-8")
+                "<body><h1>404</h1><p>找不到指定的頁面。</p><a href=\"/\">返回銀盾共同體首頁</a></body></html>").encode("utf-8")
         self.send_response(404, "Not Found")
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -566,20 +566,20 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="啟動菲爾銀盾營運中心")
-    parser.add_argument("--host", default=os.environ.get("FROBEL_HOST", "0.0.0.0"))
-    parser.add_argument("--port", type=int, default=int(os.environ.get("FROBEL_PORT", "80")))
-    parser.add_argument("--skip-doc-sync", action="store_true", help="略過啟動時的教育文件同步")
+    parser = argparse.ArgumentParser(description="啟動銀盾共同體營運中心")
+    parser.add_argument("--host", default=os.environ.get("SILVER_SHIELD_HOST", "0.0.0.0"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("SILVER_SHIELD_PORT", "80")))
+    parser.add_argument("--skip-doc-sync", action="store_true", help="略過啟動時的營運SOP文件同步")
     args = parser.parse_args()
     data.ensure_application_schema()
     if not args.skip_doc_sync:
         try:
-            count = training_documents.sync_training_library(ensure_schema=False)
-            print(f"教育訓練資料：已同步 {count} 份文件")
-        except (training_documents.DocumentImportError, data.DatabaseUnavailable) as exc:
-            print(f"教育訓練文件暫時無法同步：{exc}")
+            count = operations_manuals.sync_operations_manuals(ensure_schema=False)
+            print(f"營運SOP資料：已同步 {count} 份文件")
+        except (operations_manuals.DocumentImportError, data.DatabaseUnavailable) as exc:
+            print(f"營運SOP文件暫時無法同步：{exc}")
     server = ApplicationServer((args.host, args.port), Handler)
-    print(f"菲爾銀盾營運中心：http://{args.host}:{args.port}")
+    print(f"銀盾共同體營運中心：http://{args.host}:{args.port}")
     if args.host == "0.0.0.0":
         try:
             addresses = sorted({item[4][0] for item in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)})

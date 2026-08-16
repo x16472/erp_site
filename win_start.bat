@@ -1,17 +1,17 @@
 @echo off
-echo Starting Frobel Operations Center .
+echo Starting Operations Center .
 setlocal
 cd /d "%~dp0"
-set "FROBEL_PYTHON=%~dp0.venv\Scripts\python.exe"
+set "SILVER_SHIELD_PYTHON=%~dp0.venv\Scripts\python.exe"
 
-if not exist "%FROBEL_PYTHON%" (
+if not exist "%SILVER_SHIELD_PYTHON%" (
   echo Project virtual environment not found.
   echo Create .venv and install requirements.txt first.
   pause
   exit /b 1
 )
 
-"%FROBEL_PYTHON%" -c "import pyodbc, docx" >nul 2>&1
+"%SILVER_SHIELD_PYTHON%" -c "import pyodbc, docx" >nul 2>&1
 if errorlevel 1 (
   echo Required Python packages are missing.
   echo Run: .venv\Scripts\python.exe -m pip install -r requirements.txt
@@ -24,9 +24,9 @@ if /I "%~1"=="--check" (
   exit /b 0
 )
 
-echo Starting Frobel Operations Center on port 80 for local network access.
+echo Starting Operations Center on port 80 for local network access.
 echo Run this file as administrator if Windows denies port 80 access.
-"%FROBEL_PYTHON%" app.py --host 0.0.0.0 --port 80
+"%SILVER_SHIELD_PYTHON%" app.py --host 0.0.0.0 --port 80
 
 if errorlevel 1 (
   echo.
