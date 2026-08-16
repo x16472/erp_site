@@ -20,7 +20,7 @@
                 <a class="active" href="home.html">工作台</a>
                 <a href="sales.html">營運資料</a>
                 <a href="exam.html">內部營運手冊</a>
-                <a href="game.html">培訓影音</a>
+                <a href="game.html">宣導影音</a>
                 <a href="staff.html">員工出缺勤</a>
                 <a href="mis.html">後台管理</a>
             </nav>
@@ -87,7 +87,7 @@
                                         <b>內部營運手冊</b>
                                         <small>查閱SOP與完成檢核</small></a>
                                     <a class="quick-link" href="game.html">
-                                        <b>培訓影音</b>
+                                        <b>宣導影音</b>
                                         <small>觀看內部宣導內容</small></a>
                                     <a class="quick-link" href="index.html" target="_blank" rel="noopener">
                                         <b>官方網站</b>
@@ -103,7 +103,9 @@
                                 <p>搜尋相關敏感資訊與資料保護說明。</p>
                             </div>
                             <div class="metric-grid" id="metrics">
-                                <article class="metric-card"><p>正在載入統計數據…</p></article>
+                                <article class="metric-card">
+                                    <p>正在載入統計數據…</p>
+                                </article>
                             </div>
                         </div>
                         <div class="search-box">
@@ -147,7 +149,9 @@
                 throw new Error('需要員工驗證')
             } return session
         });
-        let entries = [], serverOffset = 0, employeeCsrf = '', currentAttendance = null;
+        let entries = [],
+            serverOffset = 0, employeeCsrf = '',
+            currentAttendance = null;
         const search = document.querySelector('#search'),
             knowledge = document.querySelector('#knowledge'),
             announcement = document.querySelector('#announcement'),
@@ -221,7 +225,8 @@
                 const attendance = await apiData('/api/attendance/clock', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json', 'X-CSRF-Token': employeeCsrf
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': employeeCsrf
                     },
                     body: JSON.stringify({ action })
                 }); renderAttendance(attendance);
@@ -241,7 +246,9 @@
             employeeLeave.disabled = true;
             try {
                 await apiData('/api/employee/logout', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: '{}'
                 })
             } finally { location.replace('employee-login.html?next=/home.html') }
         }
@@ -252,7 +259,10 @@
             employeeProfile.textContent = `${employee.employee_id}｜${employee.department}｜${employee.position}`;
             renderAttendance(session.attendance);
             await syncServerTime();
-            return Promise.all([apiData('/api/dashboard'), apiData('/api/knowledge'), apiData('/api/public')])
+            return Promise.all([
+                apiData('/api/dashboard'),
+                apiData('/api/knowledge'),
+                apiData('/api/public')])
         }).then(([dashboard, knowledgeItems, publicData]) => {
             entries = knowledgeItems;
             announcement.textContent = publicData.settings.announcement || '今天也請留意交接紀錄。';
