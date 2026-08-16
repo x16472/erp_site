@@ -41,7 +41,7 @@
             statusBox = document.querySelector('#accessStatus'),
             clock = document.querySelector('#accessClock'),
             buttons = [...form.querySelectorAll('button[type="submit"]')];
-        const allowedNext = new Set(['/home.html', '/sales.html', '/exam.html', '/game.html', '/staff.html', '/mis.html']);
+        const allowedNext = new Set(['/home.html', '/sales.html', '/exam.html', '/youtube.html', '/staff.html', '/mis.html']);
         const requested = new URLSearchParams(location.search).get('next') || '/home.html';
         const next = allowedNext.has(requested) ? requested : '/home.html';
         let serverOffset = 0;
