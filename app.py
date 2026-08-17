@@ -51,63 +51,15 @@ YOUTUBE_CACHE_LOCK = threading.Lock()
 MAX_STAFF_REQUEST_SIZE = 7 * 1024 * 1024
 
 
-class ExternalServiceUnavailable(RuntimeError):
-    """外部服務暫時無法回應。"""
-
-
-def youtube_metadata(item: dict[str, str]) -> dict[str, str]:
-    video_id = item["video_id"]
-    with YOUTUBE_CACHE_LOCK:
-        cached = YOUTUBE_CACHE.get(video_id)
-    if cached:
-        return cached
-    query = urlencode({"url": item["watch_url"], "format": "json"})
-    endpoint = "https://www.youtube.com/oembed?" + query
-    request = Request(endpoint, headers={"User-Agent": "SilverShieldOperations/1.0"})
-    try:
-        with urlopen(request, timeout=6) as response:
-            payload = json.loads(response.read(65536).decode("utf-8"))
-    except HTTPError as exc:
-        if exc.code in {400, 401, 403, 404}:
-            raise user_input.InputError("找不到影片，或影片不允許嵌入播放") from exc
-        raise ExternalServiceUnavailable("YouTube 目前無法回應，請稍後再試") from exc
-    except (URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
-        raise ExternalServiceUnavailable("YouTube 連線逾時，請稍後再試") from exc
-    title = html.unescape(str(payload.get("title", "")).strip())
-    if not title:
-        raise ExternalServiceUnavailable("YouTube 未回傳影片標題")
-    result = {**item, "title": title}
-    with YOUTUBE_CACHE_LOCK:
-        YOUTUBE_CACHE[video_id] = result
-    return result
-
-
-def save_staff_photo(employee_id: str, photo: dict[str, Any]) -> str:
-    staff_root = STATIC_ROOT / "staff"
-    staff_root.mkdir(parents=True, exist_ok=True)
-    file_name = f"{employee_id}.{photo['extension']}"
-    target = (staff_root / file_name).resolve()
-    if staff_root not in target.parents:
-        raise user_input.InputError("員工照片路徑不正確")
-    temporary = staff_root / f".{employee_id}.{secrets.token_hex(6)}.tmp"
-    try:
-        temporary.write_bytes(photo["content"])
-        os.replace(temporary, target)
-        for extension in ("jpg", "png", "webp"):
-            old = staff_root / f"{employee_id}.{extension}"
-            if old != target and old.is_file():
-                old.unlink()
-    except OSError as exc:
-        temporary.unlink(missing_ok=True)
-        raise user_input.InputError("員工照片儲存失敗") from exc
-    return file_name
-
-
 class ApplicationServer(ThreadingHTTPServer):
     """讓各請求獨立處理，結束服務時不等待閒置中的連線執行緒。"""
 
     daemon_threads = True
     allow_reuse_address = True
+
+
+class ExternalServiceUnavailable(RuntimeError):
+    """外部服務暫時無法回應。"""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -563,6 +515,54 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt: str, *args: Any) -> None:
         print(f"[{self.log_date_time_string()}] {fmt % args}")
+
+
+def youtube_metadata(item: dict[str, str]) -> dict[str, str]:
+    video_id = item["video_id"]
+    with YOUTUBE_CACHE_LOCK:
+        cached = YOUTUBE_CACHE.get(video_id)
+    if cached:
+        return cached
+    query = urlencode({"url": item["watch_url"], "format": "json"})
+    endpoint = "https://www.youtube.com/oembed?" + query
+    request = Request(endpoint, headers={"User-Agent": "SilverShieldOperations/1.0"})
+    try:
+        with urlopen(request, timeout=6) as response:
+            payload = json.loads(response.read(65536).decode("utf-8"))
+    except HTTPError as exc:
+        if exc.code in {400, 401, 403, 404}:
+            raise user_input.InputError("找不到影片，或影片不允許嵌入播放") from exc
+        raise ExternalServiceUnavailable("YouTube 目前無法回應，請稍後再試") from exc
+    except (URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+        raise ExternalServiceUnavailable("YouTube 連線逾時，請稍後再試") from exc
+    title = html.unescape(str(payload.get("title", "")).strip())
+    if not title:
+        raise ExternalServiceUnavailable("YouTube 未回傳影片標題")
+    result = {**item, "title": title}
+    with YOUTUBE_CACHE_LOCK:
+        YOUTUBE_CACHE[video_id] = result
+    return result
+
+
+def save_staff_photo(employee_id: str, photo: dict[str, Any]) -> str:
+    staff_root = STATIC_ROOT / "staff"
+    staff_root.mkdir(parents=True, exist_ok=True)
+    file_name = f"{employee_id}.{photo['extension']}"
+    target = (staff_root / file_name).resolve()
+    if staff_root not in target.parents:
+        raise user_input.InputError("員工照片路徑不正確")
+    temporary = staff_root / f".{employee_id}.{secrets.token_hex(6)}.tmp"
+    try:
+        temporary.write_bytes(photo["content"])
+        os.replace(temporary, target)
+        for extension in ("jpg", "png", "webp"):
+            old = staff_root / f"{employee_id}.{extension}"
+            if old != target and old.is_file():
+                old.unlink()
+    except OSError as exc:
+        temporary.unlink(missing_ok=True)
+        raise user_input.InputError("員工照片儲存失敗") from exc
+    return file_name
 
 
 def main() -> None:
