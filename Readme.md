@@ -219,9 +219,9 @@ BackendWebAdminPassword=後台管理員密碼
 | `GET /api/staff/public?department=...` | 公開 | 依部門取得公開專業團隊資料 |
 | `POST /api/employee/login` | 公開 | 以 `CLOCK_IN` 或 `ACCESS_ONLY` 驗證並進入 |
 | `GET /api/employee/session` | 公開 | 查詢員工工作階段及當日打卡狀態 |
-| `POST /api/employee/logout` | 員工 | 結束工作階段，不異動打卡 |
 | `GET /api/time` | 公開 | 取得 SQL Server UTC、台灣工作日與校時毫秒值 |
 | `POST /api/attendance/clock` | 員工 | 補上班或打卡下班 |
+| `POST /api/employee/logout` | 員工 | 結束工作階段，不異動打卡 |
 | `POST /api/operations/submit` | 員工 | 新增附帶建立員工的待審事項 |
 | `GET /api/manuals` | 員工 | 營運SOP文件目錄 |
 | `GET /api/manuals/document?id=...` | 員工 | 營運SOP文件段落 |
