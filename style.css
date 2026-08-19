@@ -1438,7 +1438,8 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 }
 
 .staff-card p {
-    margin: 8px 0 0;
+    margin: 8px;
+    padding: 10px;
     color: var(--muted);
     font-size: 13px
 }
@@ -1448,15 +1449,17 @@ body[data-theme="steel"] .hero-copy-public h1 span {
     grid-template-columns: 1.3fr auto 1.2fr 1fr;
     align-items: end;
     gap: 18px;
-    margin: 18px 0;
-    padding: 23px;
+    margin: 15px;
+    /*外距*/
+    padding: 5px;
+    /*內距*/
     border: 1px solid var(--line);
     border-radius: 18px;
     background: #fff
 }
 
 .clock-panel h2 {
-    margin: 2px 0
+    margin: 2px
 }
 
 .clock-panel p {
@@ -1465,8 +1468,9 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 }
 
 .live-clock {
-    min-width: 120px;
-    padding: 12px 16px;
+    min-width: 100px;
+    margin: 12px;
+    padding: 12px;
     border-radius: 13px;
     background: var(--navy);
     color: #fff;
@@ -1498,11 +1502,15 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 }
 
 .clock-result {
+    width: 100%;
+    /* 在小螢幕時撐滿 */
+    max-width: 500px;
+    /* 最大寬度限制在 500px */
     min-height: 48px;
     padding: 11px 13px;
     border-radius: 11px;
     background: #f4f6f7;
-    color: var(--muted)
+    color: var(--muted);
 }
 
 .training-toolbar {

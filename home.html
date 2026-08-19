@@ -35,17 +35,17 @@
             <div class="portal-content">
                 <section class="portal-welcome">
                     <div>
-                        <span class="eyebrow" style="color:#8edcff">Today at Silver Shield</span>
+                        <span class="eyebrow" style="color:#8edcff">WELCOME · Today at Silver Shield</span>
                         <h2>歡迎，今天也是美好的一天</h2>
                         <p id="announcement">讀取公告中…</p>
                     </div>
-                </section>
-                <section class="clock-panel">
                     <div>
-                        <span class="eyebrow">WELCOME</span>
                         <h2 id="employeeWelcome">正在驗證員工身分</h2>
                         <p id="employeeProfile">正在確認員工資料。</p>
                     </div>
+                </section>
+                <section class="clock-panel">
+
                     <div class="live-clock"><small>目前時間</small>
                         <strong id="currentClock">--:--:--</strong>
                     </div>
@@ -55,7 +55,7 @@
                     </div>
                     <div class="attendance-session-actions">
                         <button class="btn red" id="makeupClock" type="button">補打卡</button>
-                        <button class="btn" id="clockOutButton" type="button">打卡下班</button>
+                        <button class="btn gray" id="clockOutButton" type="button">打卡下班</button>
                         <button class="btn secondary" id="employeeLeave" type="button">離開系統</button>
                     </div>
                 </section>
@@ -76,23 +76,17 @@
                             <a class="quick-link" href="index.html" target="_blank" rel="noopener">
                                 <b>官方網站</b>
                                 <small>另開視窗查看目前前台網站</small></a>
+                            <a class="quick-link" href="game.html">
+                                <b>宣導影音</b>
+                                <small>觀看內部宣導內容</small>
+                            </a>
                         </div>
                     </section>
                     <section class="portal-card narrow">
                         <div class="card-head">
-                            <div><span class="eyebrow">Side Navigation</span>
+                            <div><span class="eyebrow"></span>
                                 <h2>快捷入口</h2>
-                                <div class="quick-links">
-                                    <a class="quick-link" href="exam.html">
-                                        <b>營運手冊</b>
-                                        <small>查閱SOP與完成檢核</small></a>
-                                    <a class="quick-link" href="game.html">
-                                        <b>宣導影音</b>
-                                        <small>觀看內部宣導內容</small></a>
-                                    <a class="quick-link" href="index.html" target="_blank" rel="noopener">
-                                        <b>官方網站</b>
-                                        <small>另開視窗</small></a>
-                                </div>
+                                <p>測試中</p>
                             </div>
                         </div>
                     </section>
@@ -113,8 +107,10 @@
                             <input id="search" type="search" placeholder="請輸入欲查詢內容…">
                             <span>⌕</span>
                         </div>
-                        <div class="knowledge-grid" id="knowledge">
-                            <div class="empty">正在載入條目…</div>
+                        <div class="quick-links">
+                            <div class="knowledge-grid" id="knowledge" class="empty">
+                                <div>正在載入條目…</div>
+                            </div>
                         </div>
                     </section>
                 </div>
