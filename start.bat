@@ -1,16 +1,16 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-set "SILVER_SHIELD_PYTHON=%~dp0.venv\Scripts\python.exe"
+set "PYTHON=%~dp0.venv\Scripts\python.exe"
 
-if not exist "%SILVER_SHIELD_PYTHON%" (
+if not exist "%PYTHON%" (
   echo Project virtual environment not found.
   echo Create .venv and install requirements.txt first.
   pause
   exit /b 1
 )
 
-"%SILVER_SHIELD_PYTHON%" -c "import pyodbc, docx, openpyxl, pypdf, xlrd" >nul 2>&1
+"%PYTHON%" -c "import pyodbc, docx, openpyxl, pypdf, xlrd" >nul 2>&1
 if errorlevel 1 (
   echo Required Python packages are missing.
   echo Run: .venv\Scripts\python.exe -m pip install -r requirements.txt
@@ -25,7 +25,7 @@ if /I "%~1"=="--check" (
 
 echo Starting Operations Center on port 80 for local network access.
 echo Run this file as administrator if Windows denies port 80 access.
-"%SILVER_SHIELD_PYTHON%" -m backend.app --host 0.0.0.0 --port 80
+"%PYTHON%" -m backend.app --host 0.0.0.0 --port 80
 
 if errorlevel 1 (
   echo.

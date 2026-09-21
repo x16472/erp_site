@@ -5,7 +5,6 @@
 後端使用 Python 與 `pyodbc` 實際連接 `Company_New` SQL Server 資料庫，僅存取 `dbo.Company_*` 應用資料表。網站寫入只發生在這些專用資料表及員工照片資料夾，`.env` 不會由程式自行建立或覆寫。
 
 特別感謝小助手Codex、ChatGPT、Grok給予協助。
-
 ## 程式架構
 
 ```text
