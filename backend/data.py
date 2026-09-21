@@ -15,14 +15,19 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-import time_sync as time
+try:
+    from . import time_sync as time
+except ImportError:  # 支援直接執行 backend/data.py
+    import time_sync as time
 
-ROOT = Path(__file__).parent.resolve()
-STAFF_CSV = ROOT / "data" / "staff.csv"
+BACKEND_ROOT = Path(__file__).parent.resolve()
+PROJECT_ROOT = BACKEND_ROOT.parent
+PAGE_ROOT = PROJECT_ROOT / "page"
+STAFF_CSV = PROJECT_ROOT / "data" / "staff.csv"
 STAFF_SYNC_LOCK = threading.Lock()
 
 # 本機驗證環境可將依賴放在 .deps；正式環境請使用 requirements.txt。
-LOCAL_DEPS = ROOT / ".deps"
+LOCAL_DEPS = PROJECT_ROOT / ".deps"
 if LOCAL_DEPS.is_dir():
     sys.path.insert(0, str(LOCAL_DEPS))
 
@@ -39,7 +44,7 @@ class DatabaseUnavailable(RuntimeError):
 def _load_env() -> dict[str, str]:
     """僅從專案的 .env 載入實際 SQL Server 連線設定。"""
     values: dict[str, str] = {}
-    env_path = ROOT / ".env"
+    env_path = PROJECT_ROOT / ".env"
     if not env_path.is_file():
         raise DatabaseUnavailable("找不到專案 .env，無法連線 SQL Server。")
     for raw_line in env_path.read_text(encoding="utf-8-sig").splitlines():
@@ -595,7 +600,7 @@ def ensure_application_schema() -> dict[str, Any]:
 
 def _staff_photo_file(employee_id: str) -> str | None:
     for extension in ("jpg", "png", "webp"):
-        candidate = ROOT / "static" / "staff" / f"{employee_id}.{extension}"
+        candidate = PAGE_ROOT / "static" / "staff" / f"{employee_id}.{extension}"
         if candidate.is_file():
             return candidate.name
     return None

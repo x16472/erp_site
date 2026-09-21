@@ -1,5 +1,4 @@
 @echo off
-echo Starting Operations Center .
 setlocal
 cd /d "%~dp0"
 set "SILVER_SHIELD_PYTHON=%~dp0.venv\Scripts\python.exe"
@@ -11,7 +10,7 @@ if not exist "%SILVER_SHIELD_PYTHON%" (
   exit /b 1
 )
 
-"%SILVER_SHIELD_PYTHON%" -c "import pyodbc, docx" >nul 2>&1
+"%SILVER_SHIELD_PYTHON%" -c "import pyodbc, docx, openpyxl, pypdf, xlrd" >nul 2>&1
 if errorlevel 1 (
   echo Required Python packages are missing.
   echo Run: .venv\Scripts\python.exe -m pip install -r requirements.txt
@@ -20,13 +19,13 @@ if errorlevel 1 (
 )
 
 if /I "%~1"=="--check" (
-  echo Python, pyodbc and python-docx checks passed.
+  echo Python backend dependency checks passed.
   exit /b 0
 )
 
 echo Starting Operations Center on port 80 for local network access.
 echo Run this file as administrator if Windows denies port 80 access.
-"%SILVER_SHIELD_PYTHON%" app.py --host 0.0.0.0 --port 80
+"%SILVER_SHIELD_PYTHON%" -m backend.app --host 0.0.0.0 --port 80
 
 if errorlevel 1 (
   echo.

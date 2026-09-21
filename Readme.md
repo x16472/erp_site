@@ -15,35 +15,38 @@ erp_site/
 │   ├── database.md                 #SQL Server結構與資料治理原則
 │   └── prd.md                      #銀盾共同體產品需求與檢核結果
 ├── data/                           #匯入來源、營運SOP文件與資料庫備份素材
-│   ├── exam/                       #內部營運手冊Word文件來源
+│   ├── exam/                       #內部營運手冊Word、Excel與PDF來源
 │   ├── staff.csv                   #員工初始資料與同步來源
 │   ├── Company_Schema.sql          #Company資料表結構參考SQL
 │   ├── Company_Backend_Tables.bak  #SQL Server備份檔
 │   ├── legacy/                     #不由現行程式載入的舊資料封存
 │   └── operation_submissions.json  #營運填報暫存資料
-├── static/                         #公開靜態素材
-│   ├── appicon.png                 #系統識別圖
-│   └── staff/                      #員工照片，檔名對應員工編號
+├── page/                           #前端網頁與公開靜態素材
+│   ├── static/
+│   │   ├── appicon.png             #系統識別圖
+│   │   └── staff/                  #員工照片，檔名對應員工編號
+│   ├── style.css                   #全站共用響應式UI樣式
+│   ├── index.html                  #對外官方網站
+│   ├── employee-login.html         #員工編號驗證與打卡入口
+│   ├── home.html                   #員工工作台、打卡與營運摘要
+│   ├── sales.html                  #營運日報與填報生命週期
+│   ├── exam.html                   #營運SOP文件查閱與知識檢核
+│   ├── game.html                   #企業宣導影音與YouTube播放器
+│   ├── staff.html                  #MIS員工、部門與出缺勤管理
+│   └── mis.html                    #MIS網站設定、待審、文件與題庫維護
+├── backend/                        #Python後端服務
+│   ├── __init__.py                 #後端套件定義
+│   ├── app.py                      #HTTP路由、Cookie工作階段、CSRF與存取權限
+│   ├── data.py                     #SQL Server查詢、資料表遷移與受控寫入
+│   ├── input.py                    #前端輸入清理與驗證
+│   ├── doc.py                      #Word、Excel、PDF擷取與營運SOP同步
+│   └── time_sync.py                #SQL Server權威時間與台灣工作日校時
 ├── templates/
 │   └── cookiecutter.json           #專案範本設定
 ├── .env                            #SQL Server與MIS憑證（不納入版本控制）
 ├── .gitignore                      #Git排除規則
 ├── requirements.txt                #Python套件清單
 ├── win_start.bat                   #Windows Port 80啟動與環境檢查
-├── app.py                          #HTTP路由、Cookie工作階段、CSRF與存取權限
-├── data.py                         #SQL Server查詢、資料表遷移與受控寫入
-├── input.py                        #前端輸入清理與驗證
-├── doc.py                          #Word文件轉換、擷取與營運SOP同步
-├── time_sync.py                    #SQL Server權威時間與台灣工作日校時
-├── style.css                       #全站共用響應式UI樣式
-├── index.html                      #對外官方網站
-├── employee-login.html             #員工編號驗證與打卡入口
-├── home.html                       #員工工作台、打卡與營運摘要
-├── sales.html                      #營運日報與填報生命週期
-├── exam.html                       #營運SOP文件查閱與知識檢核
-├── game.html                       #企業宣導影音與YouTube播放器
-├── staff.html                      #MIS員工、部門與出缺勤管理
-├── mis.html                        #MIS網站設定、待審、文件與題庫維護
 └── Readme.md                       #公開專案說明
 ```
 
@@ -57,7 +60,7 @@ erp_site/
 - 以羅瓦德莊園、可可藝術沙龍、聯合工匠街與地下堅石礦場呈現四大產業據點。
 - 顯示在職員工、管理部門與營運SOP文件等營運彙總，不公開個人敏感資料。
 - 專業團隊只回傳姓名、部門、職位、特質及公開照片。
-- 專業團隊可透過部門下拉選單篩選；部門清單與篩選結果皆由 `data.py` 查詢後交由 `app.py` 回傳。
+- 專業團隊可透過部門下拉選單篩選；部門清單與篩選結果皆由 `backend/data.py` 查詢後交由 `backend/app.py` 回傳。
 - 其餘首頁區域已統一強化層次、卡片、營運據點、商務合作與行動版版面。
 
 ### 員工入口與打卡
@@ -77,15 +80,15 @@ erp_site/
 - 工作台提供公告、營運指標、部門概況、常用入口與知識搜尋。
 - 營運蒐集依營運分類填寫數量、說明與日期，並以待審流程集中管理。
 - 新增的營運紀錄會保存建立員工編號，供 MIS 待審佇列依員工分類。
-- 內部營運手冊提供 Word 文件分類、段落查閱及互動題庫。
+- 內部營運手冊提供 Word、Excel、PDF 文件分類、段落查閱及互動題庫。
 - 營運蒐集與內部營運手冊皆改為分頁介面，將填報、生命週期、文件查閱與知識檢核分開管理。
 - 企業宣導影音專區由後端驗證影片網址並取得真實標題後嵌入播放。
 
 ### 員工出缺勤管理
 
-- 員工文字資料的新增、更新與停用集中於 `staff.html`。
+- 員工文字資料的新增、更新與停用集中於 `page/staff.html`。
 - 員工編號是不可變更的主鍵，編輯時輸入框會鎖定並以警示色標示。
-- 員工照片只接受 JPEG、PNG、WebP，最大 5 MB；檔名會自動改為員工編號並存入 `static/staff`。
+- 員工照片只接受 JPEG、PNG、WebP，最大 5 MB；檔名會自動改為員工編號並存入 `page/static/staff`。
 - 員工主檔固定依員工編號排序，不使用中文部門名稱定序。
 - 管理員可依日期或員工查閱出缺勤紀錄；既有打卡紀錄不因員工停用而刪除。
 - 員工資料、部門維護及打卡紀錄拆成三個分頁；部門名稱最多 5 個字，目前由原先 15 筆部門整併為營運部、製造部、財務部、資訊部、福利部與後勤部六個啟用部門。
@@ -97,15 +100,15 @@ erp_site/
 - 可唯讀查閱 10 張 `dbo.Company_*` 應用資料表；後端限制資料表名稱、分頁筆數並遮罩敏感欄位。
 - 原「員工資料」與「營運待審」已整合為「待審佇列」。
 - 待審佇列左側按員工編號顯示員工，右側顯示其建立的申請事件；可點選員工、事件或事件類別進行篩選。
-- MIS 不再提供員工編輯或停用控制，並保留前往 `staff.html` 的「查看出缺勤」入口。
+- MIS 不再提供員工編輯或停用控制，並保留前往 `page/staff.html` 的「查看出缺勤」入口。
 - MIS 新增營運SOP文件與題庫維護分頁，可同步、啟用或停用文件，以及新增、更新、停用知識檢核題目。
 
 ### 員工 CSV 與照片
 
-- `data.py` 在員工查閱、驗證與維護前掃描 `data/staff.csv`。
+- `backend/data.py` 在員工查閱、驗證與維護前掃描 `data/staff.csv`。
 - 只有修改時間或檔案大小改變時才以參數化 `MERGE` 合併員工資料。
 - CSV 未列出的員工不會自動停用，管理員上傳的既有照片不會被 CSV 覆寫。
-- 官網與後台員工名單預設皆由 `data.py` 先按員工編號整理；只有公開專業團隊提供部門條件篩選。
+- 官網與後台員工名單預設皆由 `backend/data.py` 先按員工編號整理；只有公開專業團隊提供部門條件篩選。
 
 ### 驗證與安全
 
@@ -113,36 +116,36 @@ erp_site/
 - 每個內部及 MIS API 都會重新查詢 `dbo.Company_Staff`，確認員工仍存在且啟用。
 - MIS 工作階段綁定目前員工，避免其他員工沿用既有管理工作階段。
 - 員工與管理登入都有失敗頻率限制；寫入操作另需 CSRF Token。
-- 打卡由 `time_sync.py` 的 `time.now()` 取得單一 SQL Server 時間快照，保存 UTC 與台灣工作日，避免資料庫與瀏覽器時間不一致。
+- 打卡由 `backend/time_sync.py` 的 `time.now()` 取得單一 SQL Server 時間快照，保存 UTC 與台灣工作日，避免資料庫與瀏覽器時間不一致。
 - 敏感欄位分類與遮罩在後端完成，前端不取得未遮罩內容。
 
 ### 前端頁面
 
 | 頁面 | 用途 |
 | --- | --- |
-| `index.html` | 公開官方網站與部門化專業團隊 |
-| `employee-login.html` | 員工編號驗證、上班打卡或不打卡進入 |
-| `home.html` | 員工工作台、打卡狀態、補打卡、下班及離開系統 |
-| `sales.html` | 新增營運日報與商業合約、帳務生命週期 |
-| `exam.html` | 營運SOP文件與商業規範、工安檢核 |
-| `game.html` | 企業宣導影音、YouTube網址驗證與播放器 |
-| `staff.html` | 員工主檔、部門與出缺勤分頁管理 |
-| `mis.html` | 網站設定、唯讀查閱、待審、營運SOP文件及題庫維護 |
+| `page/index.html` | 公開官方網站與部門化專業團隊 |
+| `page/employee-login.html` | 員工編號驗證、上班打卡或不打卡進入 |
+| `page/home.html` | 員工工作台、打卡狀態、補打卡、下班及離開系統 |
+| `page/sales.html` | 新增營運日報與商業合約、帳務生命週期 |
+| `page/exam.html` | 營運SOP文件與商業規範、工安檢核 |
+| `page/game.html` | 企業宣導影音、YouTube網址驗證與播放器 |
+| `page/staff.html` | 員工主檔、部門與出缺勤分頁管理 |
+| `page/mis.html` | 網站設定、唯讀查閱、待審、營運SOP文件及題庫維護 |
 
 內部系統各頁使用一致的左側導覽列。官方網站不列在側欄中，員工可從工作台的常用入口前往；管理員也可在「官方網站版面設定」直接開啟公開網站確認發布結果。
 
-所有網站圖檔都使用 `static` 資料夾內的檔案。
+所有網站圖檔都使用 `page/static` 資料夾內的檔案。
 
-### 後端頁面
+### 後端模組
 
 | 檔案 | 用途 |
 | --- | --- |
-| `app.py` | HTTP 路由、員工與 MIS 工作階段、CSRF 與 API 權限 |
-| `data.py` | SQL Server 查詢、CSV 同步、排序、打卡與受控寫入 |
-| `input.py` | 員工入口、打卡、營運、照片、YouTube 與設定輸入驗證 |
-| `doc.py` | Word 文件轉換、擷取與營運SOP資料同步 |
-| `time_sync.py` | SQL Server、台灣時區與瀏覽器校時基準 |
-| `style.css` | 官方網站、員工入口、工作台與 MIS 共用樣式 |
+| `backend/app.py` | HTTP 路由、員工與 MIS 工作階段、CSRF 與 API 權限 |
+| `backend/data.py` | SQL Server 查詢、CSV 同步、排序、打卡與受控寫入 |
+| `backend/input.py` | 員工入口、打卡、營運、照片、YouTube 與設定輸入驗證 |
+| `backend/doc.py` | Word、Excel、PDF 文件擷取與營運SOP資料同步 |
+| `backend/time_sync.py` | SQL Server、台灣時區與瀏覽器校時基準 |
+| `page/style.css` | 官方網站、員工入口、工作台與 MIS 共用樣式 |
 | `database.md` | 資料庫結構、資料治理及正式環境原則 |
 | `prd.md` | 產品需求、品牌規則與實作檢核 |
 | `win_start.bat` | Windows Port 80 啟動檔 |
@@ -155,6 +158,7 @@ erp_site/
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+python -m backend.app
 ```
 建立一個`.env`檔案，在裡面填入ENV設定
 ```
@@ -170,16 +174,16 @@ BackendWebAdminPassword=後台管理員密碼
 
 執行 `win_start.bat`。後端監聽 `0.0.0.0:80`，啟動時會列出同一內網可使用的 IPv4 網址。若 Windows 阻擋 Port 80，需以系統管理員身分執行。
 
-本專案不使用 Visual Studio Code Live Server。HTML、靜態資源與 API 均由 `app.py` 在同一個 Port 80 服務提供，避免跨來源 Cookie、Proxy 與前後端連線設定不一致。
+本專案不使用 Visual Studio Code Live Server。`page/` 的 HTML、靜態資源與 API 均由 `backend/app.py` 在同一個 Port 80 服務提供，避免跨來源 Cookie、Proxy 與前後端連線設定不一致。
 
 ## 目前整合成果
 
 - 對外網站、員工入口、營運工作區、員工管理與 MIS 已形成明確的角色分流。
 - 員工可選擇上班打卡或不打卡進入，工作台再依當日狀態提供補打卡、下班與離開功能。
 - 公開專業團隊支援部門選單，後台員工資料固定依員工編號管理。
-- 員工維護集中於 `staff.html`；MIS 原員工分頁改為以員工及事件雙向篩選的待審佇列。
+- 員工維護集中於 `page/staff.html`；MIS 原員工分頁改為以員工及事件雙向篩選的待審佇列。
 - 營運待審事項會保存建立員工，既有無建立者紀錄仍可查閱。
-- 實際 SQL Server 的 10 張 `Company_*` 表、CSV、Word 文件與 `static` 圖片共同形成目前的資料來源。
+- 實際 SQL Server 的 10 張 `Company_*` 表、CSV、Word／Excel／PDF 文件與 `page/static` 圖片共同形成目前的資料來源。
 - SQL Server 資料庫已改名為 `Company_New`，10 張應用表及限制式皆使用 `Company_*` 企業命名；原表自動產生的 25 個預設、主鍵及唯一限制式也已完成實體重新命名。
 
 ## 上線注意事項
@@ -193,7 +197,7 @@ BackendWebAdminPassword=後台管理員密碼
 
 ### 資料來源與正規化資料表
 
-`data.py` 讀取既有 `.env` 連線 SQL Server。公開、員工與 MIS 功能只會使用下列 10 張 `dbo.Company_*` 應用資料表；不會查詢其他資料表，也不能從前端送入任意 SQL。
+`backend/data.py` 讀取既有 `.env` 連線 SQL Server。公開、員工與 MIS 功能只會使用下列 10 張 `dbo.Company_*` 應用資料表；不會查詢其他資料表，也不能從前端送入任意 SQL。
 
 網站使用以下專用資料表：
 
@@ -231,10 +235,10 @@ BackendWebAdminPassword=後台管理員密碼
 | `GET /api/admin/table?name=...` | 管理員 | 取得指定 `Company_*` 資料表的遮罩分頁資料 |
 | `GET/POST /api/admin/settings` | 管理員 | 讀取或儲存官方網站設定 |
 | `GET /api/admin/submissions` | 管理員 | 取得附帶建立員工的待審佇列 |
-| `GET/POST/DELETE /api/admin/staff` | 管理員 | 員工主檔查閱、維護與停用，供 `staff.html` 使用 |
+| `GET/POST/DELETE /api/admin/staff` | 管理員 | 員工主檔查閱、維護與停用，供 `page/staff.html` 使用 |
 | `GET/POST/DELETE /api/admin/departments` | 管理員 | 部門主檔查閱、維護與停用 |
 | `GET /api/admin/attendance` | 管理員 | 依日期或員工查閱出缺勤 |
-| `POST /api/admin/manuals/sync` | 管理員 | 重新同步營運SOP Word文件 |
+| `POST /api/admin/manuals/sync` | 管理員 | 重新同步營運SOP Word、Excel與PDF文件 |
 | `GET /api/admin/manuals/documents` | 管理員 | 查閱含停用狀態的營運SOP文件 |
 | `POST /api/admin/manuals/document` | 管理員 | 啟用或停用營運SOP文件 |
 | `GET /api/admin/compliance/questions` | 管理員 | 查閱完整商業規範與工安題庫 |

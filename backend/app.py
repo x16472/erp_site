@@ -3,31 +3,39 @@
 from __future__ import annotations
 
 import argparse
-import html
 import hmac
+import html
 import json
 import mimetypes
 import os
 import re
 import secrets
+import socket
 import threading
 import time
-import socket
 from datetime import date
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import Request, urlopen
-from typing import Any
 
-import data
-import doc as operations_manuals
-import input as user_input
+try:
+    from . import data
+    from . import doc as operations_manuals
+    from . import input as user_input
+except ImportError:  # 支援直接執行 backend/app.py
+    import doc as operations_manuals
+    import input as user_input
 
-ROOT = Path(__file__).parent.resolve()
-STATIC_ROOT = (ROOT / "static").resolve()
+    import data
+
+BACKEND_ROOT = Path(__file__).parent.resolve()
+PROJECT_ROOT = BACKEND_ROOT.parent
+PAGE_ROOT = (PROJECT_ROOT / "page").resolve()
+STATIC_ROOT = (PAGE_ROOT / "static").resolve()
 PAGES = {
     "/": "index.html",
     "/index.html": "index.html",
@@ -285,9 +293,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_not_found()
 
         if parsed.path in PAGES:
-            return self.send_file(ROOT / PAGES[parsed.path])
+            return self.send_file(PAGE_ROOT / PAGES[parsed.path])
         if parsed.path.startswith("/static/"):
-            target = (ROOT / parsed.path.lstrip("/")).resolve()
+            target = (PAGE_ROOT / parsed.path.lstrip("/")).resolve()
             if STATIC_ROOT in target.parents:
                 return self.send_file(target)
         self.send_not_found()
@@ -505,7 +513,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def send_not_found(self) -> None:
         body = ("<!doctype html><html lang=\"zh-TW\"><meta charset=\"utf-8\"><title>找不到頁面</title>"
-                "<body><h1>404</h1><p>找不到指定的頁面。</p><a href=\"/\">返回銀盾共同體首頁</a></body></html>").encode("utf-8")
+                "<body><h1>404</h1><p>找不到指定的頁面。</p><a href=\"/\">返回銀盾共同體首頁</a></body></html>").encode()
         self.send_response(404, "Not Found")
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))

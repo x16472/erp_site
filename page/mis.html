@@ -167,7 +167,7 @@
                         <div class="queue-head">
                             <div><span class="eyebrow">TRAINING FILES</span>
                                 <h2>營運SOP文件維護</h2>
-                                <p>同步 `data/exam` 的 Word 文件，並控制員工入口是否顯示。</p>
+                                <p>同步 `data/exam` 的 Word、Excel 與 PDF 文件，並控制員工入口是否顯示。</p>
                             </div><button class="btn" id="syncTraining" type="button">同步營運SOP文件</button>
                         </div>
                         <p id="syncStatus" aria-live="polite"></p>
@@ -548,7 +548,7 @@
         };
         syncTraining.onclick = async () => {
             syncTraining.disabled = true;
-            syncStatus.textContent = '正在轉換並同步 Word 文件…';
+            syncStatus.textContent = '正在解析並同步 Word、Excel 與 PDF 文件…';
             try {
                 const result = await request('/api/admin/manuals/sync', {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}'
