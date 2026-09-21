@@ -1,5 +1,4 @@
 """銀盾共同體 SQL Server 受控資料存取層。
-
 所有提供給前端的查詢均採欄位白名單與彙總輸出，避免姓名、證件、
 地址、電話、銀行帳號與薪資等敏感資料離開資料庫。
 """
@@ -10,7 +9,7 @@ import json
 import sys
 import threading
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -379,10 +378,11 @@ def _default_questions() -> list[dict[str, Any]]:
 
 APPLICATION_TABLES = (
     "Company_WebSettings", "Company_Department", "Company_Staff", "Company_Attendance",
-    "Company_OperationCategory", "Company_OperationSubmission",
+        "Company_OperationCategory", "Company_OperationSubmission",
     "Company_TrainingDocument", "Company_TrainingSection", "Company_TrainingQuestion",
     "Company_ImportState",
 )
+WORKFLOW_TABLES = ("Company_OperationActivity", "Company_TrainingAnswer")
 
 # 對外顯示使用企業語意，實際查詢仍以 Company_* 白名單為準。
 TABLE_DISPLAY_NAMES = {
@@ -391,11 +391,11 @@ TABLE_DISPLAY_NAMES = {
     "Company_Staff": "員工主檔",
     "Company_Attendance": "出缺勤紀錄",
     "Company_OperationCategory": "營運分類",
-    "Company_OperationSubmission": "營運日報",
+        "Company_OperationSubmission": "營運日報",
     "Company_TrainingDocument": "營運SOP文件",
     "Company_TrainingSection": "SOP文件段落",
     "Company_TrainingQuestion": "營運與工安題庫",
-    "Company_ImportState": "資料匯入狀態",
+        "Company_ImportState": "資料匯入狀態",
 }
 
 def _migrate_business_seed_data(cursor) -> None:
@@ -524,6 +524,18 @@ def ensure_application_schema() -> dict[str, Any]:
         """IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_Company_OperationSubmission_Staff')
         ALTER TABLE dbo.Company_OperationSubmission ADD CONSTRAINT FK_Company_OperationSubmission_Staff
         FOREIGN KEY (submitted_by) REFERENCES dbo.Company_Staff(employee_id)""",
+        """IF OBJECT_ID(N'dbo.Company_OperationActivity', N'U') IS NULL
+        CREATE TABLE dbo.Company_OperationActivity (
+            activity_id bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            submission_id nvarchar(40) NOT NULL,
+            action_type nvarchar(30) NOT NULL,
+            message nvarchar(1000) NULL,
+            actor_employee_id nvarchar(20) NULL,
+            actor_role nvarchar(20) NOT NULL,
+            created_at datetime2 NOT NULL DEFAULT SYSDATETIME(),
+            CONSTRAINT FK_Company_OperationActivity_Submission FOREIGN KEY (submission_id) REFERENCES dbo.Company_OperationSubmission(submission_id) ON DELETE CASCADE,
+            CONSTRAINT FK_Company_OperationActivity_Staff FOREIGN KEY (actor_employee_id) REFERENCES dbo.Company_Staff(employee_id)
+        )""",
         """IF OBJECT_ID(N'dbo.Company_TrainingDocument', N'U') IS NULL
         CREATE TABLE dbo.Company_TrainingDocument (
             document_id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -554,9 +566,37 @@ def ensure_application_schema() -> dict[str, Any]:
             options_json nvarchar(max) NOT NULL,
             correct_index tinyint NOT NULL,
             explanation nvarchar(1000) NOT NULL,
+            question_type nvarchar(30) NOT NULL DEFAULT N'single_choice',
+            answer_json nvarchar(max) NOT NULL DEFAULT N'[]',
+            passage nvarchar(max) NULL,
             is_active bit NOT NULL DEFAULT 1,
             CONSTRAINT FK_Company_TrainingQuestion_Document FOREIGN KEY (document_id) REFERENCES dbo.Company_TrainingDocument(document_id),
             CONSTRAINT CK_Company_TrainingQuestion_Answer CHECK (correct_index BETWEEN 0 AND 9)
+        )""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'question_type') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD question_type nvarchar(30) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'answer_json') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD answer_json nvarchar(max) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'passage') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD passage nvarchar(max) NULL""",
+        """UPDATE dbo.Company_TrainingQuestion
+        SET question_type=COALESCE(question_type,N'single_choice'),
+            answer_json=COALESCE(answer_json,CONCAT(N'[',CONVERT(nvarchar(3),correct_index),N']'))
+        WHERE question_type IS NULL OR answer_json IS NULL""",
+        """IF OBJECT_ID(N'dbo.Company_TrainingAnswer', N'U') IS NULL
+        CREATE TABLE dbo.Company_TrainingAnswer (
+            answer_id bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            question_id int NOT NULL,
+            employee_id nvarchar(20) NOT NULL,
+            answer_text nvarchar(max) NOT NULL,
+            status nvarchar(20) NOT NULL DEFAULT N'待審核',
+            feedback nvarchar(1000) NULL,
+            submitted_at datetime2 NOT NULL DEFAULT SYSDATETIME(),
+            reviewed_by nvarchar(20) NULL,
+            reviewed_at datetime2 NULL,
+            CONSTRAINT FK_Company_TrainingAnswer_Question FOREIGN KEY (question_id) REFERENCES dbo.Company_TrainingQuestion(question_id),
+            CONSTRAINT FK_Company_TrainingAnswer_Employee FOREIGN KEY (employee_id) REFERENCES dbo.Company_Staff(employee_id),
+            CONSTRAINT FK_Company_TrainingAnswer_Reviewer FOREIGN KEY (reviewed_by) REFERENCES dbo.Company_Staff(employee_id)
         )""",
         """IF OBJECT_ID(N'dbo.Company_ImportState', N'U') IS NULL
         CREATE TABLE dbo.Company_ImportState (
@@ -578,9 +618,10 @@ def ensure_application_schema() -> dict[str, Any]:
                 for item in _default_questions():
                     cursor.execute("""
                         INSERT dbo.Company_TrainingQuestion
-                        (category,question,options_json,correct_index,explanation)
-                        VALUES (?,?,?,?,?)
-                    """, item["category"], item["question"], json.dumps(item["options"], ensure_ascii=False), item["answer"], item["explanation"])
+                        (category,question,options_json,correct_index,explanation,question_type,answer_json)
+                        VALUES (?,?,?,?,?,N'single_choice',?)
+                    """, item["category"], item["question"], json.dumps(item["options"], ensure_ascii=False),
+                         item["answer"], item["explanation"], json.dumps([item["answer"]]))
             _sync_staff_csv_cursor(cursor)
             _normalize_company_departments(cursor)
             cursor.execute("""
@@ -593,7 +634,7 @@ def ensure_application_schema() -> dict[str, Any]:
                   )
             """)
             db.commit()
-        return {"tables": list(APPLICATION_TABLES), "status": "ready"}
+        return {"tables": list(APPLICATION_TABLES + WORKFLOW_TABLES), "status": "ready"}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("網站應用資料表建立失敗，請確認資料庫帳號具備建表權限。") from exc
 
@@ -925,29 +966,117 @@ def attendance_records(day: str = "", employee_id: str = "") -> list[dict[str, A
 
 
 def add_operation(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
-    submission_id = f"OPS-{datetime.now():%Y%m%d%H%M%S}-{uuid.uuid4().hex[:6].upper()}"
+    submission_id = f"OPS-{datetime.now(tz=timezone.utc):%Y%m%d%H%M%S}-{uuid.uuid4().hex[:6].upper()}"
     try:
-        with connect(read_only=False) as db:
-            row = db.cursor().execute("""
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+            row = cursor.execute("""
                 INSERT dbo.Company_OperationSubmission
                 (submission_id,operation_date,campus_code,category_code,quantity,note,submitted_by)
                 OUTPUT inserted.submitted_at
                 VALUES (?,?,?,?,?,?,?)
             """, submission_id, item["date"], item["campus"], item["category"], item["count"], item["note"], employee_id).fetchone()
+            cursor.execute("""
+                INSERT dbo.Company_OperationActivity
+                (submission_id,action_type,message,actor_employee_id,actor_role)
+                VALUES (?,N'SUBMITTED',NULL,?,N'employee')
+            """, submission_id, employee_id)
+            db.commit()
         return {"id": submission_id, **item, "submitted_by": employee_id, "status": "待審核", "submitted_at": _json_value(row[0])}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("營運紀錄寫入失敗。") from exc
 
 
-def operation_submissions() -> list[dict[str, Any]]:
-    return _fetch("""
+def _operation_submissions(employee_id: str = "") -> list[dict[str, Any]]:
+    rows = _fetch("""
         SELECT o.submission_id AS id,o.operation_date AS [date],o.campus_code AS campus,
                o.category_code AS category,o.quantity AS [count],o.note,o.status,o.submitted_at,
                o.submitted_by,s.display_name AS submitted_by_name,s.department AS submitted_by_department
         FROM dbo.Company_OperationSubmission o
         LEFT JOIN dbo.Company_Staff s ON s.employee_id=o.submitted_by
+        WHERE (?=N'' OR o.submitted_by=?)
         ORDER BY o.submitted_at DESC
-    """)
+    """, (employee_id, employee_id))
+    if not rows:
+        return rows
+    activities = _fetch("""
+        SELECT a.activity_id AS id,a.submission_id,a.action_type,a.message,a.actor_role,
+               a.actor_employee_id,s.display_name AS actor_name,a.created_at
+        FROM dbo.Company_OperationActivity a
+        LEFT JOIN dbo.Company_Staff s ON s.employee_id=a.actor_employee_id
+        WHERE (?=N'' OR EXISTS (
+            SELECT 1 FROM dbo.Company_OperationSubmission o
+            WHERE o.submission_id=a.submission_id AND o.submitted_by=?
+        ))
+        ORDER BY a.created_at,a.activity_id
+    """, (employee_id, employee_id))
+    by_submission: dict[str, list[dict[str, Any]]] = {}
+    for activity in activities:
+        by_submission.setdefault(activity.pop("submission_id"), []).append(activity)
+    for row in rows:
+        row["activities"] = by_submission.get(row["id"], [])
+    return rows
+
+
+def operation_submissions() -> list[dict[str, Any]]:
+    return _operation_submissions()
+
+
+def employee_operation_submissions(employee_id: str) -> list[dict[str, Any]]:
+    return _operation_submissions(employee_id)
+
+
+def review_operation(item: dict[str, str], reviewer_id: str) -> dict[str, Any]:
+    action_types = {"要求補件": "CHANGES_REQUESTED", "審核通過": "APPROVED", "已退回": "REJECTED"}
+    try:
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+            row = cursor.execute("""
+                SELECT submission_id FROM dbo.Company_OperationSubmission WITH (UPDLOCK,HOLDLOCK)
+                WHERE submission_id=?
+            """, item["id"]).fetchone()
+            if not row:
+                raise ValueError("找不到指定營運日報")
+            cursor.execute(
+                "UPDATE dbo.Company_OperationSubmission SET status=? WHERE submission_id=?",
+                item["status"], item["id"],
+            )
+            cursor.execute("""
+                INSERT dbo.Company_OperationActivity
+                (submission_id,action_type,message,actor_employee_id,actor_role)
+                VALUES (?,?,?,?,N'admin')
+            """, item["id"], action_types[item["status"]], item["message"] or None, reviewer_id)
+            db.commit()
+        return {"id": item["id"], "status": item["status"]}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("營運日報審閱失敗。") from exc
+
+
+def reply_operation(item: dict[str, str], employee_id: str) -> dict[str, Any]:
+    try:
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+            row = cursor.execute("""
+                SELECT status FROM dbo.Company_OperationSubmission WITH (UPDLOCK,HOLDLOCK)
+                WHERE submission_id=? AND submitted_by=?
+            """, item["id"], employee_id).fetchone()
+            if not row:
+                raise ValueError("找不到可回覆的營運日報")
+            if row[0] in {"審核通過", "已退回"}:
+                raise ValueError("此營運日報已結案，無法再回覆")
+            cursor.execute(
+                "UPDATE dbo.Company_OperationSubmission SET status=N'員工已回覆' WHERE submission_id=?",
+                item["id"],
+            )
+            cursor.execute("""
+                INSERT dbo.Company_OperationActivity
+                (submission_id,action_type,message,actor_employee_id,actor_role)
+                VALUES (?,N'EMPLOYEE_REPLY',?,?,N'employee')
+            """, item["id"], item["message"], employee_id)
+            db.commit()
+        return {"id": item["id"], "status": "員工已回覆"}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("營運日報回覆失敗。") from exc
 
 
 def upsert_operations_manuals(documents: list[dict[str, Any]]) -> int:
@@ -1013,9 +1142,13 @@ def operations_manual_document(document_id: int) -> dict[str, Any]:
 
 
 def compliance_questions() -> list[dict[str, Any]]:
+    """回傳員工作答需要的題目，不傳送答案與解說。"""
     rows = _fetch("""
-        SELECT question_id AS id,category,question,options_json,correct_index AS answer,explanation
-        FROM dbo.Company_TrainingQuestion WHERE is_active=1 ORDER BY question_id
+        SELECT question_id AS id,category,question,question_type,options_json,passage
+        FROM dbo.Company_TrainingQuestion
+        WHERE is_active=1
+        ORDER BY question_id
+        OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY
     """)
     for row in rows:
         row["options"] = json.loads(row.pop("options_json"))
@@ -1053,12 +1186,13 @@ def set_operations_manual_state(document_id: int, is_active: bool) -> dict[str, 
 
 def compliance_questions_admin() -> list[dict[str, Any]]:
     rows = _fetch("""
-        SELECT question_id AS id,document_id,category,question,options_json,
-               correct_index AS answer,explanation,is_active
+        SELECT question_id AS id,document_id,category,question,question_type,
+               options_json,answer_json,passage,explanation,is_active
         FROM dbo.Company_TrainingQuestion ORDER BY is_active DESC,question_id
     """)
     for row in rows:
         row["options"] = json.loads(row.pop("options_json"))
+        row["answers"] = json.loads(row.pop("answer_json"))
     return rows
 
 
@@ -1067,27 +1201,94 @@ def save_compliance_question(item: dict[str, Any]) -> dict[str, Any]:
         with connect(read_only=False) as db:
             cursor = db.cursor()
             options_json = json.dumps(item["options"], ensure_ascii=False)
+            answer_json = json.dumps(item["answers"])
+            correct_index = item["answers"][0] if item["answers"] else 0
             if item["id"]:
                 cursor.execute("""
                     UPDATE dbo.Company_TrainingQuestion
                     SET document_id=?,category=?,question=?,options_json=?,correct_index=?,
-                        explanation=?,is_active=1
+                        explanation=?,question_type=?,answer_json=?,passage=?,is_active=1
                     WHERE question_id=?
                 """, item["document_id"], item["category"], item["question"], options_json,
-                     item["answer"], item["explanation"], item["id"])
+                     correct_index, item["explanation"], item["question_type"], answer_json,
+                     item["passage"] or None, item["id"])
                 if cursor.rowcount == 0:
                     raise ValueError("找不到指定題目")
                 question_id = item["id"]
             else:
                 question_id = cursor.execute("""
                     INSERT dbo.Company_TrainingQuestion
-                    (document_id,category,question,options_json,correct_index,explanation)
-                    OUTPUT inserted.question_id VALUES (?,?,?,?,?,?)
+                    (document_id,category,question,options_json,correct_index,explanation,
+                     question_type,answer_json,passage)
+                    OUTPUT inserted.question_id VALUES (?,?,?,?,?,?,?,?,?)
                 """, item["document_id"], item["category"], item["question"], options_json,
-                     item["answer"], item["explanation"]).fetchone()[0]
+                     correct_index, item["explanation"], item["question_type"], answer_json,
+                     item["passage"] or None).fetchone()[0]
         return {**item, "id": question_id, "is_active": True}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("營運檢核題庫儲存失敗。") from exc
+
+
+def grade_compliance_answer(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
+    rows = _fetch("""
+        SELECT question_id AS id,question_type,options_json,answer_json,explanation
+        FROM dbo.Company_TrainingQuestion WHERE question_id=? AND is_active=1
+    """, (item["question_id"],))
+    if not rows:
+        raise ValueError("找不到指定題目")
+    question = rows[0]
+    if question["question_type"] == "essay":
+        if not item["answer_text"]:
+            raise ValueError("請輸入申論答案")
+        try:
+            with connect(read_only=False) as db:
+                answer_id = db.cursor().execute("""
+                    INSERT dbo.Company_TrainingAnswer (question_id,employee_id,answer_text)
+                    OUTPUT inserted.answer_id VALUES (?,?,?)
+                """, item["question_id"], employee_id, item["answer_text"]).fetchone()[0]
+            return {"id": answer_id, "status": "待審核", "is_essay": True}
+        except pyodbc.Error as exc:
+            raise DatabaseUnavailable("申論答案送審失敗。") from exc
+
+    options = json.loads(question["options_json"])
+    if not item["answers"] or any(answer < 0 or answer >= len(options) for answer in item["answers"]):
+        raise ValueError("作答選項不正確")
+    expected = sorted(set(json.loads(question["answer_json"])))
+    is_correct = item["answers"] == expected
+    return {
+        "is_essay": False,
+        "correct": is_correct,
+        "answers": expected,
+        "explanation": question["explanation"],
+    }
+
+
+def compliance_essay_answers_admin() -> list[dict[str, Any]]:
+    return _fetch("""
+        SELECT a.answer_id AS id,a.question_id,q.category,q.question,a.employee_id,
+               s.display_name AS employee_name,a.answer_text,a.status,a.feedback,
+               a.submitted_at,a.reviewed_by,a.reviewed_at
+        FROM dbo.Company_TrainingAnswer a
+        JOIN dbo.Company_TrainingQuestion q ON q.question_id=a.question_id
+        JOIN dbo.Company_Staff s ON s.employee_id=a.employee_id
+        ORDER BY CASE WHEN a.status=N'待審核' THEN 0 ELSE 1 END,a.submitted_at DESC
+    """)
+
+
+def review_compliance_essay(item: dict[str, Any], reviewer_id: str) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                UPDATE dbo.Company_TrainingAnswer
+                SET status=?,feedback=?,reviewed_by=?,reviewed_at=SYSDATETIME()
+                WHERE answer_id=?
+            """, item["status"], item["feedback"] or None, reviewer_id, item["id"])
+            if cursor.rowcount == 0:
+                raise ValueError("找不到指定申論答案")
+        return {"id": item["id"], "status": item["status"]}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("申論答案審核失敗。") from exc
 
 
 def deactivate_compliance_question(question_id: int) -> dict[str, Any]:

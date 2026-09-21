@@ -18,6 +18,9 @@ ALLOWED_THEMES = {"shield", "medal", "steel"}
 ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
 ALLOWED_ACCESS_MODES = {"CLOCK_IN", "ACCESS_ONLY"}
 ALLOWED_GENDERS = {"男", "女", "其他"}
+ALLOWED_OPERATION_REVIEW_STATUSES = {"要求補件", "審核通過", "已退回"}
+ALLOWED_QUESTION_TYPES = {"single_choice", "multiple_choice", "reading", "essay"}
+ALLOWED_ESSAY_REVIEW_STATUSES = {"審核通過", "需修正"}
 MAX_STAFF_PHOTO_BYTES = 5 * 1024 * 1024
 PRIVATE_NOTE_PATTERN = re.compile(
     r"(身分證|居留證|姓名|電話|手機|地址|電子郵件|e-?mail|"
@@ -73,6 +76,25 @@ def validate_operation(payload: dict[str, Any]) -> dict[str, Any]:
         "category": category,
         "count": count,
         "note": note,
+    }
+
+
+def validate_operation_reply(payload: dict[str, Any]) -> dict[str, str]:
+    return {
+        "id": _text(payload.get("id"), "營運日報編號", 40),
+        "message": _text(payload.get("message"), "回覆內容", 1000),
+    }
+
+
+def validate_operation_review(payload: dict[str, Any]) -> dict[str, str]:
+    status = _text(payload.get("status"), "審閱狀態", 20)
+    if status not in ALLOWED_OPERATION_REVIEW_STATUSES:
+        raise InputError("審閱狀態不正確")
+    message = _text(payload.get("message"), "審閱意見", 1000, required=status == "要求補件")
+    return {
+        "id": _text(payload.get("id"), "營運日報編號", 40),
+        "status": status,
+        "message": message,
     }
 
 
@@ -145,25 +167,146 @@ def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         question_id = int(payload.get("id") or 0)
         document_id = int(payload.get("document_id") or 0) or None
-        answer = int(payload.get("answer"))
     except (TypeError, ValueError) as exc:
-        raise InputError("題目編號或答案設定不正確") from exc
+        raise InputError("題目或文件編號不正確") from exc
+    question_type = _text(payload.get("question_type") or "single_choice", "題型", 30)
+    if question_type not in ALLOWED_QUESTION_TYPES:
+        raise InputError("題型不正確")
     options_value = payload.get("options")
     if not isinstance(options_value, list):
         raise InputError("選項格式不正確")
     options = [_text(value, f"選項 {index + 1}", 200) for index, value in enumerate(options_value)]
-    if not 2 <= len(options) <= 6:
-        raise InputError("題目必須有 2 到 6 個選項")
-    if not 0 <= answer < len(options):
-        raise InputError("正確答案超出選項範圍")
+    answers_value = payload.get("answers", [])
+    if not isinstance(answers_value, list):
+        raise InputError("正確答案格式不正確")
+    try:
+        answers = sorted({int(value) for value in answers_value})
+    except (TypeError, ValueError) as exc:
+        raise InputError("正確答案格式不正確") from exc
+    passage = _text(payload.get("passage"), "閱讀文章", 5000, required=False)
+    if question_type == "essay":
+        if options or answers:
+            raise InputError("申論題不可設定選項或標準答案")
+    else:
+        if not 2 <= len(options) <= 6:
+            raise InputError("選擇題必須有 2 到 6 個選項")
+        if not answers or any(answer < 0 or answer >= len(options) for answer in answers):
+            raise InputError("正確答案超出選項範圍")
+        if question_type in {"single_choice", "reading"} and len(answers) != 1:
+            raise InputError("單選題與閱讀測驗只能設定一個正確答案")
+    if question_type == "reading" and not passage:
+        raise InputError("閱讀測驗必須提供閱讀文章")
     return {
         "id": question_id,
         "document_id": document_id,
+        "question_type": question_type,
         "category": _text(payload.get("category"), "題目分類", 50),
         "question": _text(payload.get("question"), "題目", 500),
+        "passage": passage,
         "options": options,
-        "answer": answer,
-        "explanation": _text(payload.get("explanation"), "答案解說", 1000),
+        "answers": answers,
+        "explanation": _text(
+            payload.get("explanation"),
+            "答案解說",
+            1000,
+            required=question_type != "essay",
+        ),
+    }
+
+
+def parse_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
+    """解析常見的自然語言題目格式，回傳仍需人工確認的表單資料。"""
+    source = _text(payload.get("text"), "題目文字", 12000)
+    lines = [line.strip() for line in source.splitlines() if line.strip()]
+    labels: dict[str, str] = {}
+    options: list[str] = []
+    option_labels: list[str] = []
+    unlabeled: list[str] = []
+    for line in lines:
+        option_match = re.match(r"^([A-Fa-f]|[1-6])[.、)）:]\s*(.+)$", line)
+        if option_match:
+            option_labels.append(option_match.group(1).upper())
+            options.append(option_match.group(2).strip())
+            continue
+        field_match = re.match(
+            r"^(題型|分類|類別|文章|本文|閱讀文章|題目|問題|答案|正確答案|解說|解析)\s*[：:]\s*(.*)$",
+            line,
+        )
+        if field_match:
+            labels[field_match.group(1)] = field_match.group(2).strip()
+        else:
+            unlabeled.append(line)
+
+    type_names = {
+        "單選": "single_choice",
+        "單選題": "single_choice",
+        "多選": "multiple_choice",
+        "多選題": "multiple_choice",
+        "閱讀": "reading",
+        "閱讀測驗": "reading",
+        "申論": "essay",
+        "申論題": "essay",
+    }
+    raw_answer = labels.get("答案") or labels.get("正確答案") or ""
+    passage = labels.get("文章") or labels.get("本文") or labels.get("閱讀文章") or ""
+    explicit_type = type_names.get(labels.get("題型", ""), "")
+    question_type = explicit_type or (
+        "essay" if not options else "reading" if passage else
+        "multiple_choice" if re.search(r"[,，、\s]+", raw_answer.strip()) else "single_choice"
+    )
+    answers: list[int] = []
+    for token in re.findall(r"[A-Fa-f]|[1-6]", raw_answer):
+        normalized = token.upper()
+        if normalized in option_labels:
+            answers.append(option_labels.index(normalized))
+        elif normalized.isdigit():
+            answers.append(int(normalized) - 1)
+    question = labels.get("題目") or labels.get("問題") or (unlabeled[-1] if unlabeled else "")
+    if passage and question == passage:
+        question = ""
+    return {
+        "question_type": question_type,
+        "category": labels.get("分類") or labels.get("類別") or "一般",
+        "passage": passage,
+        "question": question,
+        "options": options,
+        "answers": sorted({answer for answer in answers if 0 <= answer < len(options)}),
+        "explanation": labels.get("解說") or labels.get("解析") or "",
+        "needs_review": True,
+    }
+
+
+def validate_compliance_answer(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        question_id = int(payload.get("question_id"))
+    except (TypeError, ValueError) as exc:
+        raise InputError("題目編號不正確") from exc
+    answers_value = payload.get("answers", [])
+    if not isinstance(answers_value, list):
+        raise InputError("作答格式不正確")
+    try:
+        answers = sorted({int(value) for value in answers_value})
+    except (TypeError, ValueError) as exc:
+        raise InputError("作答格式不正確") from exc
+    return {
+        "question_id": question_id,
+        "answers": answers,
+        "answer_text": _text(payload.get("answer_text"), "申論答案", 5000, required=False),
+    }
+
+
+def validate_essay_review(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        answer_id = int(payload.get("id"))
+    except (TypeError, ValueError) as exc:
+        raise InputError("申論答案編號不正確") from exc
+    status = _text(payload.get("status"), "審核狀態", 20)
+    if status not in ALLOWED_ESSAY_REVIEW_STATUSES:
+        raise InputError("申論審核狀態不正確")
+    return {
+        "id": answer_id,
+        "status": status,
+        "feedback": _text(payload.get("feedback"), "審核回饋", 1000, required=status == "需修正"),
     }
 
 

@@ -212,6 +212,15 @@ class Handler(BaseHTTPRequestHandler):
             except data.DatabaseUnavailable as exc:
                 return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
+        if parsed.path == "/api/operations/mine":
+            try:
+                session = self.require_employee()
+                if not session:
+                    return
+                return self.send_json({"data": data.employee_operation_submissions(session["employee_id"])})
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+
         employee_routes = {
             "/api/dashboard": data.dashboard,
             "/api/knowledge": data.knowledge,
@@ -286,6 +295,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"data": data.operations_manuals_admin()})
                 if parsed.path == "/api/admin/compliance/questions":
                     return self.send_json({"data": data.compliance_questions_admin()})
+                if parsed.path == "/api/admin/compliance/answers":
+                    return self.send_json({"data": data.compliance_essay_answers_admin()})
             except ValueError as exc:
                 return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
             except data.DatabaseUnavailable as exc:
@@ -318,6 +329,18 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 item = user_input.validate_operation(self.read_json())
                 return self.send_json({"data": data.add_operation(item, session["employee_id"])}, 201)
+            if parsed.path == "/api/operations/reply":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                item = user_input.validate_operation_reply(self.read_json())
+                return self.send_json({"data": data.reply_operation(item, session["employee_id"])})
+            if parsed.path == "/api/compliance/answer":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                item = user_input.validate_compliance_answer(self.read_json())
+                return self.send_json({"data": data.grade_compliance_answer(item, session["employee_id"])})
             if parsed.path == "/api/attendance/clock":
                 session = self.require_employee()
                 if not session or not self.require_csrf(session):
@@ -365,6 +388,14 @@ class Handler(BaseHTTPRequestHandler):
                 if parsed.path == "/api/admin/compliance/question":
                     item = user_input.validate_compliance_question(self.read_json())
                     return self.send_json({"data": data.save_compliance_question(item)})
+                if parsed.path == "/api/admin/compliance/parse":
+                    return self.send_json({"data": user_input.parse_compliance_question(self.read_json())})
+                if parsed.path == "/api/admin/compliance/answer/review":
+                    item = user_input.validate_essay_review(self.read_json())
+                    return self.send_json({"data": data.review_compliance_essay(item, session["employee_id"])})
+                if parsed.path == "/api/admin/submission/review":
+                    item = user_input.validate_operation_review(self.read_json())
+                    return self.send_json({"data": data.review_operation(item, session["employee_id"])})
         except user_input.InputError as exc:
             return self.send_json({"error": str(exc), "code": "INVALID_INPUT"}, 400)
         except ValueError as exc:

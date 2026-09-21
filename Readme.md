@@ -28,7 +28,7 @@ erp_site/
 │   ├── index.html                  #對外官方網站
 │   ├── employee-login.html         #員工編號驗證與打卡入口
 │   ├── home.html                   #員工工作台、打卡與營運摘要
-│   ├── sales.html                  #營運日報與填報生命週期
+│   ├── sales.html                  #營運日報、填報摘要、審閱歷程與員工回覆
 │   ├── exam.html                   #營運SOP文件查閱與知識檢核
 │   ├── game.html                   #企業宣導影音與YouTube播放器
 │   ├── staff.html                  #MIS員工、部門與出缺勤管理
@@ -79,8 +79,9 @@ erp_site/
 - 工作台提供公告、營運指標、部門概況、常用入口與知識搜尋。
 - 營運蒐集依營運分類填寫數量、說明與日期，並以待審流程集中管理。
 - 新增的營運紀錄會保存建立員工編號，供 MIS 待審佇列依員工分類。
+- 員工可查閱自己的日報狀態、完整審閱歷程，並在待審或補件階段回覆管理員。
 - 內部營運手冊提供 Word、Excel、PDF 文件分類、段落查閱及互動題庫。
-- 營運蒐集與內部營運手冊皆改為分頁介面，將填報、生命週期、文件查閱與知識檢核分開管理。
+- 題庫支援單選、多選、閱讀測驗與申論題；選擇題由後端判分，申論答案送交 MIS 人工審核。
 - 企業宣導影音專區由後端驗證影片網址並取得真實標題後嵌入播放。
 
 ### 員工出缺勤管理
@@ -99,8 +100,9 @@ erp_site/
 - 可唯讀查閱 10 張 `dbo.Company_*` 應用資料表；後端限制資料表名稱、分頁筆數並遮罩敏感欄位。
 - 原「員工資料」與「營運待審」已整合為「待審佇列」。
 - 待審佇列左側按員工編號顯示員工，右側顯示其建立的申請事件；可點選員工、事件或事件類別進行篩選。
+- MIS 可對營運日報要求補件、核准或退回，每次審閱與員工回覆都會保留歷程。
 - MIS 不再提供員工編輯或停用控制，並保留前往 `page/staff.html` 的「查看出缺勤」入口。
-- MIS 新增營運SOP文件與題庫維護分頁，可同步、啟用或停用文件，以及新增、更新、停用知識檢核題目。
+- MIS 的題庫維護可依四種題型新增、更新或停用題目，並提供自然語言解析預覽與申論答案人工審核。
 
 ### 員工 CSV 與照片
 
@@ -125,7 +127,7 @@ erp_site/
 | `page/index.html` | 公開官方網站與部門化專業團隊 |
 | `page/employee-login.html` | 員工編號驗證、上班打卡或不打卡進入 |
 | `page/home.html` | 員工工作台、打卡狀態、補打卡、下班及離開系統 |
-| `page/sales.html` | 新增營運日報與商業合約、帳務生命週期 |
+| `page/sales.html` | 新增營運日報、填報摘要、審閱歷程與員工回覆 |
 | `page/exam.html` | 營運SOP文件與商業規範、工安檢核 |
 | `page/game.html` | 企業宣導影音、YouTube網址驗證與播放器 |
 | `page/staff.html` | 員工主檔、部門與出缺勤分頁管理 |
@@ -182,7 +184,7 @@ BackendWebAdminPassword=後台管理員密碼
 - 公開專業團隊支援部門選單，後台員工資料固定依員工編號管理。
 - 員工維護集中於 `page/staff.html`；MIS 原員工分頁改為以員工及事件雙向篩選的待審佇列。
 - 營運待審事項會保存建立員工，既有無建立者紀錄仍可查閱。
-- 實際 SQL Server 的 10 張 `Company_*` 表、CSV、Word／Excel／PDF 文件與 `page/static` 圖片共同形成目前的資料來源。
+- 實際 SQL Server 的 12 張 `Company_*` 應用表、CSV、Word／Excel／PDF 文件與 `page/static` 圖片共同形成目前的資料來源。
 - SQL Server 資料庫已改名為 `Company_New`，10 張應用表及限制式皆使用 `Company_*` 企業命名；原表自動產生的 25 個預設、主鍵及唯一限制式也已完成實體重新命名。
 
 ## 上線注意事項
@@ -196,7 +198,7 @@ BackendWebAdminPassword=後台管理員密碼
 
 ### 資料來源與正規化資料表
 
-`backend/data.py` 讀取既有 `.env` 連線 SQL Server。公開、員工與 MIS 功能只會使用下列 10 張 `dbo.Company_*` 應用資料表；不會查詢其他資料表，也不能從前端送入任意 SQL。
+`backend/data.py` 讀取既有 `.env` 連線 SQL Server。公開、員工與 MIS 功能使用下列 12 張 `dbo.Company_*` 應用資料表；MIS 通用資料查閱仍只開放原有 10 張白名單資料表，審閱歷程與申論答案只能透過受控 API 存取，前端不能送入任意 SQL。
 
 網站使用以下專用資料表：
 
@@ -207,10 +209,12 @@ BackendWebAdminPassword=後台管理員密碼
 | `dbo.Company_Staff` | 員工主檔 |
 | `dbo.Company_Attendance` | 上下班打卡紀錄 |
 | `dbo.Company_OperationCategory` | 營運填報分類 |
-| `dbo.Company_OperationSubmission` | 待審營運紀錄與建立員工 |
+| `dbo.Company_OperationSubmission` | 營運日報、建立員工與目前審閱狀態 |
+| `dbo.Company_OperationActivity` | 日報審閱、補件及員工回覆歷程 |
 | `dbo.Company_TrainingDocument` | 營運SOP文件主檔 |
 | `dbo.Company_TrainingSection` | 營運SOP文件段落 |
-| `dbo.Company_TrainingQuestion` | 內部營運手冊題庫 |
+| `dbo.Company_TrainingQuestion` | 單選、多選、閱讀測驗及申論題庫 |
+| `dbo.Company_TrainingAnswer` | 申論題文字答案及人工審核結果 |
 | `dbo.Company_ImportState` | `staff.csv` 匯入狀態 |
 
 ### API 摘要
@@ -226,14 +230,18 @@ BackendWebAdminPassword=後台管理員密碼
 | `POST /api/attendance/clock` | 員工 | 補上班或打卡下班 |
 | `POST /api/employee/logout` | 員工 | 結束工作階段，不異動打卡 |
 | `POST /api/operations/submit` | 員工 | 新增附帶建立員工的待審事項 |
+| `GET /api/operations/mine` | 員工 | 查閱自己的日報與審閱歷程 |
+| `POST /api/operations/reply` | 員工 | 回覆日報審閱或補件要求 |
 | `GET /api/manuals` | 員工 | 營運SOP文件目錄 |
 | `GET /api/manuals/document?id=...` | 員工 | 營運SOP文件段落 |
 | `GET /api/compliance/questions` | 員工 | 商業規範與工安檢核題庫 |
+| `POST /api/compliance/answer` | 員工 | 後端判斷選擇題或送交申論答案 |
 | `POST /api/admin/login` | 已驗證員工 | 建立後台管理工作階段 |
 | `GET /api/admin/catalog` | 管理員 | 取得可唯讀查閱的 `Company_*` 資料表目錄 |
 | `GET /api/admin/table?name=...` | 管理員 | 取得指定 `Company_*` 資料表的遮罩分頁資料 |
 | `GET/POST /api/admin/settings` | 管理員 | 讀取或儲存官方網站設定 |
 | `GET /api/admin/submissions` | 管理員 | 取得附帶建立員工的待審佇列 |
+| `POST /api/admin/submission/review` | 管理員 | 核准、退回或要求補件 |
 | `GET/POST/DELETE /api/admin/staff` | 管理員 | 員工主檔查閱、維護與停用，供 `page/staff.html` 使用 |
 | `GET/POST/DELETE /api/admin/departments` | 管理員 | 部門主檔查閱、維護與停用 |
 | `GET /api/admin/attendance` | 管理員 | 依日期或員工查閱出缺勤 |
@@ -242,3 +250,6 @@ BackendWebAdminPassword=後台管理員密碼
 | `POST /api/admin/manuals/document` | 管理員 | 啟用或停用營運SOP文件 |
 | `GET /api/admin/compliance/questions` | 管理員 | 查閱完整商業規範與工安題庫 |
 | `POST/DELETE /api/admin/compliance/question` | 管理員 | 新增、更新或停用題目 |
+| `POST /api/admin/compliance/parse` | 管理員 | 將自然語言題目解析成待確認結構 |
+| `GET /api/admin/compliance/answers` | 管理員 | 查閱申論答案待審清單 |
+| `POST /api/admin/compliance/answer/review` | 管理員 | 審核申論答案並留下回饋 |

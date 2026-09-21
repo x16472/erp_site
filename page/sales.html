@@ -31,11 +31,7 @@
                 </div><span class="api-state" id="apiState">準備填報</span>
             </header>
             <div class="portal-content">
-                <nav class="admin-tabs" id="salesTabs">
-                    <button class="active" data-panel="reportPanel">新增營運日報</button><button
-                        data-panel="lifecyclePanel">商業合約與帳務生命週期</button>
-                </nav>
-                <section class="admin-panel active" id="reportPanel">
+                <section class="admin-panel active">
                     <div class="portal-grid">
                         <section class="portal-card wide">
                             <div class="card-head">
@@ -76,21 +72,20 @@
                             <div class="success-note">只記錄彙總數量與營運摘要，嚴禁輸入任何可辨識個人的隱私資訊。</div>
                             <p class="hint">資料會寫入專用待審資料表，由後台管理員確認後再處理；不會直接修改其他營運資料。</p>
                             <div id="lastSubmission"></div>
+                            <div class="process-list compact" id="process">
+                                <div class="empty">正在讀取填報摘要…</div>
+                            </div>
                         </aside>
                     </div>
                 </section>
-                <section class="admin-panel" id="lifecyclePanel">
-                    <section class="portal-card full">
-                        <div class="card-head">
-                            <div><span class="eyebrow">CONTRACT &amp; ACCOUNTING FLOW</span>
-                                <h2>商業合約與帳務生命週期</h2>
-                                <p>即時彙整營運分類與待審紀錄，呈現合約、帳務及執行事項的處理狀態。</p>
-                            </div>
+                <section class="portal-card full operation-history">
+                    <div class="card-head">
+                        <div><span class="eyebrow">MY SUBMISSIONS</span>
+                            <h2>我的填報與審閱回覆</h2>
+                            <p>查看管理員審閱意見；收到補件要求時，可直接補充回覆。</p>
                         </div>
-                        <div class="process-list" id="process">
-                            <div class="empty">正在讀取營運流程…</div>
-                        </div>
-                    </section>
+                    </div>
+                    <div class="result-list" id="mySubmissions"><div class="empty">正在讀取填報紀錄…</div></div>
                 </section>
             </div>
         </main>
@@ -107,8 +102,8 @@
             apiState = document.querySelector('#apiState'),
             formStatus = document.querySelector('#formStatus'),
             lastSubmission = document.querySelector('#lastSubmission'),
-            toast = document.querySelector('#toast'),
-            salesTabs = document.querySelector('#salesTabs');
+            mySubmissions = document.querySelector('#mySubmissions'),
+            toast = document.querySelector('#toast');
         const esc = value => {
             const n = document.createElement('div');
             n.textContent = value ?? '';
@@ -131,8 +126,30 @@
                 throw new Error('需要員工驗證')
             } employeeCsrf = session.csrf; return session
         });
+        const activityNames = {
+            SUBMITTED: '已送出', CHANGES_REQUESTED: '管理員要求補件', APPROVED: '管理員審核通過',
+            REJECTED: '管理員退回', EMPLOYEE_REPLY: '員工補充回覆'
+        };
+        function renderMySubmissions(items) {
+            mySubmissions.innerHTML = items.length ? items.map(item => `<article class="submission-card operation-thread">
+                <header><b>${esc(item.category)} · ${esc(item.campus)}</b><span class="tag">${esc(item.status)}</span></header>
+                <p>${esc(item.date)} · ${number(item.count)} 筆 · ${esc(item.note || '無備註')}</p>
+                <div class="activity-list">${item.activities.map(activity => `<div class="activity-item">
+                    <b>${esc(activityNames[activity.action_type] || activity.action_type)}</b>
+                    ${activity.message ? `<p>${esc(activity.message)}</p>` : ''}
+                    <small>${esc(activity.actor_name || activity.actor_employee_id || '系統')} · ${esc(activity.created_at)}</small>
+                </div>`).join('')}</div>
+                ${['待審核', '要求補件', '員工已回覆'].includes(item.status) ? `<form class="operation-reply" data-reply-id="${esc(item.id)}">
+                    <label class="field"><span>補充回覆</span><textarea name="message" maxlength="1000" required placeholder="回覆管理員或補充日報內容"></textarea></label>
+                    <button class="btn secondary" type="submit">送出回覆</button>
+                </form>` : ''}
+            </article>`).join('') : '<div class="empty">目前尚無填報紀錄。</div>'
+        }
+        async function refreshMySubmissions() {
+            renderMySubmissions(await request('/api/operations/mine'))
+        }
         employeeAccess.then(() => Promise.all([request('/api/branches'),
-        request('/api/operations'), request('/api/time')])).then(([branches, processItems, time]) => {
+        request('/api/operations'), request('/api/time'), request('/api/operations/mine')])).then(([branches, processItems, time, submissions]) => {
             operationForm.date.value = time.current_time.slice(0, 10);
             campus.innerHTML = '<option value="">請選擇區域</option>' + branches.map(item =>
                 `<option value="${esc(item.code)}">${esc(item.name)}</option>`).join('');
@@ -143,6 +160,7 @@
                         <small>${esc(item.description)}</small>
                     </div><em>${number(item.count)} 筆</em>
                 </div>`).join('');
+            renderMySubmissions(submissions);
             apiState.textContent = '服務已連線';
             apiState.classList.add('ok')
         }).catch(() => { apiState.textContent = '資料服務未連線' });
@@ -175,17 +193,33 @@
                 operationForm.date.value = payload.date;
                 toast.textContent = '營運日報已寫入待審資料表';
                 toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 2200)
+                setTimeout(() => toast.classList.remove('show'), 2200);
+                await refreshMySubmissions()
             } catch (error) {
                 formStatus.className = 'error-note';
                 formStatus.textContent = error.message
             }
         };
-        salesTabs.onclick = event => {
-            const button = event.target.closest('[data-panel]');
-            if (!button) return;
-            salesTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
-            document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.panel))
+        mySubmissions.onsubmit = async event => {
+            const form = event.target.closest('[data-reply-id]');
+            if (!form) return;
+            event.preventDefault();
+            const button = form.querySelector('button');
+            button.disabled = true;
+            try {
+                await request('/api/operations/reply', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': employeeCsrf},
+                    body: JSON.stringify({id: form.dataset.replyId, message: form.elements.message.value})
+                });
+                await refreshMySubmissions();
+                toast.textContent = '回覆已送交 MIS';
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2200)
+            } catch (error) {
+                alert(error.message)
+            } finally {
+                button.disabled = false
+            }
         };
     </script>
 </body>

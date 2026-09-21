@@ -157,6 +157,9 @@ CREATE TABLE [dbo].[Company_TrainingQuestion](
 	[options_json] [nvarchar](max) NOT NULL,
 	[correct_index] [tinyint] NOT NULL,
 	[explanation] [nvarchar](1000) NOT NULL,
+	[question_type] [nvarchar](30) NOT NULL,
+	[answer_json] [nvarchar](max) NOT NULL,
+	[passage] [nvarchar](max) NULL,
 	[is_active] [bit] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
@@ -270,4 +273,33 @@ GO
 ALTER TABLE [dbo].[Company_TrainingQuestion]  WITH CHECK ADD  CONSTRAINT [CK_Company_TrainingQuestion_Answer] CHECK  (([correct_index]>=(0) AND [correct_index]<=(9)))
 GO
 ALTER TABLE [dbo].[Company_TrainingQuestion] CHECK CONSTRAINT [CK_Company_TrainingQuestion_Answer]
+GO
+
+CREATE TABLE [dbo].[Company_OperationActivity](
+	[activity_id] [bigint] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[submission_id] [nvarchar](40) NOT NULL,
+	[action_type] [nvarchar](30) NOT NULL,
+	[message] [nvarchar](1000) NULL,
+	[actor_employee_id] [nvarchar](20) NULL,
+	[actor_role] [nvarchar](20) NOT NULL,
+	[created_at] [datetime2](7) NOT NULL DEFAULT (sysdatetime()),
+	CONSTRAINT [FK_Company_OperationActivity_Submission] FOREIGN KEY([submission_id]) REFERENCES [dbo].[Company_OperationSubmission]([submission_id]) ON DELETE CASCADE,
+	CONSTRAINT [FK_Company_OperationActivity_Staff] FOREIGN KEY([actor_employee_id]) REFERENCES [dbo].[Company_Staff]([employee_id])
+) ON [PRIMARY]
+GO
+
+CREATE TABLE [dbo].[Company_TrainingAnswer](
+	[answer_id] [bigint] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[question_id] [int] NOT NULL,
+	[employee_id] [nvarchar](20) NOT NULL,
+	[answer_text] [nvarchar](max) NOT NULL,
+	[status] [nvarchar](20) NOT NULL DEFAULT (N'待審核'),
+	[feedback] [nvarchar](1000) NULL,
+	[submitted_at] [datetime2](7) NOT NULL DEFAULT (sysdatetime()),
+	[reviewed_by] [nvarchar](20) NULL,
+	[reviewed_at] [datetime2](7) NULL,
+	CONSTRAINT [FK_Company_TrainingAnswer_Question] FOREIGN KEY([question_id]) REFERENCES [dbo].[Company_TrainingQuestion]([question_id]),
+	CONSTRAINT [FK_Company_TrainingAnswer_Employee] FOREIGN KEY([employee_id]) REFERENCES [dbo].[Company_Staff]([employee_id]),
+	CONSTRAINT [FK_Company_TrainingAnswer_Reviewer] FOREIGN KEY([reviewed_by]) REFERENCES [dbo].[Company_Staff]([employee_id])
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO

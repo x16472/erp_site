@@ -67,7 +67,7 @@
                         <div class="card-head">
                             <div><span class="eyebrow">QUICK CHECK</span>
                                 <h2>商業營運規範與工安檢核</h2>
-                                <p>題庫由資料庫即時提供，完成後可立即查看規範解說。</p>
+                                <p>選擇題由後端即時判斷；申論題以文字作答後送交 MIS 人員審核。</p>
                             </div><button class="btn secondary" id="restart" type="button">重新作答</button>
                         </div>
                         <div class="progress"><span id="bar" style="width:0"></span></div>
@@ -93,11 +93,12 @@
             } if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用');
             return body.data
         };
+        let employeeCsrf = '';
         const employeeAccess = request('/api/employee/session').then(session => {
             if (!session.authenticated) {
                 location.replace(loginUrl);
                 throw new Error('需要員工驗證')
-            } return session
+            } employeeCsrf = session.csrf; return session
         });
         const esc = value => {
             const node = document.createElement('div');
@@ -121,7 +122,7 @@
             examTabs = document.querySelector('#examTabs');
         let documents = [],
             questions = [],
-            at = 0, score = 0,
+            at = 0, score = 0, graded = 0, essaySubmitted = 0,
             locked = false;
 
         function renderDocuments() {
@@ -168,6 +169,8 @@
         function resetQuiz() {
             at = 0;
             score = 0;
+            graded = 0;
+            essaySubmitted = 0;
             renderQuiz()
         } function renderQuiz() {
             if (!questions.length) {
@@ -176,8 +179,8 @@
             }
             if (at >= questions.length) {
                 quiz.innerHTML = `<span class="eyebrow">RESULT</span>
-                <h2>恭喜完成考試！答對 ${score} / ${questions.length} 題</h2>
-                <p class="hint">${score === questions.length ? '觀念非常完整，謝謝你持續進修。' : '建議回顧解說後再挑戰一次。'}</p>
+                <h2>已完成本次知識檢核</h2>
+                <p>客觀題答對 ${score} / ${graded} 題${essaySubmitted ? `；${essaySubmitted} 題申論答案已送交人工審核` : ''}。</p>
                 <button class="btn" id="again">再考一次</button>`;
                 bar.style.width = '100%';
                 quiz.querySelector('#again').onclick = resetQuiz;
@@ -187,25 +190,80 @@
             bar.style.width = `${at / questions.length * 100}%`;
             quiz.innerHTML = `<span class="tag">${esc(question.category)}</span>
             <p class="hint">第 ${at + 1} 題，共 ${questions.length} 題</p>
+            ${question.passage ? `<article class="reading-passage">${esc(question.passage).replace(/\n/g, '<br>')}</article>` : ''}
             <h2>${esc(question.question)}</h2>
-            ${question.options.map((option, index) => `<button class="quiz-option" data-index="${index}">${esc(option)}</button>`).join('')}
+            ${question.question_type === 'essay' ? `<label class="field"><span>申論答案</span><textarea id="essayResponse" rows="10" maxlength="5000" placeholder="請輸入完整作答內容"></textarea></label><button class="btn" id="submitEssay">送交人工審核</button>` :
+                question.options.map((option, index) => `<button class="quiz-option" data-index="${index}" aria-pressed="false">${esc(option)}</button>`).join('') +
+                (question.question_type === 'multiple_choice' ? '<button class="btn" id="submitAnswer">送出多選答案</button>' : '')}
             <p id="feedback"></p>
             <button class="btn" id="next" hidden>${at === questions.length - 1 ? '查看結果' : '下一題'}</button>`
         }
-        quiz.onclick = event => {
+        async function submitCurrent(payload) {
+            if (locked) return;
+            locked = true;
+            const question = questions[at], feedback = quiz.querySelector('#feedback');
+            feedback.textContent = '送出中…';
+            try {
+                const result = await request('/api/compliance/answer', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': employeeCsrf},
+                    body: JSON.stringify({question_id: question.id, ...payload})
+                });
+                if (result.is_essay) {
+                    essaySubmitted++;
+                    quiz.querySelector('#submitEssay').disabled = true;
+                    quiz.querySelector('#essayResponse').disabled = true;
+                    feedback.textContent = '申論答案已送交 MIS 人員審核。'
+                } else {
+                    graded++;
+                    if (result.correct) score++;
+                    quiz.querySelectorAll('[data-index]').forEach(button => {
+                        const index = Number(button.dataset.index);
+                        if (result.answers.includes(index)) button.classList.add('correct');
+                        else if (button.classList.contains('selected')) button.classList.add('wrong');
+                        button.disabled = true
+                    });
+                    const submit = quiz.querySelector('#submitAnswer');
+                    if (submit) submit.disabled = true;
+                    feedback.textContent = `${result.correct ? '答對了。' : '答案不正確。'}${result.explanation}`
+                }
+                quiz.querySelector('#next').hidden = false
+            } catch (error) {
+                locked = false;
+                feedback.textContent = error.message
+            }
+        }
+        quiz.onclick = async event => {
+            if (event.target.id === 'next') {
+                at++;
+                renderQuiz();
+                return
+            }
             const option = event.target.closest('[data-index]');
             if (option && !locked) {
-                locked = true;
-                const question = questions[at], chosen = Number(option.dataset.index);
-                quiz.querySelectorAll('[data-index]').forEach((button, index) => {
-                    if (index === question.answer) button.classList.add('correct');
-                    else if (index === chosen) button.classList.add('wrong');
-                    button.disabled = true
-                });
-                if (chosen === question.answer) score++;
-                quiz.querySelector('#feedback').textContent = `${chosen === question.answer ? '答對了。' : '再想一下。'}${question.explanation}`;
-                quiz.querySelector('#next').hidden = false
-            } if (event.target.id === 'next') { at++; renderQuiz() }
+                if (questions[at].question_type === 'multiple_choice') {
+                    option.classList.toggle('selected');
+                    option.setAttribute('aria-pressed', String(option.classList.contains('selected')))
+                } else {
+                    option.classList.add('selected');
+                    await submitCurrent({answers: [Number(option.dataset.index)], answer_text: ''})
+                }
+            }
+            if (event.target.id === 'submitAnswer') {
+                const answers = [...quiz.querySelectorAll('[data-index].selected')].map(button => Number(button.dataset.index));
+                if (!answers.length) {
+                    quiz.querySelector('#feedback').textContent = '請至少選擇一個答案。';
+                    return
+                }
+                await submitCurrent({answers, answer_text: ''})
+            }
+            if (event.target.id === 'submitEssay') {
+                const answerText = quiz.querySelector('#essayResponse').value.trim();
+                if (!answerText) {
+                    quiz.querySelector('#feedback').textContent = '請輸入申論答案。';
+                    return
+                }
+                await submitCurrent({answers: [], answer_text: answerText})
+            }
         }; restart.onclick = resetQuiz;
 
         employeeAccess.then(() => Promise.all([request('/api/manuals'),
