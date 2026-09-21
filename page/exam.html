@@ -195,7 +195,7 @@
             ${question.question_type === 'essay' ? `<label class="field"><span>申論答案</span><textarea id="essayResponse" rows="10" maxlength="5000" placeholder="請輸入完整作答內容"></textarea></label><button class="btn" id="submitEssay">送交人工審核</button>` :
                 question.options.map((option, index) => `<button class="quiz-option" data-index="${index}" aria-pressed="false">${esc(option)}</button>`).join('') +
                 (question.question_type === 'multiple_choice' ? '<button class="btn" id="submitAnswer">送出多選答案</button>' : '')}
-            <p id="feedback"></p>
+            <p class="quiz-feedback" id="feedback"></p>
             <button class="btn" id="next" hidden>${at === questions.length - 1 ? '查看結果' : '下一題'}</button>`
         }
         async function submitCurrent(payload) {
@@ -224,7 +224,7 @@
                     });
                     const submit = quiz.querySelector('#submitAnswer');
                     if (submit) submit.disabled = true;
-                    feedback.textContent = `${result.correct ? '答對了。' : '答案不正確。'}${result.explanation}`
+                    feedback.textContent = `${result.correct ? '答對了。' : '答案不正確。'}\n${result.explanation}`
                 }
                 quiz.querySelector('#next').hidden = false
             } catch (error) {

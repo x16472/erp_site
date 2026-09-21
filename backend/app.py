@@ -388,8 +388,6 @@ class Handler(BaseHTTPRequestHandler):
                 if parsed.path == "/api/admin/compliance/question":
                     item = user_input.validate_compliance_question(self.read_json())
                     return self.send_json({"data": data.save_compliance_question(item)})
-                if parsed.path == "/api/admin/compliance/parse":
-                    return self.send_json({"data": user_input.parse_compliance_question(self.read_json())})
                 if parsed.path == "/api/admin/compliance/answer/review":
                     item = user_input.validate_essay_review(self.read_json())
                     return self.send_json({"data": data.review_compliance_essay(item, session["employee_id"])})

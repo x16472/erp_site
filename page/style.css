@@ -2850,3 +2850,7 @@ body[data-theme="steel"] .hero-card {
     outline: 3px solid rgba(23, 63, 103, .2);
     border-color: var(--primary, #173f67)
 }
+
+.quiz-feedback {
+    white-space: pre-wrap
+}

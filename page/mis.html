@@ -177,18 +177,6 @@
                     </section>
                     <section class="admin-panel" id="questionPanel">
                         <div class="portal-grid staff-maintenance">
-                            <section class="portal-card full">
-                                <div class="card-head"><div><span class="eyebrow">TEXT IMPORT</span>
-                                    <h2>自然語言題目匯入</h2>
-                                    <p>貼上題型、題目、選項、答案與解說，解析後仍須由管理員確認再儲存。</p>
-                                </div></div>
-                                <label class="field"><span>題目文字</span>
-                                    <textarea id="questionImportText" rows="8" maxlength="12000"
-                                        placeholder="題型：多選題&#10;分類：工安管理&#10;題目：進場前應完成哪些事項？&#10;A. 檢查防護裝備&#10;B. 確認作業許可&#10;C. 跳過點名&#10;答案：A、B&#10;解析：完成防護與授權確認。"></textarea>
-                                </label>
-                                <div class="actions"><button class="btn secondary" id="parseQuestion" type="button">解析並帶入表單</button></div>
-                                <p id="parseStatus" aria-live="polite"></p>
-                            </section>
                             <form class="portal-card narrow" id="questionForm">
                                 <div class="card-head">
                                     <div><span class="eyebrow">QUESTION EDITOR</span>
@@ -308,9 +296,6 @@
             answersField = document.querySelector('#answersField'),
             explanationField = document.querySelector('#explanationField'),
             essayHint = document.querySelector('#essayHint'),
-            questionImportText = document.querySelector('#questionImportText'),
-            parseQuestion = document.querySelector('#parseQuestion'),
-            parseStatus = document.querySelector('#parseStatus'),
             essayAnswerList = document.querySelector('#essayAnswerList');
         async function request(url, options = {}) {
             const response = await fetch(url, {
@@ -631,30 +616,6 @@
             setQuestionType('single_choice');
             questionStatus.textContent = '';
             questionForm.elements.category.focus()
-        };
-        parseQuestion.onclick = async () => {
-            parseStatus.className = '';
-            parseStatus.textContent = '解析中…';
-            try {
-                const item = await request('/api/admin/compliance/parse', {
-                    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrf},
-                    body: JSON.stringify({text: questionImportText.value})
-                });
-                questionForm.reset();
-                setQuestionType(item.question_type);
-                questionForm.elements.category.value = item.category;
-                questionForm.elements.question.value = item.question;
-                questionForm.elements.passage.value = item.passage;
-                questionForm.elements.options.value = item.options.join('\n');
-                questionForm.elements.answers.value = item.answers.map(value => value + 1).join(',');
-                questionForm.elements.explanation.value = item.explanation;
-                parseStatus.className = 'success-note';
-                parseStatus.textContent = '已帶入表單，請人工確認題型、選項與答案後再儲存。';
-                questionForm.scrollIntoView({behavior: 'smooth'})
-            } catch (error) {
-                parseStatus.className = 'error-note';
-                parseStatus.textContent = error.message
-            }
         };
         function renderEssayAnswers() {
             essayAnswerList.innerHTML = essayAnswers.length ? essayAnswers.map(item => `<article class="submission-card essay-answer-card">

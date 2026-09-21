@@ -214,68 +214,6 @@ def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def parse_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
-    """解析常見的自然語言題目格式，回傳仍需人工確認的表單資料。"""
-    source = _text(payload.get("text"), "題目文字", 12000)
-    lines = [line.strip() for line in source.splitlines() if line.strip()]
-    labels: dict[str, str] = {}
-    options: list[str] = []
-    option_labels: list[str] = []
-    unlabeled: list[str] = []
-    for line in lines:
-        option_match = re.match(r"^([A-Fa-f]|[1-6])[.、)）:]\s*(.+)$", line)
-        if option_match:
-            option_labels.append(option_match.group(1).upper())
-            options.append(option_match.group(2).strip())
-            continue
-        field_match = re.match(
-            r"^(題型|分類|類別|文章|本文|閱讀文章|題目|問題|答案|正確答案|解說|解析)\s*[：:]\s*(.*)$",
-            line,
-        )
-        if field_match:
-            labels[field_match.group(1)] = field_match.group(2).strip()
-        else:
-            unlabeled.append(line)
-
-    type_names = {
-        "單選": "single_choice",
-        "單選題": "single_choice",
-        "多選": "multiple_choice",
-        "多選題": "multiple_choice",
-        "閱讀": "reading",
-        "閱讀測驗": "reading",
-        "申論": "essay",
-        "申論題": "essay",
-    }
-    raw_answer = labels.get("答案") or labels.get("正確答案") or ""
-    passage = labels.get("文章") or labels.get("本文") or labels.get("閱讀文章") or ""
-    explicit_type = type_names.get(labels.get("題型", ""), "")
-    question_type = explicit_type or (
-        "essay" if not options else "reading" if passage else
-        "multiple_choice" if re.search(r"[,，、\s]+", raw_answer.strip()) else "single_choice"
-    )
-    answers: list[int] = []
-    for token in re.findall(r"[A-Fa-f]|[1-6]", raw_answer):
-        normalized = token.upper()
-        if normalized in option_labels:
-            answers.append(option_labels.index(normalized))
-        elif normalized.isdigit():
-            answers.append(int(normalized) - 1)
-    question = labels.get("題目") or labels.get("問題") or (unlabeled[-1] if unlabeled else "")
-    if passage and question == passage:
-        question = ""
-    return {
-        "question_type": question_type,
-        "category": labels.get("分類") or labels.get("類別") or "一般",
-        "passage": passage,
-        "question": question,
-        "options": options,
-        "answers": sorted({answer for answer in answers if 0 <= answer < len(options)}),
-        "explanation": labels.get("解說") or labels.get("解析") or "",
-        "needs_review": True,
-    }
-
-
 def validate_compliance_answer(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         question_id = int(payload.get("question_id"))

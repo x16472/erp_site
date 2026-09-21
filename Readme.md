@@ -102,7 +102,7 @@ erp_site/
 - 待審佇列左側按員工編號顯示員工，右側顯示其建立的申請事件；可點選員工、事件或事件類別進行篩選。
 - MIS 可對營運日報要求補件、核准或退回，每次審閱與員工回覆都會保留歷程。
 - MIS 不再提供員工編輯或停用控制，並保留前往 `page/staff.html` 的「查看出缺勤」入口。
-- MIS 的題庫維護可依四種題型新增、更新或停用題目，並提供自然語言解析預覽與申論答案人工審核。
+- MIS 的題庫維護可依四種題型新增、更新或停用題目，並提供申論答案人工審核。
 
 ### 員工 CSV 與照片
 
@@ -250,6 +250,5 @@ BackendWebAdminPassword=後台管理員密碼
 | `POST /api/admin/manuals/document` | 管理員 | 啟用或停用營運SOP文件 |
 | `GET /api/admin/compliance/questions` | 管理員 | 查閱完整商業規範與工安題庫 |
 | `POST/DELETE /api/admin/compliance/question` | 管理員 | 新增、更新或停用題目 |
-| `POST /api/admin/compliance/parse` | 管理員 | 將自然語言題目解析成待確認結構 |
 | `GET /api/admin/compliance/answers` | 管理員 | 查閱申論答案待審清單 |
 | `POST /api/admin/compliance/answer/review` | 管理員 | 審核申論答案並留下回饋 |
