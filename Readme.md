@@ -1,6 +1,6 @@
 # 銀盾共同體營運中心
 
-這是一套前後端分離的企業官方網站與內部平台。公開網站呈現企業宗旨、營運規模、營運據點與專業團隊；員工入口整合出勤、營運填報、內部營運手冊與內部資訊；後台管理中心則提供受控的網站設定、唯讀資料查閱及待審佇列。
+這是一套前後端分離的企業官方網站與內部平台。公開網站呈現企業宗旨、營運規模、營運據點與專業團隊；員工入口整合出勤、營運填報、營運SOP、學術科題庫與內部資訊；後台管理中心則提供受控的網站設定、唯讀資料查閱及待審佇列。
 
 後端使用 Python 與 `pyodbc` 實際連接 `Company_New` SQL Server 資料庫，僅存取 `dbo.Company_*` 應用資料表。網站寫入只發生在這些專用資料表及員工照片資料夾，`.env` 不會由程式自行建立或覆寫。
 
@@ -13,8 +13,8 @@ erp_site/
 │   ├── agent.md                    #開發協作規範與內部歷程
 │   ├── database.md                 #SQL Server結構與資料治理原則
 │   └── prd.md                      #銀盾共同體產品需求與檢核結果
-├── data/                           #匯入來源、營運SOP文件與資料庫備份素材
-│   ├── exam/                       #內部營運手冊Word、Excel與PDF來源
+├── data/                           #匯入來源、SOP文件與資料庫備份素材
+│   ├── exam/                       #營運SOP與題庫 Word、Excel、PDF來源
 │   ├── staff.csv                   #員工初始資料與同步來源
 │   ├── Company_Schema.sql          #Company資料表結構參考SQL
 │   ├── Company_Backend_Tables.bak  #SQL Server備份檔
@@ -29,7 +29,7 @@ erp_site/
 │   ├── employee-login.html         #員工編號驗證與打卡入口
 │   ├── home.html                   #員工工作台、打卡與營運摘要
 │   ├── sales.html                  #營運日報、填報摘要、審閱歷程與員工回覆
-│   ├── exam.html                   #營運SOP文件查閱與知識檢核
+│   ├── exam.html                   #學科刷題、模擬考、錯題本與術科申論
 │   ├── game.html                   #企業宣導影音與YouTube播放器
 │   ├── staff.html                  #MIS員工、部門與出缺勤管理
 │   └── mis.html                    #MIS網站設定、待審、文件與題庫維護
@@ -57,10 +57,41 @@ erp_site/
 
 - 響應式企業品牌首頁，支援銀盾藍、勳章紅、鋼鐵灰三種資料庫主題。
 - 以羅瓦德莊園、可可藝術沙龍、聯合工匠街與地下堅石礦場呈現四大產業據點。
-- 顯示在職員工、管理部門與營運SOP文件等營運彙總，不公開個人敏感資料。
+- 顯示在職員工、管理部門與SOP文件等營運彙總，不公開個人敏感資料。
 - 專業團隊只回傳姓名、部門、職位、特質及公開照片。
 - 專業團隊可透過部門下拉選單篩選；部門清單與篩選結果皆由 `backend/data.py` 查詢後交由 `backend/app.py` 回傳。
 - 其餘首頁區域已統一強化層次、卡片、營運據點、商務合作與行動版版面。
+
+#### 視覺主題參數
+
+MIS 預覽與官方網站共用以下六個 CSS 變數：
+
+| 參數 | 用途 |
+| --- | --- |
+| `--public-theme-dark` | 頁首、頁尾及主視覺深色底 |
+| `--public-theme-mid` | 主視覺漸層、卡片及主要品牌色 |
+| `--public-theme-light` | 主視覺光暈及較亮的輔助色 |
+| `--public-theme-accent` | 標題強調字及導覽互動色 |
+| `--public-theme-detail` | 裝飾線、卡片標記及次要重點色 |
+| `--public-theme-surface` | 官方網站頁面底色 |
+
+新增主題時需同步完成三處設定：
+
+1. 在 `page/mis.html` 的視覺主題下拉選單增加唯一英文值與顯示名稱。
+2. 在 `backend/input.py` 的 `ALLOWED_THEMES` 加入相同英文值。
+3. 在 `page/style.css` 加入以下色票結構：
+
+```css
+.public-body[data-theme="custom"],
+.settings-preview.custom {
+    --public-theme-dark: #111827;
+    --public-theme-mid: #374151;
+    --public-theme-light: #6b7280;
+    --public-theme-accent: #fbbf24;
+    --public-theme-detail: #d97706;
+    --public-theme-surface: #f9fafb
+}
+```
 
 ### 員工入口與打卡
 
@@ -80,8 +111,9 @@ erp_site/
 - 營運蒐集依營運分類填寫數量、說明與日期，並以待審流程集中管理。
 - 新增的營運紀錄會保存建立員工編號，供 MIS 待審佇列依員工分類。
 - 員工可查閱自己的日報狀態、完整審閱歷程，並在待審或補件階段回覆管理員。
-- 內部營運手冊提供 Word、Excel、PDF 文件分類、段落查閱及互動題庫。
-- 題庫支援單選、多選、閱讀測驗與申論題；選擇題由後端判分，申論答案送交 MIS 人工審核。
+- 工作台知識區提供 Word、Excel、PDF 營運SOP的分類、搜尋與段落查閱。
+- 題庫中心分為學科與術科；學科支援單選、多選、閱讀、程式碼填空、配對、分類練習、模擬考及錯題本，術科申論送交 MIS 人工審核。
+- 題目進度、模考倒數與錯題均綁定員工帳號；模考交卷前不回傳正解或解析。
 - 企業宣導影音專區由後端驗證影片網址並取得真實標題後嵌入播放。
 
 ### 員工出缺勤管理
@@ -102,7 +134,7 @@ erp_site/
 - 待審佇列左側按員工編號顯示員工，右側顯示其建立的申請事件；可點選員工、事件或事件類別進行篩選。
 - MIS 可對營運日報要求補件、核准或退回，每次審閱與員工回覆都會保留歷程。
 - MIS 不再提供員工編輯或停用控制，並保留前往 `page/staff.html` 的「查看出缺勤」入口。
-- MIS 的題庫維護可依四種題型新增、更新或停用題目，並提供申論答案人工審核。
+- MIS 可維護學科／術科、科目、章節、模考規則與六種題型，文件解析題目一律先進草稿，管理員編修後不受後續同步覆寫。
 
 ### 員工 CSV 與照片
 
@@ -128,10 +160,10 @@ erp_site/
 | `page/employee-login.html` | 員工編號驗證、上班打卡或不打卡進入 |
 | `page/home.html` | 員工工作台、打卡狀態、補打卡、下班及離開系統 |
 | `page/sales.html` | 新增營運日報、填報摘要、審閱歷程與員工回覆 |
-| `page/exam.html` | 營運SOP文件與商業規範、工安檢核 |
+| `page/exam.html` | 學科刷題、模擬考、錯題本與術科申論 |
 | `page/game.html` | 企業宣導影音、YouTube網址驗證與播放器 |
 | `page/staff.html` | 員工主檔、部門與出缺勤分頁管理 |
-| `page/mis.html` | 網站設定、唯讀查閱、待審、營運SOP文件及題庫維護 |
+| `page/mis.html` | 網站設定、唯讀查閱、待審、SOP文件及題庫維護 |
 
 內部系統各頁使用一致的左側導覽列。官方網站不列在側欄中，員工可從工作台的常用入口前往；管理員也可在「官方網站版面設定」直接開啟公開網站確認發布結果。
 
@@ -154,6 +186,8 @@ erp_site/
 ## 安裝與啟動
 
 建議使用 Visual Studio Code，並安裝 Microsoft ODBC Driver 17 for SQL Server。
+
+掃描型 PDF 題庫另需安裝 Tesseract OCR，並啟用 `chi_tra` 與 `eng` 語言資料。程式會優先尋找系統 `PATH`，其次尋找 `C:\Program Files\Tesseract-OCR\tesseract.exe`；缺少 OCR 時仍可同步其他文件，MIS 會顯示來源警告。
 
 ```powershell
 python -m venv .venv
@@ -184,7 +218,7 @@ BackendWebAdminPassword=後台管理員密碼
 - 公開專業團隊支援部門選單，後台員工資料固定依員工編號管理。
 - 員工維護集中於 `page/staff.html`；MIS 原員工分頁改為以員工及事件雙向篩選的待審佇列。
 - 營運待審事項會保存建立員工，既有無建立者紀錄仍可查閱。
-- 實際 SQL Server 的 12 張 `Company_*` 應用表、CSV、Word／Excel／PDF 文件與 `page/static` 圖片共同形成目前的資料來源。
+- 實際 SQL Server 的 17 張 `Company_*` 應用表、CSV、Word／Excel／PDF 文件與 `page/static` 圖片共同形成目前的資料來源。
 - SQL Server 資料庫已改名為 `Company_New`，10 張應用表及限制式皆使用 `Company_*` 企業命名；原表自動產生的 25 個預設、主鍵及唯一限制式也已完成實體重新命名。
 
 ## 上線注意事項
@@ -198,7 +232,7 @@ BackendWebAdminPassword=後台管理員密碼
 
 ### 資料來源與正規化資料表
 
-`backend/data.py` 讀取既有 `.env` 連線 SQL Server。公開、員工與 MIS 功能使用下列 12 張 `dbo.Company_*` 應用資料表；MIS 通用資料查閱仍只開放原有 10 張白名單資料表，審閱歷程與申論答案只能透過受控 API 存取，前端不能送入任意 SQL。
+`backend/data.py` 讀取既有 `.env` 連線 SQL Server。公開、員工與 MIS 功能使用下列 17 張 `dbo.Company_*` 應用資料表；MIS 通用資料查閱仍只開放原有 10 張白名單資料表，審閱歷程、題庫作答與申論答案只能透過受控 API 存取，前端不能送入任意 SQL。
 
 網站使用以下專用資料表：
 
@@ -211,10 +245,15 @@ BackendWebAdminPassword=後台管理員密碼
 | `dbo.Company_OperationCategory` | 營運填報分類 |
 | `dbo.Company_OperationSubmission` | 營運日報、建立員工與目前審閱狀態 |
 | `dbo.Company_OperationActivity` | 日報審閱、補件及員工回覆歷程 |
-| `dbo.Company_TrainingDocument` | 營運SOP文件主檔 |
-| `dbo.Company_TrainingSection` | 營運SOP文件段落 |
-| `dbo.Company_TrainingQuestion` | 單選、多選、閱讀測驗及申論題庫 |
+| `dbo.Company_TrainingDocument` | SOP文件主檔 |
+| `dbo.Company_TrainingSection` | SOP文件段落 |
+| `dbo.Company_TrainingQuestion` | 學科、術科、來源、解析狀態與結構化題目 |
 | `dbo.Company_TrainingAnswer` | 申論題文字答案及人工審核結果 |
+| `dbo.Company_TrainingSubject` | 學科／術科科目與模擬考設定 |
+| `dbo.Company_TrainingChapter` | 題庫章節與排序 |
+| `dbo.Company_TrainingSession` | 員工練習或模擬考階段 |
+| `dbo.Company_TrainingSessionQuestion` | 題組快照、作答與標記 |
+| `dbo.Company_TrainingWrongQuestion` | 員工錯題本與手動移除狀態 |
 | `dbo.Company_ImportState` | `staff.csv` 匯入狀態 |
 
 ### API 摘要
@@ -232,10 +271,15 @@ BackendWebAdminPassword=後台管理員密碼
 | `POST /api/operations/submit` | 員工 | 新增附帶建立員工的待審事項 |
 | `GET /api/operations/mine` | 員工 | 查閱自己的日報與審閱歷程 |
 | `POST /api/operations/reply` | 員工 | 回覆日報審閱或補件要求 |
-| `GET /api/manuals` | 員工 | 營運SOP文件目錄 |
-| `GET /api/manuals/document?id=...` | 員工 | 營運SOP文件段落 |
+| `GET /api/manuals` | 員工 | SOP文件目錄 |
+| `GET /api/manuals/document?id=...` | 員工 | SOP文件段落 |
 | `GET /api/compliance/questions` | 員工 | 商業規範與工安檢核題庫 |
 | `POST /api/compliance/answer` | 員工 | 後端判斷選擇題或送交申論答案 |
+| `GET /api/training/catalog` | 員工 | 取得學科／術科、科目、章節、來源與續作資訊 |
+| `POST /api/training/session/start` | 員工 | 建立分類練習或模擬考 |
+| `GET/POST /api/training/session*` | 員工 | 續作、儲存答案與交卷 |
+| `GET/POST /api/training/wrong*` | 員工 | 取得或手動移除錯題 |
+| `GET/POST /api/training/practical*` | 員工 | 術科題目、申論提交與審核狀態 |
 | `POST /api/admin/login` | 已驗證員工 | 建立後台管理工作階段 |
 | `GET /api/admin/catalog` | 管理員 | 取得可唯讀查閱的 `Company_*` 資料表目錄 |
 | `GET /api/admin/table?name=...` | 管理員 | 取得指定 `Company_*` 資料表的遮罩分頁資料 |
@@ -245,10 +289,11 @@ BackendWebAdminPassword=後台管理員密碼
 | `GET/POST/DELETE /api/admin/staff` | 管理員 | 員工主檔查閱、維護與停用，供 `page/staff.html` 使用 |
 | `GET/POST/DELETE /api/admin/departments` | 管理員 | 部門主檔查閱、維護與停用 |
 | `GET /api/admin/attendance` | 管理員 | 依日期或員工查閱出缺勤 |
-| `POST /api/admin/manuals/sync` | 管理員 | 重新同步營運SOP Word、Excel與PDF文件 |
-| `GET /api/admin/manuals/documents` | 管理員 | 查閱含停用狀態的營運SOP文件 |
-| `POST /api/admin/manuals/document` | 管理員 | 啟用或停用營運SOP文件 |
+| `POST /api/admin/manuals/sync` | 管理員 | 同步文件、必要時 OCR，並匯入結構化題目草稿 |
+| `GET /api/admin/manuals/documents` | 管理員 | 查閱含停用狀態的SOP文件 |
+| `POST /api/admin/manuals/document` | 管理員 | 啟用或停用SOP文件 |
 | `GET /api/admin/compliance/questions` | 管理員 | 查閱完整商業規範與工安題庫 |
 | `POST/DELETE /api/admin/compliance/question` | 管理員 | 新增、更新或停用題目 |
 | `GET /api/admin/compliance/answers` | 管理員 | 查閱申論答案待審清單 |
 | `POST /api/admin/compliance/answer/review` | 管理員 | 審核申論答案並留下回饋 |
+| `GET/POST /api/admin/training/*` | 管理員 | 維護科目、章節、模考設定與題目發布狀態 |

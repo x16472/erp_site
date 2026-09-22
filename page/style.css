@@ -455,8 +455,8 @@ img {
 
 @media (max-width: 768px) {
     .public-nav {
-        /* 當手機版點擊展開時，強制換成深藍色背景，蓋掉有問題的白底 */
-        background-color: #0f172a !important;
+        /* 手機選單跟隨目前公開網站主題。 */
+        background-color: var(--public-theme-dark, #101b2d) !important;
 
         /* 轉為垂直排列 */
         flex-direction: column;
@@ -565,30 +565,6 @@ img {
     display: block;
     text-decoration: none;
     margin: 7px 0
-}
-
-body[data-theme="medal"] .public-hero {
-    background: linear-gradient(135deg, #fff9ef 0%, #fff0e8 100%)
-}
-
-body[data-theme="medal"] .hero-card {
-    background: linear-gradient(145deg, #e99a45, #b95c51)
-}
-
-body[data-theme="medal"] .hero-copy-public h1 span {
-    color: #c65e42
-}
-
-body[data-theme="steel"] .public-hero {
-    background: linear-gradient(135deg, #f3faf5 0%, #edf6ed 100%)
-}
-
-body[data-theme="steel"] .hero-card {
-    background: linear-gradient(145deg, #4f9671, #245d53)
-}
-
-body[data-theme="steel"] .hero-copy-public h1 span {
-    color: #34795f
 }
 
 /*員工入口共用*/
@@ -814,7 +790,7 @@ body[data-theme="steel"] .hero-copy-public h1 span {
     box-shadow: 0 5px 18px rgba(28, 48, 75, .04)
 }
 
-.portal-card.wide {
+/* .portal-card.wide {
     grid-column: span 8
 }
 
@@ -824,7 +800,7 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 
 .portal-card.full {
     grid-column: 1/-1
-}
+} */
 
 .card-head {
     display: flex;
@@ -1143,16 +1119,10 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 .settings-preview {
     padding: 25px;
     border-radius: 18px;
-    background: linear-gradient(125deg, var(--navy), var(--blue));
+    background: linear-gradient(125deg,
+        var(--public-theme-dark, #101b2d),
+        var(--public-theme-mid, #244a73));
     color: #fff
-}
-
-.settings-preview.medal {
-    background: linear-gradient(125deg, #aa4f39, #f2a441)
-}
-
-.settings-preview.steel {
-    background: linear-gradient(125deg, #285c52, #46a67c)
 }
 
 .settings-preview h2 {
@@ -2115,17 +2085,6 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 .attendance-session-actions .btn:first-child:not([hidden]) {
     grid-column: 1/-1
 }
-
-.review-workspace {
-    display: grid;
-    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-    min-height: 560px;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    background: #fff
-}
-
 .queue-head,
 .review-event-head,
 .review-pane-title {
@@ -2149,21 +2108,41 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 .review-pane-title small {
     color: var(--muted)
 }
+/*桌面版 RWD 樣式 */
+.review-workspace {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    /* 1. 限制整體高度（可依你的版面微調，例如 650px） */
+    height: calc(100vh - 160px);
+    min-height: 560px;
 
+    overflow: hidden; /* 防止整體溢出外框 */
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: #fff;
+}
+/* 左側：員工列表 */
 .review-people {
     padding: 18px;
     border-right: 1px solid var(--line);
-    background: #f6f8f9
+    background: #f6f8f9;
+    /* 高度填滿父層，並開啟垂直滾動 */
+    height: 100%;
+    box-sizing: border-box;
+    /*啟用 Flex 佈局，讓內部的名單（flex: 1）能夠直通到底部 */
+    display: flex;
+    flex-direction: column;
+    /*外殼關閉滾動，避免與內層產生雙重滾動條 */
+    overflow: hidden;
 }
-
 .review-person-list {
     display: grid;
     gap: 7px;
-    max-height: 570px;
-    margin-top: 14px;
-    overflow: auto
+    /*這行會成功生效，自動將灰色背景延伸到紅框底部 */
+    flex: 1;
+     /* 當員工名單超出高度時，在這裡產生滾動條 */
+    overflow-y: auto;
 }
-
 .review-person {
     display: grid;
     grid-template-columns: 44px 1fr auto;
@@ -2177,7 +2156,6 @@ body[data-theme="steel"] .hero-copy-public h1 span {
     text-align: left;
     cursor: pointer
 }
-
 .review-person:hover,
 .review-person.active {
     border-color: #b8ddea;
@@ -2207,10 +2185,32 @@ body[data-theme="steel"] .hero-copy-public h1 span {
     font-weight: 900;
     color: var(--blue)
 }
-
+/* 右側：申請事件外殼 */
 .review-events {
-    min-width: 0;
-    padding: 24px
+    height: 100%; /* 填滿紅框高度 */
+    /* 啟用 Flex 佈局，才能讓內部的 result-list 滾動 */
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden; /* 確保外殼不出現雙滾動條 */
+}
+
+/* 右側頂部固定區（標題與篩選按鈕保持不動） */
+.review-event-head,
+.queue-filters {
+    padding-left: 24px;
+    padding-right: 24px;
+    flex-shrink: 0; /* 防止被壓縮 */
+}
+.review-event-head { padding-top: 24px; }
+.queue-filters { padding-top: 12px; padding-bottom: 12px; }
+
+/* 右側事件列表*/
+.result-list {
+    flex: 1;            /* 自動佔滿剩餘的所有高度 */
+    overflow-y: auto;   /* 垂直滾動條 */
+    padding: 12px 24px 24px 24px;
 }
 
 .queue-filters {
@@ -2327,11 +2327,11 @@ body[data-theme="steel"] .hero-copy-public h1 span {
         grid-template-columns: repeat(2, 1fr)
     }
 
-    .portal-card,
+    /* .portal-card,
     .portal-card.wide,
     .portal-card.narrow {
         grid-column: 1/-1
-    }
+    } */
 
     .clock-panel {
         grid-template-columns: 1fr 1fr
@@ -2522,19 +2522,53 @@ body[data-theme="steel"] .hero-copy-public h1 span {
     }
 }
 
-@media(max-width:980px) {
+/* 平板/手機版 RWD 樣式（小於 980px） */
+@media(max-width: 980px) {
+    /* 父層：取消桌面版高度，使其隨網頁自然延伸 */
     .review-workspace {
-        grid-template-columns: 1fr
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
     }
-
+    /* 上方員工區：移除右邊框，改為下邊框 */
     .review-people {
         border-right: 0;
-        border-bottom: 1px solid var(--line)
+        border-bottom: 1px solid var(--line);
+        height: auto;
+        overflow: visible;
     }
 
+    /* 員工列表：維持原本的 2 欄設定 */
     .review-person-list {
+        display: grid;
         grid-template-columns: repeat(2, minmax(230px, 1fr));
-        max-height: 300px
+        max-height: 300px;
+        overflow-y: auto;
+    }
+        /* 下方事件外殼：取消它的滾動，讓它變成靜態容器，標題和按鈕就不會跟著滾 */
+    .review-events {
+        height: auto;
+        overflow: visible;
+        padding: 0;
+    }
+  /* 調整手機版標題與篩選器的內距 */
+    .review-event-head,
+    .queue-filters {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    /* 下方卡片列表：把固定高度與滾動條鎖在這裡！ */
+    .result-list {
+        /* 設定一個適合手機版卡片滾動的高度（例如 400px，可依需求調整） */
+        height: 400px;
+
+        /* 啟用垂直滾動，只有卡片會滾動，上方的標題與篩選按鈕會固定住 */
+        overflow-y: auto;
+        box-sizing: border-box;
+
+        /* 保持漂亮的卡片與外框間距 */
+        padding: 12px 16px 24px 16px;
     }
 }
 
@@ -2585,15 +2619,49 @@ body[data-theme="steel"] .hero-copy-public h1 span {
     --silver-shield-gold: #c79b42
 }
 
+.question-card {
+    grid-template-columns: 24px minmax(0, 1fr) auto
+}
+
+.public-body,
+.settings-preview.shield {
+    --public-theme-dark: #101b2d;
+    --public-theme-mid: #244a73;
+    --public-theme-light: #41658f;
+    --public-theme-accent: #d8b66e;
+    --public-theme-detail: #8f2634;
+    --public-theme-surface: #f4f5f6
+}
+
+.public-body[data-theme="medal"],
+.settings-preview.medal {
+    --public-theme-dark: #3a1117;
+    --public-theme-mid: #8f2634;
+    --public-theme-light: #c2555f;
+    --public-theme-accent: #e1bd71;
+    --public-theme-detail: #c79b42;
+    --public-theme-surface: #f8f2f1
+}
+
+.public-body[data-theme="steel"],
+.settings-preview.steel {
+    --public-theme-dark: #252a31;
+    --public-theme-mid: #4f5b68;
+    --public-theme-light: #778492;
+    --public-theme-accent: #d7dde4;
+    --public-theme-detail: #8e9aa6;
+    --public-theme-surface: #f1f3f5
+}
+
 /* 公開首頁使用深色企業主視覺，避免舊版童趣漸層。 */
 .public-body {
-    background: #f4f5f6;
-    color: var(--silver-shield-navy)
+    background: var(--public-theme-surface);
+    color: var(--public-theme-dark)
 }
 
 .public-header {
     border-bottom-color: #ffffff1f;
-    background: #101b2df2;
+    background: color-mix(in srgb, var(--public-theme-dark) 95%, transparent);
     box-shadow: 0 12px 32px #07101d26
 }
 
@@ -2613,16 +2681,14 @@ body[data-theme="steel"] .hero-copy-public h1 span {
 }
 
 .public-nav a:not(.btn):hover {
-    color: #e1bd71
+    color: var(--public-theme-accent)
 }
 
-.public-hero,
-body[data-theme="medal"] .public-hero,
-body[data-theme="steel"] .public-hero {
+.public-hero {
     min-height: 720px;
     background:
-        radial-gradient(circle at 80% 10%, #41658f55 0, transparent 35%),
-        linear-gradient(120deg, #101b2d 0%, #172b43 56%, #27394f 100%);
+        radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--public-theme-light) 38%, transparent) 0, transparent 35%),
+        linear-gradient(120deg, var(--public-theme-dark) 0%, var(--public-theme-mid) 100%);
     color: #fff
 }
 
@@ -2636,10 +2702,8 @@ body[data-theme="steel"] .public-hero {
     letter-spacing: -.035em
 }
 
-.hero-copy-public h1 span,
-body[data-theme="medal"] .hero-copy-public h1 span,
-body[data-theme="steel"] .hero-copy-public h1 span {
-    color: #d8b66e
+.hero-copy-public h1 span {
+    color: var(--public-theme-accent)
 }
 
 .hero-copy-public p {
@@ -2656,20 +2720,20 @@ body[data-theme="steel"] .hero-copy-public h1 span {
     min-height: 530px
 }
 
-.hero-card,
-body[data-theme="medal"] .hero-card,
-body[data-theme="steel"] .hero-card {
+.hero-card {
     inset: 38px 22px 18px 70px;
     border: 1px solid #ffffff2e;
     border-radius: 18px;
     background:
-        linear-gradient(145deg, #17283ac7, #31465dc7),
+        linear-gradient(145deg,
+            color-mix(in srgb, var(--public-theme-dark) 82%, transparent),
+            color-mix(in srgb, var(--public-theme-light) 78%, transparent)),
         url("static/appicon.png") center / min(65%, 360px) no-repeat;
     box-shadow: 0 32px 70px #050a1266
 }
 
 .hero-card:after {
-    border-color: var(--silver-shield-red);
+    border-color: var(--public-theme-detail);
     opacity: .8
 }
 
@@ -2681,7 +2745,7 @@ body[data-theme="steel"] .hero-card {
 }
 
 .floating-note b {
-    color: var(--silver-shield-navy);
+    color: var(--public-theme-dark);
     font-family: Georgia, "Times New Roman", serif;
     font-size: 20px
 }
@@ -2702,7 +2766,7 @@ body[data-theme="steel"] .hero-card {
 }
 
 .philosophy-card {
-    border-top: 3px solid var(--silver-shield-blue)
+    border-top: 3px solid var(--public-theme-mid)
 }
 
 .business-sector-section {
@@ -2712,17 +2776,17 @@ body[data-theme="steel"] .hero-card {
 .sector-card {
     min-height: 260px;
     border: 1px solid #910202b2;
-    border-top: 4px solid var(--silver-shield-red);
+    border-top: 4px solid var(--public-theme-detail);
     box-shadow: 0 12px 28px #77777777
 }
 
 .sector-card:nth-child(even) {
-    border-top-color: var(--silver-shield-blue);
+    border-top-color: var(--public-theme-mid);
     background-color: #616161;
 }
 
 .sector-card time {
-    color: var(--silver-shield-red);
+    color: var(--public-theme-detail);
     letter-spacing: .08em
 }
 
@@ -2734,11 +2798,11 @@ body[data-theme="steel"] .hero-card {
 .cta-banner {
     border: 1px solid #ffffff1c;
     border-radius: 12px;
-    background: linear-gradient(120deg, #101b2d, #244a73)
+    background: linear-gradient(120deg, var(--public-theme-dark), var(--public-theme-mid))
 }
 
 .public-footer {
-    background: #0b1422
+    background: var(--public-theme-dark)
 }
 
 /* 內部系統沿用相同企業色，確保官方網站與工作入口一致。 */
@@ -2748,8 +2812,8 @@ body[data-theme="steel"] .hero-card {
 
 .portal-nav a.active,
 .portal-nav a:hover {
-    border-color: #ffffff22;
-    background: #ffffff12
+    border-color: #4a01d3b4;
+    background: #9200be12
 }
 
 @media(max-width:980px) {
@@ -2758,7 +2822,7 @@ body[data-theme="steel"] .hero-card {
     }
 
     .public-nav {
-        background: #101b2d
+        background: var(--public-theme-dark)
     }
 
     .hero-card {
@@ -2853,4 +2917,384 @@ body[data-theme="steel"] .hero-card {
 
 .quiz-feedback {
     white-space: pre-wrap
+}
+
+/* 題庫練習中心 */
+.training-hero,
+.session-head,
+.practical-card header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px
+}
+
+.training-hero {
+    margin-bottom: 20px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: linear-gradient(130deg, #fff, #edf4fb)
+}
+
+.training-hero h2,
+.subject-card h3,
+.session-head h2 {
+    margin: 5px 0
+}
+
+.training-home-actions,
+.session-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px
+}
+
+.subject-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px
+}
+
+.subject-card {
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 22px #173f6710
+}
+
+.subject-card p {
+    min-height: 42px;
+    color: var(--muted)
+}
+
+.subject-progress {
+    display: grid;
+    gap: 10px;
+    margin: 14px 0 20px
+}
+
+.subject-progress>div>span {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 5px;
+    color: var(--ink);
+    font-size: .88rem
+}
+
+.subject-progress small {
+    color: var(--muted)
+}
+
+.progress-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--line)
+}
+
+.progress-track i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent)
+}
+
+.training-mode-picker {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 18px
+}
+
+.training-mode-picker label {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    cursor: pointer
+}
+
+.training-mode-picker span,
+.training-mode-picker small {
+    display: block
+}
+
+.training-mode-picker small {
+    margin-top: 3px;
+    color: var(--muted)
+}
+
+.training-filter-grid {
+    align-items: start
+}
+
+.filter-field {
+    min-width: 0;
+    margin: 0;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 13px
+}
+
+.filter-field legend {
+    padding: 0 6px;
+    font-weight: 800
+}
+
+.check-grid {
+    display: grid;
+    gap: 8px;
+    max-height: 220px;
+    overflow: auto
+}
+
+.check-grid label {
+    display: flex;
+    align-items: center;
+    gap: 7px
+}
+
+.training-session {
+    display: grid;
+    gap: 15px
+}
+
+.session-clock {
+    min-width: 130px;
+    padding: 10px 16px;
+    border-radius: 13px;
+    background: var(--navy);
+    color: #fff;
+    text-align: center
+}
+
+.session-clock small,
+.session-clock strong {
+    display: block
+}
+
+.session-clock strong {
+    margin-top: 3px;
+    font: 800 24px ui-monospace, Consolas, monospace
+}
+
+.session-layout {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start
+}
+/* 當沒有側邊欄時，強制轉為單欄 */
+.session-layout.no-sidebar {
+    grid-template-columns: 1fr;
+}
+
+.question-navigator {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+    position: sticky;
+    top: 20px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff
+}
+
+.question-navigator button {
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    cursor: pointer
+}
+
+.question-navigator button.answered {
+    border-color: var(--green);
+    background: #e5f6ef
+}
+
+.question-navigator button.flagged {
+    box-shadow: inset 0 -4px #d9a11b
+}
+
+.question-navigator button.active {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: #fff
+}
+
+.question-stage {
+    min-height: 440px
+}
+
+.question-text {
+    margin: 16px 0;
+    font-size: 18px;
+    line-height: 1.8
+}
+
+.question-code {
+    overflow: auto;
+    margin: 15px 0;
+    padding: 18px;
+    border: 1px solid #cbd7e4;
+    border-radius: 12px;
+    background: #101b2d;
+    color: #eef5ff;
+    line-height: 1.65;
+    tab-size: 4
+}
+
+.answer-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px
+}
+
+.answer-label input {
+    margin-top: 4px
+}
+
+.match-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) minmax(180px, 1fr);
+    gap: 12px;
+    margin: 10px 0
+}
+
+.session-actions {
+    margin-top: 22px
+}
+
+.session-actions .active {
+    border-color: #d9a11b;
+    background: #fff8df
+}
+
+.result-hero {
+    padding: 25px;
+    text-align: center
+}
+
+.result-hero strong {
+    display: block;
+    margin: 10px 0;
+    color: var(--blue);
+    font-size: clamp(38px, 7vw, 68px)
+}
+
+.review-list,
+.wrong-list,
+.practical-list {
+    display: grid;
+    gap: 12px
+}
+
+.review-question,
+.wrong-card {
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    background: #fff
+}
+
+.review-question.correct {
+    border-left: 5px solid var(--green)
+}
+
+.review-question.wrong {
+    border-left: 5px solid var(--red)
+}
+
+.review-question summary {
+    cursor: pointer;
+    font-weight: 800
+}
+
+.wrong-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 15px;
+    align-items: start
+}
+
+.practical-card {
+    max-width: 980px;
+    margin: 0 auto
+}
+
+.text-action {
+    margin: 3px;
+    padding: 4px 7px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: #fff;
+    color: var(--blue);
+    cursor: pointer
+}
+
+.training-bulk-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px
+}
+
+.training-bulk-toolbar select {
+    min-width: 150px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff
+}
+
+.question-card>[data-question-select] {
+    width: 18px;
+    height: 18px
+}
+
+@media (max-width: 900px) {
+    .subject-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+
+    .session-layout {
+        grid-template-columns: 1fr
+    }
+
+    .question-navigator {
+        position: static;
+        grid-template-columns: repeat(8, 1fr)
+    }
+}
+
+@media (max-width: 640px) {
+    .training-hero,
+    .session-head,
+    .wrong-card {
+        display: grid;
+        grid-template-columns: 1fr
+    }
+
+    .subject-grid,
+    .training-mode-picker {
+        grid-template-columns: 1fr
+    }
+
+    .question-navigator {
+        grid-template-columns: repeat(5, 1fr)
+    }
+
+    .session-actions .btn {
+        flex: 1 1 calc(50% - 9px)
+    }
+
+    .match-row {
+        grid-template-columns: 1fr
+    }
 }

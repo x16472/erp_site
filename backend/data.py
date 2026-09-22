@@ -9,7 +9,7 @@ import json
 import sys
 import threading
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -369,10 +369,17 @@ def knowledge() -> list[dict[str, Any]]:
 def _default_questions() -> list[dict[str, Any]]:
     """提供不含實際員工或客戶資料的商業營運檢核題目。"""
     return [
-        {"id": 1, "category": "資料治理", "question": "營運儀表板需要顯示人員規模時，最合適的做法是？", "options": ["公開完整員工主檔", "由後端回傳彙總人數", "顯示私人聯絡方式", "下載薪資明細"], "answer": 1, "explanation": "彙總數字足以支援營運判斷，不需暴露成員個人資料。"},
-        {"id": 2, "category": "合約覆核", "question": "建立商業合約或帳務紀錄前，應優先確認什麼？", "options": ["交易項目與授權範圍", "員工私人帳號", "客戶證件影本", "網站配色"], "answer": 0, "explanation": "先確認交易標的、責任與授權，才能維持完整且可稽核的紀錄。"},
-        {"id": 3, "category": "權限管理", "question": "專案協作人員的內部資料權限應採哪一種原則？", "options": ["永久管理權", "開放全部資料", "依工作範圍與期限開放", "共用管理員帳號"], "answer": 2, "explanation": "依實際職責與期限授權，才能符合最小權限原則。"},
-        {"id": 4, "category": "工安管理", "question": "進入製造區或礦場前，最先應完成哪項程序？", "options": ["跳過現場點名", "確認防護裝備與作業許可", "自行修改機具設定", "將安全資料公開轉傳"], "answer": 1, "explanation": "高風險作業必須先確認個人防護、現場授權與設備狀態。"},
+#         {"id": 1, "category": "資料治理",
+#           "question": "營運儀表板需要顯示人員規模時，最合適的做法是？",
+#           "options": [
+#               "公開完整員工主檔", "由後端回傳彙總人數", "顯示私人聯絡方式", "下載薪資明細"
+#               ],
+#           "answer": 1, "explanation": "彙總數字足以支援營運判斷，不需暴露成員個人資料。"},
+#         {"id": 2, "category": "合約覆核", "question": "建立商業合約或帳務紀錄前，應優先確認什麼？", "options": [
+#             "交易項目與授權範圍", "員工私人帳號", "客戶證件影本", "網站配色"
+#             ], "answer": 0, "explanation": "先確認交易標的、責任與授權，才能維持完整且可稽核的紀錄。"},
+#         {"id": 3, "category": "權限管理", "question": "專案協作人員的內部資料權限應採哪一種原則？", "options": ["永久管理權", "開放全部資料", "依工作範圍與期限開放", "共用管理員帳號"], "answer": 2, "explanation": "依實際職責與期限授權，才能符合最小權限原則。"},
+#         {"id": 4, "category": "工安管理", "question": "進入製造區或礦場前，最先應完成哪項程序？", "options": ["跳過現場點名", "確認防護裝備與作業許可", "自行修改機具設定", "將安全資料公開轉傳"], "answer": 1, "explanation": "高風險作業必須先確認個人防護、現場授權與設備狀態。"},
     ]
 
 
@@ -382,7 +389,11 @@ APPLICATION_TABLES = (
     "Company_TrainingDocument", "Company_TrainingSection", "Company_TrainingQuestion",
     "Company_ImportState",
 )
-WORKFLOW_TABLES = ("Company_OperationActivity", "Company_TrainingAnswer")
+WORKFLOW_TABLES = (
+    "Company_OperationActivity", "Company_TrainingAnswer", "Company_TrainingSubject",
+    "Company_TrainingChapter", "Company_TrainingSession",
+    "Company_TrainingSessionQuestion", "Company_TrainingWrongQuestion",
+)
 
 # 對外顯示使用企業語意，實際查詢仍以 Company_* 白名單為準。
 TABLE_DISPLAY_NAMES = {
@@ -392,9 +403,9 @@ TABLE_DISPLAY_NAMES = {
     "Company_Attendance": "出缺勤紀錄",
     "Company_OperationCategory": "營運分類",
         "Company_OperationSubmission": "營運日報",
-    "Company_TrainingDocument": "營運SOP文件",
+    "Company_TrainingDocument": "SOP文件",
     "Company_TrainingSection": "SOP文件段落",
-    "Company_TrainingQuestion": "營運與工安題庫",
+    "Company_TrainingQuestion": "營運題庫",
         "Company_ImportState": "資料匯入狀態",
 }
 
@@ -598,6 +609,108 @@ def ensure_application_schema() -> dict[str, Any]:
             CONSTRAINT FK_Company_TrainingAnswer_Employee FOREIGN KEY (employee_id) REFERENCES dbo.Company_Staff(employee_id),
             CONSTRAINT FK_Company_TrainingAnswer_Reviewer FOREIGN KEY (reviewed_by) REFERENCES dbo.Company_Staff(employee_id)
         )""",
+        """IF OBJECT_ID(N'dbo.Company_TrainingSubject', N'U') IS NULL
+        CREATE TABLE dbo.Company_TrainingSubject (
+            subject_id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            domain nvarchar(20) NOT NULL,
+            subject_name nvarchar(100) NOT NULL,
+            mock_question_count int NOT NULL DEFAULT 40,
+            mock_duration_minutes int NOT NULL DEFAULT 45,
+            mock_pass_score int NOT NULL DEFAULT 70,
+            is_active bit NOT NULL DEFAULT 1,
+            CONSTRAINT UQ_Company_TrainingSubject UNIQUE (domain,subject_name)
+        )""",
+        """IF OBJECT_ID(N'dbo.Company_TrainingChapter', N'U') IS NULL
+        CREATE TABLE dbo.Company_TrainingChapter (
+            chapter_id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            subject_id int NOT NULL,
+            chapter_code nvarchar(30) NOT NULL,
+            chapter_name nvarchar(120) NOT NULL,
+            display_order int NOT NULL DEFAULT 0,
+            is_active bit NOT NULL DEFAULT 1,
+            CONSTRAINT FK_Company_TrainingChapter_Subject FOREIGN KEY (subject_id) REFERENCES dbo.Company_TrainingSubject(subject_id),
+            CONSTRAINT UQ_Company_TrainingChapter UNIQUE (subject_id,chapter_code)
+        )""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingDocument', N'source_kind') IS NULL
+        ALTER TABLE dbo.Company_TrainingDocument ADD source_kind nvarchar(30) NOT NULL CONSTRAINT DF_Company_TrainingDocument_SourceKind DEFAULT N'manual' WITH VALUES""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingDocument', N'parse_status') IS NULL
+        ALTER TABLE dbo.Company_TrainingDocument ADD parse_status nvarchar(30) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingDocument', N'parse_message') IS NULL
+        ALTER TABLE dbo.Company_TrainingDocument ADD parse_message nvarchar(1000) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'domain') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD domain nvarchar(20) NOT NULL CONSTRAINT DF_Company_TrainingQuestion_Domain DEFAULT N'academic' WITH VALUES""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'subject_id') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD subject_id int NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'chapter_id') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD chapter_id int NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'content_json') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD content_json nvarchar(max) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'structure_json') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD structure_json nvarchar(max) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'source_locator') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD source_locator nvarchar(300) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'source_question_key') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD source_question_key nvarchar(200) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'source_fingerprint') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD source_fingerprint char(64) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'parse_confidence') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD parse_confidence decimal(5,2) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'parse_warnings_json') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD parse_warnings_json nvarchar(max) NULL""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'status') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD status nvarchar(20) NOT NULL CONSTRAINT DF_Company_TrainingQuestion_Status DEFAULT N'published' WITH VALUES""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'admin_locked') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD admin_locked bit NOT NULL CONSTRAINT DF_Company_TrainingQuestion_AdminLocked DEFAULT 0 WITH VALUES""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'updated_at') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD updated_at datetime2 NOT NULL CONSTRAINT DF_Company_TrainingQuestion_UpdatedAt DEFAULT SYSDATETIME() WITH VALUES""",
+        """IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_Company_TrainingQuestion_Subject')
+        ALTER TABLE dbo.Company_TrainingQuestion ADD CONSTRAINT FK_Company_TrainingQuestion_Subject
+        FOREIGN KEY (subject_id) REFERENCES dbo.Company_TrainingSubject(subject_id)""",
+        """IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_Company_TrainingQuestion_Chapter')
+        ALTER TABLE dbo.Company_TrainingQuestion ADD CONSTRAINT FK_Company_TrainingQuestion_Chapter
+        FOREIGN KEY (chapter_id) REFERENCES dbo.Company_TrainingChapter(chapter_id)""",
+        """IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name=N'UX_Company_TrainingQuestion_Fingerprint' AND object_id=OBJECT_ID(N'dbo.Company_TrainingQuestion'))
+        CREATE UNIQUE INDEX UX_Company_TrainingQuestion_Fingerprint ON dbo.Company_TrainingQuestion(source_fingerprint) WHERE source_fingerprint IS NOT NULL""",
+        """IF OBJECT_ID(N'dbo.Company_TrainingSession', N'U') IS NULL
+        CREATE TABLE dbo.Company_TrainingSession (
+            session_id uniqueidentifier NOT NULL PRIMARY KEY,
+            employee_id nvarchar(20) NOT NULL,
+            subject_id int NOT NULL,
+            mode nvarchar(20) NOT NULL,
+            status nvarchar(20) NOT NULL DEFAULT N'in_progress',
+            config_json nvarchar(max) NOT NULL,
+            started_at datetime2 NOT NULL DEFAULT SYSUTCDATETIME(),
+            expires_at datetime2 NULL,
+            submitted_at datetime2 NULL,
+            score decimal(5,2) NULL,
+            CONSTRAINT FK_Company_TrainingSession_Employee FOREIGN KEY (employee_id) REFERENCES dbo.Company_Staff(employee_id),
+            CONSTRAINT FK_Company_TrainingSession_Subject FOREIGN KEY (subject_id) REFERENCES dbo.Company_TrainingSubject(subject_id)
+        )""",
+        """IF OBJECT_ID(N'dbo.Company_TrainingSessionQuestion', N'U') IS NULL
+        CREATE TABLE dbo.Company_TrainingSessionQuestion (
+            session_question_id bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            session_id uniqueidentifier NOT NULL,
+            question_id int NOT NULL,
+            question_order int NOT NULL,
+            snapshot_json nvarchar(max) NOT NULL,
+            response_json nvarchar(max) NULL,
+            is_flagged bit NOT NULL DEFAULT 0,
+            is_correct bit NULL,
+            answered_at datetime2 NULL,
+            CONSTRAINT FK_Company_TrainingSessionQuestion_Session FOREIGN KEY (session_id) REFERENCES dbo.Company_TrainingSession(session_id) ON DELETE CASCADE,
+            CONSTRAINT FK_Company_TrainingSessionQuestion_Question FOREIGN KEY (question_id) REFERENCES dbo.Company_TrainingQuestion(question_id),
+            CONSTRAINT UQ_Company_TrainingSessionQuestion_Order UNIQUE (session_id,question_order)
+        )""",
+        """IF OBJECT_ID(N'dbo.Company_TrainingWrongQuestion', N'U') IS NULL
+        CREATE TABLE dbo.Company_TrainingWrongQuestion (
+            employee_id nvarchar(20) NOT NULL,
+            question_id int NOT NULL,
+            added_at datetime2 NOT NULL DEFAULT SYSUTCDATETIME(),
+            removed_at datetime2 NULL,
+            CONSTRAINT PK_Company_TrainingWrongQuestion PRIMARY KEY (employee_id,question_id),
+            CONSTRAINT FK_Company_TrainingWrongQuestion_Employee FOREIGN KEY (employee_id) REFERENCES dbo.Company_Staff(employee_id),
+            CONSTRAINT FK_Company_TrainingWrongQuestion_Question FOREIGN KEY (question_id) REFERENCES dbo.Company_TrainingQuestion(question_id)
+        )""",
         """IF OBJECT_ID(N'dbo.Company_ImportState', N'U') IS NULL
         CREATE TABLE dbo.Company_ImportState (
             source_key nvarchar(100) NOT NULL PRIMARY KEY,
@@ -613,6 +726,30 @@ def ensure_application_schema() -> dict[str, Any]:
             for statement in statements:
                 cursor.execute(statement)
             _migrate_business_seed_data(cursor)
+            cursor.execute("""
+                MERGE dbo.Company_TrainingSubject AS target
+                USING (VALUES
+                    (N'academic',N'通用知識',40,45,70),
+                    (N'practical',N'術科申論',0,0,0)
+                ) AS source(domain,subject_name,question_count,duration_minutes,pass_score)
+                ON target.domain=source.domain AND target.subject_name=source.subject_name
+                WHEN MATCHED THEN UPDATE SET is_active=1
+                WHEN NOT MATCHED THEN INSERT
+                    (domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score,is_active)
+                    VALUES (source.domain,source.subject_name,source.question_count,source.duration_minutes,source.pass_score,1);
+            """)
+            academic_subject_id = cursor.execute(
+                "SELECT subject_id FROM dbo.Company_TrainingSubject WHERE domain=N'academic' AND subject_name=N'通用知識'"
+            ).fetchone()[0]
+            practical_subject_id = cursor.execute(
+                "SELECT subject_id FROM dbo.Company_TrainingSubject WHERE domain=N'practical' AND subject_name=N'術科申論'"
+            ).fetchone()[0]
+            for subject_id in (academic_subject_id, practical_subject_id):
+                cursor.execute("""
+                    IF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=N'UNSORTED')
+                    INSERT dbo.Company_TrainingChapter (subject_id,chapter_code,chapter_name,display_order)
+                    VALUES (?,N'UNSORTED',N'未分類',999)
+                """, subject_id, subject_id)
             count = cursor.execute("SELECT COUNT(*) FROM dbo.Company_TrainingQuestion").fetchone()[0]
             if not count:
                 for item in _default_questions():
@@ -622,6 +759,26 @@ def ensure_application_schema() -> dict[str, Any]:
                         VALUES (?,?,?,?,?,N'single_choice',?)
                     """, item["category"], item["question"], json.dumps(item["options"], ensure_ascii=False),
                          item["answer"], item["explanation"], json.dumps([item["answer"]]))
+            academic_chapter_id = cursor.execute(
+                "SELECT chapter_id FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=N'UNSORTED'",
+                academic_subject_id,
+            ).fetchone()[0]
+            practical_chapter_id = cursor.execute(
+                "SELECT chapter_id FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=N'UNSORTED'",
+                practical_subject_id,
+            ).fetchone()[0]
+            cursor.execute("""
+                UPDATE dbo.Company_TrainingQuestion
+                SET domain=CASE WHEN question_type=N'essay' THEN N'practical' ELSE N'academic' END,
+                    subject_id=CASE WHEN question_type=N'essay' THEN ? ELSE ? END,
+                    chapter_id=CASE WHEN question_type=N'essay' THEN ? ELSE ? END,
+                    status=CASE WHEN is_active=1 THEN N'published' ELSE N'disabled' END,
+                    content_json=COALESCE(content_json,CONCAT(N'[{"type":"text","content":',
+                        N'"',STRING_ESCAPE(question,'json'),N'"}]')),
+                    structure_json=COALESCE(structure_json,N'{}'),
+                    parse_warnings_json=COALESCE(parse_warnings_json,N'[]')
+                WHERE subject_id IS NULL OR chapter_id IS NULL OR content_json IS NULL
+            """, practical_subject_id, academic_subject_id, practical_chapter_id, academic_chapter_id)
             _sync_staff_csv_cursor(cursor)
             _normalize_company_departments(cursor)
             cursor.execute("""
@@ -1112,7 +1269,7 @@ def upsert_operations_manuals(documents: list[dict[str, Any]]) -> int:
             db.commit()
         return len(documents)
     except pyodbc.Error as exc:
-        raise DatabaseUnavailable("營運SOP文件寫入失敗。") from exc
+        raise DatabaseUnavailable("SOP文件寫入失敗。") from exc
 
 
 def operations_manual_catalog() -> list[dict[str, Any]]:
@@ -1133,7 +1290,7 @@ def operations_manual_document(document_id: int) -> dict[str, Any]:
         FROM dbo.Company_TrainingDocument WHERE document_id=? AND is_active=1
     """, (document_id,))
     if not docs:
-        raise ValueError("找不到指定營運SOP文件")
+        raise ValueError("找不到指定SOP文件")
     docs[0]["sections"] = _fetch("""
         SELECT section_order AS [order],heading,content
         FROM dbo.Company_TrainingSection WHERE document_id=? ORDER BY section_order
@@ -1141,32 +1298,607 @@ def operations_manual_document(document_id: int) -> dict[str, Any]:
     return docs[0]
 
 
-def compliance_questions() -> list[dict[str, Any]]:
-    """回傳員工作答需要的題目，不傳送答案與解說。"""
+def _loads_json(value: Any, fallback: Any) -> Any:
+    try:
+        return json.loads(value) if value not in (None, "") else fallback
+    except (TypeError, json.JSONDecodeError):
+        return fallback
+
+
+def _question_snapshot(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": int(row["id"]),
+        "domain": row.get("domain") or "academic",
+        "subject": row.get("subject") or "未分類",
+        "chapter": row.get("chapter") or row.get("category") or "未分類",
+        "source": row.get("source") or "人工建立",
+        "source_locator": row.get("source_locator") or "",
+        "question_type": row["question_type"],
+        "question": row["question"],
+        "content_blocks": _loads_json(row.get("content_json"), [{"type": "text", "content": row["question"]}]),
+        "options": _loads_json(row.get("options_json"), []),
+        "answers": _loads_json(row.get("answer_json"), []),
+        "structure": _loads_json(row.get("structure_json"), {}),
+        "passage": row.get("passage") or "",
+        "explanation": row.get("explanation") or "",
+    }
+
+
+def _published_question_rows(
+    subject_id: int,
+    chapter_ids: list[int] | None = None,
+    document_ids: list[int] | None = None,
+    question_types: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    conditions = ["q.subject_id=?", "q.domain=N'academic'", "q.status=N'published'", "q.is_active=1", "q.question_type<>N'essay'"]
+    params: list[Any] = [subject_id]
+    for column, values in (
+        ("q.chapter_id", chapter_ids or []),
+        ("q.document_id", document_ids or []),
+        ("q.question_type", question_types or []),
+    ):
+        if values:
+            conditions.append(f"{column} IN ({','.join('?' for _ in values)})")
+            params.extend(values)
+    return _fetch(f"""
+        SELECT q.question_id AS id,q.domain,s.subject_name AS subject,
+               c.chapter_name AS chapter,d.file_name AS source,q.source_locator,
+               q.question_type,q.question,q.content_json,q.options_json,q.answer_json,
+               q.structure_json,q.passage,q.explanation
+        FROM dbo.Company_TrainingQuestion q
+        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id
+        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id
+        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id
+        WHERE {' AND '.join(conditions)}
+        ORDER BY q.question_id
+    """, tuple(params))
+
+
+def training_catalog(employee_id: str) -> dict[str, Any]:
+    subjects = _fetch("""
+        SELECT s.subject_id AS id,s.domain,s.subject_name AS name,
+               s.mock_question_count,s.mock_duration_minutes,s.mock_pass_score,
+               COUNT(CASE WHEN q.status=N'published' AND q.is_active=1 THEN 1 END) AS question_count
+        FROM dbo.Company_TrainingSubject s
+        LEFT JOIN dbo.Company_TrainingQuestion q ON q.subject_id=s.subject_id
+        WHERE s.is_active=1
+        GROUP BY s.subject_id,s.domain,s.subject_name,s.mock_question_count,
+                 s.mock_duration_minutes,s.mock_pass_score
+        ORDER BY CASE WHEN s.domain=N'academic' THEN 0 ELSE 1 END,s.subject_name
+    """)
+    chapters = _fetch("""
+        SELECT c.chapter_id AS id,c.subject_id,c.chapter_code AS code,c.chapter_name AS name,
+               COUNT(CASE WHEN q.status=N'published' AND q.is_active=1 THEN 1 END) AS question_count
+        FROM dbo.Company_TrainingChapter c
+        LEFT JOIN dbo.Company_TrainingQuestion q ON q.chapter_id=c.chapter_id
+        WHERE c.is_active=1
+        GROUP BY c.chapter_id,c.subject_id,c.chapter_code,c.chapter_name,c.display_order
+        ORDER BY c.subject_id,c.display_order,c.chapter_code
+    """)
+    progress_rows = _fetch("""
+        SELECT q.chapter_id,
+               COUNT(DISTINCT sq.question_id) AS attempted_count,
+               COUNT(DISTINCT CASE WHEN sq.is_correct=1 THEN sq.question_id END) AS correct_count
+        FROM dbo.Company_TrainingSession s
+        JOIN dbo.Company_TrainingSessionQuestion sq ON sq.session_id=s.session_id
+        JOIN dbo.Company_TrainingQuestion q ON q.question_id=sq.question_id
+        WHERE s.employee_id=? AND s.status=N'submitted' AND q.chapter_id IS NOT NULL
+        GROUP BY q.chapter_id
+    """, (employee_id,))
+    progress_by_chapter = {row["chapter_id"]: row for row in progress_rows}
+    for chapter in chapters:
+        progress = progress_by_chapter.get(chapter["id"], {})
+        chapter["attempted_count"] = int(progress.get("attempted_count", 0))
+        chapter["correct_count"] = int(progress.get("correct_count", 0))
+        chapter["progress_percent"] = min(
+            100,
+            round(chapter["attempted_count"] * 100 / max(1, int(chapter["question_count"]))),
+        )
+    sources = _fetch("""
+        SELECT DISTINCT d.document_id AS id,d.title,d.file_name,q.subject_id
+        FROM dbo.Company_TrainingDocument d
+        JOIN dbo.Company_TrainingQuestion q ON q.document_id=d.document_id
+        WHERE d.is_active=1 AND q.status=N'published' AND q.is_active=1
+        ORDER BY d.title
+    """)
+    resumable = _fetch("""
+        SELECT TOP 1 CONVERT(nvarchar(36),session_id) AS id,mode,subject_id,started_at,expires_at
+        FROM dbo.Company_TrainingSession
+        WHERE employee_id=? AND status=N'in_progress'
+        ORDER BY started_at DESC
+    """, (employee_id,))
+    wrong_count = _fetch("""
+        SELECT COUNT(*) AS [count] FROM dbo.Company_TrainingWrongQuestion
+        WHERE employee_id=? AND removed_at IS NULL
+    """, (employee_id,))[0]["count"]
+    return {
+        "subjects": subjects,
+        "chapters": chapters,
+        "sources": sources,
+        "resumable": resumable[0] if resumable else None,
+        "wrong_count": wrong_count,
+    }
+
+
+def _public_session_payload(session: dict[str, Any], rows: list[dict[str, Any]], *, include_review: bool = False) -> dict[str, Any]:
+    questions = []
+    for row in rows:
+        snapshot = _loads_json(row["snapshot_json"], {})
+        response = _loads_json(row.get("response_json"), {})
+        question = {
+            key: value for key, value in snapshot.items()
+            if include_review or key not in {"answers", "explanation"}
+        }
+        question.update({
+            "order": row["question_order"],
+            "response": response,
+            "flagged": bool(row.get("is_flagged")),
+            "correct": row.get("is_correct") if include_review else None,
+        })
+        questions.append(question)
+    return {
+        "id": session["id"],
+        "mode": session["mode"],
+        "status": session["status"],
+        "subject_id": session["subject_id"],
+        "started_at": session["started_at"],
+        "expires_at": session.get("expires_at"),
+        "submitted_at": session.get("submitted_at"),
+        "score": session.get("score"),
+        "config": _loads_json(session.get("config_json"), {}),
+        "questions": questions,
+    }
+
+
+def start_training_session(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
+    subject_rows = _fetch("""
+        SELECT subject_id AS id,domain,mock_question_count,mock_duration_minutes,mock_pass_score
+        FROM dbo.Company_TrainingSubject WHERE subject_id=? AND is_active=1
+    """, (item["subject_id"],))
+    if not subject_rows or subject_rows[0]["domain"] != "academic":
+        raise ValueError("找不到可用的學科科目")
+    subject = subject_rows[0]
+    rows = _published_question_rows(
+        item["subject_id"], item["chapter_ids"], item["source_ids"], item["question_types"],
+    )
+    count = subject["mock_question_count"] if item["mode"] == "mock" else item["question_count"]
+    if item["mode"] == "mock" and len(rows) < count:
+        raise ValueError(f"目前只有 {len(rows)} 題可用，尚不足模擬考設定的 {count} 題")
+    if not rows:
+        raise ValueError("目前篩選條件沒有可作答的題目")
+    import random
+    random.SystemRandom().shuffle(rows)
+    rows = rows if count == 0 else rows[:count]
+    session_id = str(uuid.uuid4())
+    duration = int(subject["mock_duration_minutes"]) if item["mode"] == "mock" else 0
+    expires_at = (datetime.utcnow() + timedelta(minutes=duration)) if duration else None
+    config = {
+        "question_count": len(rows),
+        "pass_score": int(subject["mock_pass_score"]) if item["mode"] == "mock" else None,
+        "chapter_ids": item["chapter_ids"],
+        "source_ids": item["source_ids"],
+        "question_types": item["question_types"],
+    }
+    try:
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                INSERT dbo.Company_TrainingSession
+                (session_id,employee_id,subject_id,mode,status,config_json,expires_at)
+                VALUES (?,?,?, ?,N'in_progress',?,?)
+            """, session_id, employee_id, item["subject_id"], item["mode"], json.dumps(config), expires_at)
+            for order, row in enumerate(rows, 1):
+                cursor.execute("""
+                    INSERT dbo.Company_TrainingSessionQuestion
+                    (session_id,question_id,question_order,snapshot_json)
+                    VALUES (?,?,?,?)
+                """, session_id, row["id"], order, json.dumps(_question_snapshot(row), ensure_ascii=False))
+            db.commit()
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("無法建立本次題組。") from exc
+    return training_session(session_id, employee_id)
+
+
+def training_session(session_id: str, employee_id: str) -> dict[str, Any]:
+    sessions = _fetch("""
+        SELECT CONVERT(nvarchar(36),session_id) AS id,mode,status,subject_id,
+               config_json,started_at,expires_at,submitted_at,score
+        FROM dbo.Company_TrainingSession WHERE session_id=? AND employee_id=?
+    """, (session_id, employee_id))
+    if not sessions:
+        raise ValueError("找不到指定的作答階段")
+    session = sessions[0]
+    if session["status"] == "in_progress" and session.get("expires_at"):
+        expires = datetime.fromisoformat(session["expires_at"])
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires <= datetime.now(timezone.utc):
+            return submit_training_session(session_id, employee_id)
     rows = _fetch("""
-        SELECT question_id AS id,category,question,question_type,options_json,passage
-        FROM dbo.Company_TrainingQuestion
-        WHERE is_active=1
-        ORDER BY question_id
-        OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY
+        SELECT question_order,snapshot_json,response_json,is_flagged,is_correct
+        FROM dbo.Company_TrainingSessionQuestion WHERE session_id=? ORDER BY question_order
+    """, (session_id,))
+    return _public_session_payload(session, rows, include_review=session["status"] == "submitted")
+
+
+def _grade_snapshot(snapshot: dict[str, Any], response: dict[str, Any]) -> bool:
+    question_type = snapshot.get("question_type")
+    expected = snapshot.get("answers", [])
+    supplied = response.get("answers", [])
+    if question_type in {"single_choice", "multiple_choice", "reading"}:
+        try:
+            return sorted({int(value) for value in supplied}) == sorted({int(value) for value in expected})
+        except (TypeError, ValueError):
+            return False
+    if question_type == "fill_blank":
+        normalized = [str(value).strip() for value in supplied]
+        return normalized == [str(value).strip() for value in expected]
+    if question_type == "matching":
+        return supplied == expected
+    return False
+
+
+def _record_wrong(cursor, employee_id: str, question_id: int) -> None:
+    cursor.execute("""
+        MERGE dbo.Company_TrainingWrongQuestion AS target
+        USING (SELECT ? AS employee_id,? AS question_id) AS source
+        ON target.employee_id=source.employee_id AND target.question_id=source.question_id
+        WHEN MATCHED THEN UPDATE SET removed_at=NULL,added_at=SYSUTCDATETIME()
+        WHEN NOT MATCHED THEN INSERT (employee_id,question_id) VALUES (source.employee_id,source.question_id);
+    """, employee_id, question_id)
+
+
+def save_training_answer(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
+    rows = _fetch("""
+        SELECT s.mode,s.status,s.expires_at,sq.question_id,sq.snapshot_json
+        FROM dbo.Company_TrainingSession s
+        JOIN dbo.Company_TrainingSessionQuestion sq ON sq.session_id=s.session_id
+        WHERE s.session_id=? AND s.employee_id=? AND sq.question_order=?
+    """, (item["session_id"], employee_id, item["order"]))
+    if not rows or rows[0]["status"] != "in_progress":
+        raise ValueError("此題組目前無法作答")
+    row = rows[0]
+    if row.get("expires_at"):
+        expires = datetime.fromisoformat(row["expires_at"])
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires <= datetime.now(timezone.utc):
+            submit_training_session(item["session_id"], employee_id)
+            raise ValueError("模擬考時間已到，系統已自動交卷")
+    snapshot = _loads_json(row["snapshot_json"], {})
+    correct = _grade_snapshot(snapshot, item["response"])
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                UPDATE dbo.Company_TrainingSessionQuestion
+                SET response_json=?,is_flagged=?,is_correct=?,answered_at=SYSUTCDATETIME()
+                WHERE session_id=? AND question_order=?
+            """, json.dumps(item["response"], ensure_ascii=False), int(item["flagged"]),
+                 int(correct), item["session_id"], item["order"])
+            if not correct and item["response"].get("answers") not in (None, [], ""):
+                _record_wrong(cursor, employee_id, row["question_id"])
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("作答儲存失敗。") from exc
+    result = {"saved": True, "flagged": item["flagged"]}
+    if row["mode"] == "practice":
+        result.update({
+            "correct": correct,
+            "answers": snapshot.get("answers", []),
+            "explanation": snapshot.get("explanation", ""),
+        })
+    return result
+
+
+def submit_training_session(session_id: str, employee_id: str) -> dict[str, Any]:
+    sessions = _fetch("""
+        SELECT CONVERT(nvarchar(36),session_id) AS id,mode,status,subject_id,
+               config_json,started_at,expires_at,submitted_at,score
+        FROM dbo.Company_TrainingSession WHERE session_id=? AND employee_id=?
+    """, (session_id, employee_id))
+    if not sessions:
+        raise ValueError("找不到指定的作答階段")
+    session = sessions[0]
+    rows = _fetch("""
+        SELECT sq.question_order,sq.question_id,sq.snapshot_json,sq.response_json,sq.is_flagged,sq.is_correct
+        FROM dbo.Company_TrainingSessionQuestion sq WHERE sq.session_id=? ORDER BY sq.question_order
+    """, (session_id,))
+    if session["status"] != "submitted":
+        correct_count = 0
+        try:
+            with connect(read_only=False, autocommit=False) as db:
+                cursor = db.cursor()
+                for row in rows:
+                    snapshot = _loads_json(row["snapshot_json"], {})
+                    response = _loads_json(row.get("response_json"), {})
+                    correct = _grade_snapshot(snapshot, response)
+                    correct_count += int(correct)
+                    cursor.execute("""
+                        UPDATE dbo.Company_TrainingSessionQuestion SET is_correct=?
+                        WHERE session_id=? AND question_order=?
+                    """, int(correct), session_id, row["question_order"])
+                    if not correct and response.get("answers") not in (None, [], ""):
+                        _record_wrong(cursor, employee_id, row["question_id"])
+                    row["is_correct"] = correct
+                score = round(correct_count * 100 / max(1, len(rows)), 2)
+                cursor.execute("""
+                    UPDATE dbo.Company_TrainingSession
+                    SET status=N'submitted',submitted_at=SYSUTCDATETIME(),score=?
+                    WHERE session_id=? AND employee_id=?
+                """, score, session_id, employee_id)
+                db.commit()
+            session.update({"status": "submitted", "score": score, "submitted_at": datetime.now(timezone.utc).isoformat()})
+        except pyodbc.Error as exc:
+            raise DatabaseUnavailable("交卷失敗。") from exc
+    return _public_session_payload(session, rows, include_review=True)
+
+
+def training_wrong_questions(employee_id: str) -> list[dict[str, Any]]:
+    rows = _fetch("""
+        SELECT q.question_id AS id,q.domain,s.subject_name AS subject,c.chapter_name AS chapter,
+               d.file_name AS source,q.source_locator,q.question_type,q.question,q.content_json,
+               q.options_json,q.answer_json,q.structure_json,q.passage,q.explanation,w.added_at
+        FROM dbo.Company_TrainingWrongQuestion w
+        JOIN dbo.Company_TrainingQuestion q ON q.question_id=w.question_id
+        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id
+        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id
+        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id
+        WHERE w.employee_id=? AND w.removed_at IS NULL
+        ORDER BY w.added_at DESC
+    """, (employee_id,))
+    return [{**_question_snapshot(row), "added_at": row["added_at"]} for row in rows]
+
+
+def remove_training_wrong(question_id: int, employee_id: str) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                UPDATE dbo.Company_TrainingWrongQuestion SET removed_at=SYSUTCDATETIME()
+                WHERE employee_id=? AND question_id=? AND removed_at IS NULL
+            """, employee_id, question_id)
+        return {"id": question_id, "removed": True}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("無法移除錯題。") from exc
+
+
+def compliance_questions() -> list[dict[str, Any]]:
+    """相容舊前端的已發布學科題目，不傳送答案與解析。"""
+    rows = _fetch("""
+        SELECT TOP 20 q.question_id AS id,q.category,q.question,q.question_type,
+               q.options_json,q.passage,q.content_json,q.structure_json
+        FROM dbo.Company_TrainingQuestion q
+        WHERE q.status=N'published' AND q.is_active=1 AND q.domain=N'academic'
+        ORDER BY q.question_id
     """)
     for row in rows:
-        row["options"] = json.loads(row.pop("options_json"))
+        row["options"] = _loads_json(row.pop("options_json"), [])
+        row["content_blocks"] = _loads_json(row.pop("content_json"), [{"type": "text", "content": row["question"]}])
+        row["structure"] = _loads_json(row.pop("structure_json"), {})
     return rows
 
 
 def operations_manuals_admin() -> list[dict[str, Any]]:
-    """回傳含停用狀態的營運SOP文件，供 MIS 維護。"""
+    """回傳含停用狀態的SOP文件，供 MIS 維護。"""
     return _fetch("""
         SELECT d.document_id AS id,d.title,d.role_category AS category,d.file_name,
-               d.source_size,d.source_modified,d.is_active,d.imported_at,
+               d.source_size,d.source_modified,d.source_kind,d.parse_status,d.parse_message,
+               d.is_active,d.imported_at,
                COUNT(s.section_id) AS section_count
         FROM dbo.Company_TrainingDocument d
         LEFT JOIN dbo.Company_TrainingSection s ON s.document_id=d.document_id
         GROUP BY d.document_id,d.title,d.role_category,d.file_name,d.source_size,
-                 d.source_modified,d.is_active,d.imported_at
+                 d.source_modified,d.source_kind,d.parse_status,d.parse_message,d.is_active,d.imported_at
         ORDER BY d.is_active DESC,d.role_category,d.title
     """)
+
+
+def _ensure_training_classification(cursor, domain: str, subject_name: str, chapter_code: str, chapter_name: str) -> tuple[int, int]:
+    cursor.execute("""
+        IF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingSubject WHERE domain=? AND subject_name=?)
+        INSERT dbo.Company_TrainingSubject
+            (domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score)
+        VALUES (?,?,40,45,70)
+    """, domain, subject_name, domain, subject_name)
+    subject_id = cursor.execute(
+        "SELECT subject_id FROM dbo.Company_TrainingSubject WHERE domain=? AND subject_name=?",
+        domain, subject_name,
+    ).fetchone()[0]
+    cursor.execute("""
+        IF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=?)
+        INSERT dbo.Company_TrainingChapter (subject_id,chapter_code,chapter_name,display_order)
+        VALUES (?,?,?,?)
+    """, subject_id, chapter_code, subject_id, chapter_code, chapter_name, 999 if chapter_code == "UNSORTED" else 0)
+    chapter_id = cursor.execute(
+        "SELECT chapter_id FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=?",
+        subject_id, chapter_code,
+    ).fetchone()[0]
+    return int(subject_id), int(chapter_id)
+
+
+def import_training_question_drafts(
+    drafts: list[dict[str, Any]], warnings: list[dict[str, str]] | None = None,
+    failures: list[dict[str, str]] | None = None,
+) -> dict[str, int]:
+    """以來源指紋冪等匯入草稿，絕不覆寫管理員已鎖定的題目。"""
+    result = {"created": 0, "updated": 0, "locked": 0, "duplicates": 0}
+    warnings = warnings or []
+    failures = failures or []
+    if not drafts and not warnings and not failures:
+        return result
+    try:
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+            documents = {
+                row[0]: row[1]
+                for row in cursor.execute("SELECT file_name,document_id FROM dbo.Company_TrainingDocument").fetchall()
+            }
+            draft_counts: dict[str, int] = {}
+            for draft in drafts:
+                source_name = draft.get("source_document", "")
+                draft_counts[source_name] = draft_counts.get(source_name, 0) + 1
+            warning_messages: dict[str, list[str]] = {}
+            for warning in warnings:
+                warning_messages.setdefault(warning.get("source", ""), []).append(warning.get("message", ""))
+            failure_messages: dict[str, list[str]] = {}
+            for failure in failures:
+                failure_messages.setdefault(failure.get("source", ""), []).append(failure.get("message", ""))
+            for source_name in set(draft_counts) | set(warning_messages) | set(failure_messages):
+                messages = failure_messages.get(source_name) or warning_messages.get(source_name, [])
+                cursor.execute("""
+                    UPDATE dbo.Company_TrainingDocument
+                    SET source_kind=?,parse_status=?,parse_message=?
+                    WHERE file_name=?
+                """, "question_bank" if draft_counts.get(source_name) or failure_messages.get(source_name) else "manual",
+                     "failed" if failure_messages.get(source_name) else (
+                         "warning" if warning_messages.get(source_name) else "parsed"
+                     ),
+                     "；".join(messages)[:1000] or None,
+                     source_name)
+            seen: set[str] = set()
+            for draft in drafts:
+                fingerprint = draft["source_fingerprint"]
+                if fingerprint in seen:
+                    result["duplicates"] += 1
+                    continue
+                seen.add(fingerprint)
+                subject_id, chapter_id = _ensure_training_classification(
+                    cursor,
+                    draft.get("domain", "academic"),
+                    draft.get("subject") or "未分類",
+                    draft.get("chapter_code") or "UNSORTED",
+                    draft.get("chapter") or "未分類",
+                )
+                document_id = documents.get(draft.get("source_document"))
+                previous = cursor.execute("""
+                    SELECT question_id,admin_locked FROM dbo.Company_TrainingQuestion
+                    WHERE source_fingerprint=? OR
+                          (document_id=? AND source_question_key=?)
+                    ORDER BY CASE WHEN source_fingerprint=? THEN 0 ELSE 1 END
+                """, fingerprint, document_id, draft.get("source_question_key"), fingerprint).fetchone()
+                if previous and previous[1]:
+                    result["locked"] += 1
+                    continue
+                values = (
+                    document_id, subject_id, chapter_id, draft.get("domain", "academic"),
+                    draft.get("chapter") or "未分類", draft["question"][:500],
+                    json.dumps(draft.get("options", []), ensure_ascii=False),
+                    int(draft.get("answers", [0])[0] if draft.get("answers") else 0),
+                    draft.get("explanation", "")[:1000], draft["question_type"],
+                    json.dumps(draft.get("answers", [])),
+                    json.dumps(draft.get("stem_blocks", []), ensure_ascii=False),
+                    json.dumps(draft.get("structure", {}), ensure_ascii=False),
+                    draft.get("source_locator", "")[:300], draft.get("source_question_key", "")[:200],
+                    fingerprint, float(draft.get("parse_confidence", 0)),
+                    json.dumps(draft.get("parse_warnings", []), ensure_ascii=False),
+                )
+                if previous:
+                    cursor.execute("""
+                        UPDATE dbo.Company_TrainingQuestion
+                        SET document_id=?,subject_id=?,chapter_id=?,domain=?,category=?,question=?,
+                            options_json=?,correct_index=?,explanation=?,question_type=?,answer_json=?,
+                            content_json=?,structure_json=?,source_locator=?,source_question_key=?,
+                            source_fingerprint=?,parse_confidence=?,parse_warnings_json=?,
+                            status=N'draft',is_active=0,updated_at=SYSDATETIME()
+                        WHERE question_id=? AND admin_locked=0
+                    """, *values, previous[0])
+                    result["updated"] += 1
+                else:
+                    cursor.execute("""
+                        INSERT dbo.Company_TrainingQuestion
+                        (document_id,subject_id,chapter_id,domain,category,question,options_json,
+                         correct_index,explanation,question_type,answer_json,content_json,structure_json,
+                         source_locator,source_question_key,source_fingerprint,parse_confidence,
+                         parse_warnings_json,status,is_active,admin_locked)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,N'draft',0,0)
+                    """, *values)
+                    result["created"] += 1
+            db.commit()
+        return result
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("題庫草稿匯入失敗。") from exc
+
+
+def training_taxonomy_admin() -> dict[str, Any]:
+    return {
+        "subjects": _fetch("""
+            SELECT subject_id AS id,domain,subject_name AS name,mock_question_count,
+                   mock_duration_minutes,mock_pass_score,is_active
+            FROM dbo.Company_TrainingSubject ORDER BY domain,subject_name
+        """),
+        "chapters": _fetch("""
+            SELECT chapter_id AS id,subject_id,chapter_code AS code,chapter_name AS name,
+                   display_order,is_active
+            FROM dbo.Company_TrainingChapter ORDER BY subject_id,display_order,chapter_code
+        """),
+    }
+
+
+def save_training_subject(item: dict[str, Any]) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            if item["id"]:
+                current = cursor.execute(
+                    "SELECT domain FROM dbo.Company_TrainingSubject WHERE subject_id=?", item["id"]
+                ).fetchone()
+                if not current:
+                    raise ValueError("找不到指定科目")
+                if current[0] != item["domain"] and cursor.execute(
+                    "SELECT COUNT(*) FROM dbo.Company_TrainingQuestion WHERE subject_id=?", item["id"]
+                ).fetchone()[0]:
+                    raise ValueError("已有題目的科目不可變更學科／術科領域")
+                cursor.execute("""
+                    UPDATE dbo.Company_TrainingSubject
+                    SET domain=?,subject_name=?,mock_question_count=?,mock_duration_minutes=?,
+                        mock_pass_score=?,is_active=? WHERE subject_id=?
+                """, item["domain"], item["name"], item["mock_question_count"],
+                     item["mock_duration_minutes"], item["mock_pass_score"],
+                     int(item["is_active"]), item["id"])
+                subject_id = item["id"]
+            else:
+                subject_id = cursor.execute("""
+                    INSERT dbo.Company_TrainingSubject
+                    (domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score,is_active)
+                    OUTPUT inserted.subject_id VALUES (?,?,?,?,?,?)
+                """, item["domain"], item["name"], item["mock_question_count"],
+                     item["mock_duration_minutes"], item["mock_pass_score"], int(item["is_active"])).fetchone()[0]
+        return {**item, "id": int(subject_id)}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("科目設定儲存失敗。") from exc
+
+
+def save_training_chapter(item: dict[str, Any]) -> dict[str, Any]:
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            if item["id"]:
+                current = cursor.execute(
+                    "SELECT subject_id FROM dbo.Company_TrainingChapter WHERE chapter_id=?", item["id"]
+                ).fetchone()
+                if not current:
+                    raise ValueError("找不到指定章節")
+                if int(current[0]) != item["subject_id"] and cursor.execute(
+                    "SELECT COUNT(*) FROM dbo.Company_TrainingQuestion WHERE chapter_id=?", item["id"]
+                ).fetchone()[0]:
+                    raise ValueError("已有題目的章節不可移至其他科目")
+                cursor.execute("""
+                    UPDATE dbo.Company_TrainingChapter
+                    SET subject_id=?,chapter_code=?,chapter_name=?,display_order=?,is_active=?
+                    WHERE chapter_id=?
+                """, item["subject_id"], item["code"], item["name"], item["display_order"],
+                     int(item["is_active"]), item["id"])
+                chapter_id = item["id"]
+            else:
+                chapter_id = cursor.execute("""
+                    INSERT dbo.Company_TrainingChapter
+                    (subject_id,chapter_code,chapter_name,display_order,is_active)
+                    OUTPUT inserted.chapter_id VALUES (?,?,?,?,?)
+                """, item["subject_id"], item["code"], item["name"], item["display_order"],
+                     int(item["is_active"])).fetchone()[0]
+        return {**item, "id": int(chapter_id)}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("章節設定儲存失敗。") from exc
 
 
 def set_operations_manual_state(document_id: int, is_active: bool) -> dict[str, Any]:
@@ -1178,21 +1910,32 @@ def set_operations_manual_state(document_id: int, is_active: bool) -> dict[str, 
                 int(is_active), document_id,
             )
             if cursor.rowcount == 0:
-                raise ValueError("找不到指定營運SOP文件")
+                raise ValueError("找不到指定SOP文件")
         return {"id": document_id, "is_active": is_active}
     except pyodbc.Error as exc:
-        raise DatabaseUnavailable("營運SOP文件狀態更新失敗。") from exc
+        raise DatabaseUnavailable("SOP文件狀態更新失敗。") from exc
 
 
 def compliance_questions_admin() -> list[dict[str, Any]]:
     rows = _fetch("""
-        SELECT question_id AS id,document_id,category,question,question_type,
-               options_json,answer_json,passage,explanation,is_active
-        FROM dbo.Company_TrainingQuestion ORDER BY is_active DESC,question_id
+        SELECT q.question_id AS id,q.document_id,q.subject_id,q.chapter_id,q.domain,
+               s.subject_name AS subject,c.chapter_code,c.chapter_name AS chapter,
+               d.file_name AS source,q.category,q.question,q.question_type,
+               q.options_json,q.answer_json,q.content_json,q.structure_json,q.passage,
+               q.explanation,q.source_locator,q.parse_confidence,q.parse_warnings_json,
+               q.status,q.admin_locked,q.is_active
+        FROM dbo.Company_TrainingQuestion q
+        LEFT JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id
+        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id
+        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id
+        ORDER BY CASE q.status WHEN N'draft' THEN 0 WHEN N'published' THEN 1 ELSE 2 END,q.question_id
     """)
     for row in rows:
-        row["options"] = json.loads(row.pop("options_json"))
-        row["answers"] = json.loads(row.pop("answer_json"))
+        row["options"] = _loads_json(row.pop("options_json"), [])
+        row["answers"] = _loads_json(row.pop("answer_json"), [])
+        row["content_blocks"] = _loads_json(row.pop("content_json"), [{"type": "text", "content": row["question"]}])
+        row["structure"] = _loads_json(row.pop("structure_json"), {})
+        row["parse_warnings"] = _loads_json(row.pop("parse_warnings_json"), [])
     return rows
 
 
@@ -1201,30 +1944,39 @@ def save_compliance_question(item: dict[str, Any]) -> dict[str, Any]:
         with connect(read_only=False) as db:
             cursor = db.cursor()
             options_json = json.dumps(item["options"], ensure_ascii=False)
-            answer_json = json.dumps(item["answers"])
-            correct_index = item["answers"][0] if item["answers"] else 0
+            answer_json = json.dumps(item["answers"], ensure_ascii=False)
+            content_json = json.dumps(item["content_blocks"], ensure_ascii=False)
+            structure_json = json.dumps(item["structure"], ensure_ascii=False)
+            correct_index = item["answers"][0] if item["answers"] and isinstance(item["answers"][0], int) else 0
+            category = item.get("chapter_name") or item.get("category") or "未分類"
+            is_active = int(item["status"] == "published")
             if item["id"]:
                 cursor.execute("""
                     UPDATE dbo.Company_TrainingQuestion
-                    SET document_id=?,category=?,question=?,options_json=?,correct_index=?,
-                        explanation=?,question_type=?,answer_json=?,passage=?,is_active=1
+                    SET document_id=?,subject_id=?,chapter_id=?,domain=?,category=?,question=?,
+                        options_json=?,correct_index=?,explanation=?,question_type=?,answer_json=?,
+                        content_json=?,structure_json=?,passage=?,status=?,is_active=?,
+                        admin_locked=1,updated_at=SYSDATETIME()
                     WHERE question_id=?
-                """, item["document_id"], item["category"], item["question"], options_json,
-                     correct_index, item["explanation"], item["question_type"], answer_json,
-                     item["passage"] or None, item["id"])
+                """, item["document_id"], item["subject_id"], item["chapter_id"], item["domain"],
+                     category, item["question"], options_json, correct_index, item["explanation"],
+                     item["question_type"], answer_json, content_json, structure_json,
+                     item["passage"] or None, item["status"], is_active, item["id"])
                 if cursor.rowcount == 0:
                     raise ValueError("找不到指定題目")
                 question_id = item["id"]
             else:
                 question_id = cursor.execute("""
                     INSERT dbo.Company_TrainingQuestion
-                    (document_id,category,question,options_json,correct_index,explanation,
-                     question_type,answer_json,passage)
-                    OUTPUT inserted.question_id VALUES (?,?,?,?,?,?,?,?,?)
-                """, item["document_id"], item["category"], item["question"], options_json,
-                     correct_index, item["explanation"], item["question_type"], answer_json,
-                     item["passage"] or None).fetchone()[0]
-        return {**item, "id": question_id, "is_active": True}
+                    (document_id,subject_id,chapter_id,domain,category,question,options_json,
+                     correct_index,explanation,question_type,answer_json,content_json,structure_json,
+                     passage,status,is_active,admin_locked)
+                    OUTPUT inserted.question_id VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)
+                """, item["document_id"], item["subject_id"], item["chapter_id"], item["domain"],
+                     category, item["question"], options_json, correct_index, item["explanation"],
+                     item["question_type"], answer_json, content_json, structure_json,
+                     item["passage"] or None, item["status"], is_active).fetchone()[0]
+        return {**item, "id": question_id, "is_active": bool(is_active), "admin_locked": True}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("營運檢核題庫儲存失敗。") from exc
 
@@ -1232,7 +1984,7 @@ def save_compliance_question(item: dict[str, Any]) -> dict[str, Any]:
 def grade_compliance_answer(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
     rows = _fetch("""
         SELECT question_id AS id,question_type,options_json,answer_json,explanation
-        FROM dbo.Company_TrainingQuestion WHERE question_id=? AND is_active=1
+        FROM dbo.Company_TrainingQuestion WHERE question_id=? AND is_active=1 AND status=N'published'
     """, (item["question_id"],))
     if not rows:
         raise ValueError("找不到指定題目")
@@ -1261,6 +2013,29 @@ def grade_compliance_answer(item: dict[str, Any], employee_id: str) -> dict[str,
         "answers": expected,
         "explanation": question["explanation"],
     }
+
+
+def practical_questions(employee_id: str) -> list[dict[str, Any]]:
+    rows = _fetch("""
+        SELECT q.question_id AS id,s.subject_name AS subject,c.chapter_name AS chapter,
+               q.question,q.content_json,q.source_locator,
+               latest.status AS answer_status,latest.feedback,latest.submitted_at
+        FROM dbo.Company_TrainingQuestion q
+        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id
+        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id
+        OUTER APPLY (
+            SELECT TOP 1 a.status,a.feedback,a.submitted_at
+            FROM dbo.Company_TrainingAnswer a
+            WHERE a.question_id=q.question_id AND a.employee_id=?
+            ORDER BY a.submitted_at DESC
+        ) latest
+        WHERE q.domain=N'practical' AND q.question_type=N'essay'
+          AND q.status=N'published' AND q.is_active=1
+        ORDER BY q.question_id
+    """, (employee_id,))
+    for row in rows:
+        row["content_blocks"] = _loads_json(row.pop("content_json"), [{"type": "text", "content": row["question"]}])
+    return rows
 
 
 def compliance_essay_answers_admin() -> list[dict[str, Any]]:
@@ -1296,7 +2071,7 @@ def deactivate_compliance_question(question_id: int) -> dict[str, Any]:
         with connect(read_only=False) as db:
             cursor = db.cursor()
             cursor.execute(
-                "UPDATE dbo.Company_TrainingQuestion SET is_active=0 WHERE question_id=?",
+                "UPDATE dbo.Company_TrainingQuestion SET is_active=0,status=N'disabled',admin_locked=1,updated_at=SYSDATETIME() WHERE question_id=?",
                 question_id,
             )
             if cursor.rowcount == 0:
@@ -1304,3 +2079,76 @@ def deactivate_compliance_question(question_id: int) -> dict[str, Any]:
         return {"id": question_id, "is_active": False}
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("營運檢核題庫停用失敗。") from exc
+
+
+def set_training_question_status(question_id: int, status: str) -> dict[str, Any]:
+    if status not in {"draft", "published", "disabled"}:
+        raise ValueError("題目狀態不正確")
+    rows = _fetch("""
+        SELECT question_type,options_json,answer_json,structure_json,explanation
+        FROM dbo.Company_TrainingQuestion WHERE question_id=?
+    """, (question_id,))
+    if not rows:
+        raise ValueError("找不到指定題目")
+    row = rows[0]
+    if status == "published" and row["question_type"] != "essay":
+        answers = _loads_json(row["answer_json"], [])
+        options = _loads_json(row["options_json"], [])
+        structure = _loads_json(row["structure_json"], {})
+        if not answers or not row["explanation"]:
+            raise ValueError("發布前必須完成正確答案與解析")
+        if row["question_type"] in {"single_choice", "multiple_choice", "reading"} and len(options) < 2:
+            raise ValueError("發布前必須完成至少兩個選項")
+        if row["question_type"] in {"fill_blank", "matching"} and not structure:
+            raise ValueError("發布前必須完成題型結構")
+    try:
+        with connect(read_only=False) as db:
+            db.cursor().execute("""
+                UPDATE dbo.Company_TrainingQuestion
+                SET status=?,is_active=?,admin_locked=1,updated_at=SYSDATETIME()
+                WHERE question_id=?
+            """, status, int(status == "published"), question_id)
+        return {"id": question_id, "status": status, "is_active": status == "published"}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("題目狀態更新失敗。") from exc
+
+
+def unlock_training_question_import(question_id: int) -> dict[str, Any]:
+    """由管理員明確授權下一次來源同步覆寫指定題目。"""
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                UPDATE dbo.Company_TrainingQuestion
+                SET admin_locked=0,status=N'draft',is_active=0,updated_at=SYSDATETIME()
+                WHERE question_id=? AND source_fingerprint IS NOT NULL
+            """, question_id)
+            if cursor.rowcount == 0:
+                raise ValueError("此題目沒有可重新匯入的來源")
+        return {"id": question_id, "unlocked": True}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("無法解除題目的匯入保護。") from exc
+
+
+def update_training_questions_bulk(item: dict[str, Any]) -> dict[str, Any]:
+    placeholders = ",".join("?" for _ in item["ids"])
+    try:
+        if item["subject_id"]:
+            chapters = _fetch("""
+                SELECT chapter_id FROM dbo.Company_TrainingChapter
+                WHERE subject_id=? AND chapter_id=?
+            """, (item["subject_id"], item["chapter_id"]))
+            if not chapters:
+                raise ValueError("指定章節不屬於所選科目")
+            with connect(read_only=False) as db:
+                db.cursor().execute(f"""
+                    UPDATE dbo.Company_TrainingQuestion
+                    SET subject_id=?,chapter_id=?,admin_locked=1,updated_at=SYSDATETIME()
+                    WHERE question_id IN ({placeholders})
+                """, item["subject_id"], item["chapter_id"], *item["ids"])
+        if item["status"]:
+            for question_id in item["ids"]:
+                set_training_question_status(question_id, item["status"])
+        return {"updated": len(item["ids"]), **item}
+    except pyodbc.Error as exc:
+        raise DatabaseUnavailable("題目批次更新失敗。") from exc

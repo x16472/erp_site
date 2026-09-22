@@ -19,7 +19,7 @@
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a class="active" href="home.html">工作台</a>
                 <a href="sales.html">營運資料</a>
-                <a href="exam.html">內部營運手冊</a>
+                <a href="exam.html">題庫練習</a>
                 <a href="game.html">宣導影音</a>
                 <a href="staff.html">員工出缺勤</a>
                 <a href="mis.html">後台管理</a>
@@ -71,8 +71,8 @@
                                 <b>營運日報</b>
                                 <small>填寫據點與作業摘要</small></a>
                             <a class="quick-link" href="exam.html">
-                                <b>內部營運手冊</b>
-                                <small>查閱營運SOP文件</small></a>
+                                <b>題庫練習</b>
+                                <small>學科刷題與術科申論</small></a>
                             <a class="quick-link" href="index.html" target="_blank" rel="noopener">
                                 <b>官方網站</b>
                                 <small>另開視窗查看目前前台網站</small></a>
@@ -92,26 +92,40 @@
                     </section>
                     <section class="portal-card full">
                         <div class="card-head">
-                            <div><span class="eyebrow">KNOWLEDGE SEARCH</span>
-                                <h2>相關知識快速檢索</h2>
-                                <p>搜尋相關敏感資訊與資料保護說明。</p>
+                            <div><span class="eyebrow">KNOWLEDGE &amp; MANUALS</span>
+                                <h2>知識與營運SOP檢索</h2>
+                                <p>搜尋知識條目，或查閱同步後的營運文件與段落。</p>
                             </div>
                         </div>
+                        <nav class="admin-tabs" id="knowledgeTabs">
+                            <button class="active" data-knowledge-mode="entries">知識條目</button>
+                            <button data-knowledge-mode="manuals">營運SOP</button>
+                        </nav>
                         <div class="metric-grid" id="metrics">
                             <article class="metric-card">
                                 <p>正在載入統計數據…</p>
                             </article>
                         </div>
-                        <div class="search-box">
+                        <div class="training-toolbar">
+                            <div class="search-box">
                             <label class="sr-only" for="search">搜尋知識</label>
                             <input id="search" type="search" placeholder="請輸入欲查詢內容…">
                             <span>⌕</span>
+                            </div>
+                            <label class="field" id="manualCategoryField" hidden><span class="sr-only">SOP分類</span>
+                                <select id="manualCategory"><option value="">全部分類</option></select></label>
                         </div>
                         <div class="quick-links">
                             <div class="knowledge-grid" id="knowledge" class="empty">
                                 <div>正在載入條目…</div>
                             </div>
                         </div>
+                        <section class="training-reader" id="manualReader" hidden>
+                            <button class="btn secondary" id="closeManual" type="button">返回文件列表</button>
+                            <div class="card-head"><div><span class="eyebrow" id="manualReaderCategory"></span>
+                                <h2 id="manualReaderTitle"></h2><p id="manualReaderFile"></p></div></div>
+                            <div class="training-sections" id="manualReaderSections"></div>
+                        </section>
                     </section>
                 </div>
             </div>
@@ -145,11 +159,20 @@
                 throw new Error('需要員工驗證')
             } return session
         });
-        let entries = [],
+        let entries = [], manuals = [], knowledgeMode = 'entries',
             serverOffset = 0, employeeCsrf = '',
             currentAttendance = null;
         const search = document.querySelector('#search'),
             knowledge = document.querySelector('#knowledge'),
+            knowledgeTabs = document.querySelector('#knowledgeTabs'),
+            manualCategoryField = document.querySelector('#manualCategoryField'),
+            manualCategory = document.querySelector('#manualCategory'),
+            manualReader = document.querySelector('#manualReader'),
+            manualReaderCategory = document.querySelector('#manualReaderCategory'),
+            manualReaderTitle = document.querySelector('#manualReaderTitle'),
+            manualReaderFile = document.querySelector('#manualReaderFile'),
+            manualReaderSections = document.querySelector('#manualReaderSections'),
+            closeManual = document.querySelector('#closeManual'),
             announcement = document.querySelector('#announcement'),
             metrics = document.querySelector('#metrics'),
             apiState = document.querySelector('#apiState'),
@@ -174,13 +197,37 @@
         const number = value => new Intl.NumberFormat('zh-TW').format(value);
         function renderKnowledge() {
             const q = search.value.trim().toLowerCase(),
-                items = q ? entries.filter(item => Object.values(item).join(' ').toLowerCase().includes(q)) : entries;
+                category = manualCategory.value;
+            if (knowledgeMode === 'manuals') {
+                const items = manuals.filter(item => (!category || item.category === category) &&
+                    (!q || `${item.title} ${item.category} ${item.file_name}`.toLowerCase().includes(q)));
+                knowledge.innerHTML = items.length ? items.map(item => `<button class="knowledge-card" data-manual-id="${item.id}">
+                    <span class="tag">${esc(item.category)}</span><h3>${esc(item.title)}</h3>
+                    <p>${item.section_count} 個段落 · ${esc(item.file_name)}</p></button>`).join('')
+                    : '<div class="empty">找不到符合條件的SOP文件。</div>';
+                return
+            }
+            const items = q ? entries.filter(item => Object.values(item).join(' ').toLowerCase().includes(q)) : entries;
             knowledge.innerHTML = items.length ? items.map(item =>
                 `<button class="knowledge-card" data-id="${item.id}">
                 <span class="tag">${esc(item.category)}</span>
                 <h3>${esc(item.title)}</h3>
                 <p>${esc(item.summary)}</p></button>`
             ).join('') : '<div class="empty">找不到相關條目。</div>'
+        }
+        async function openManual(id) {
+            manualReader.hidden = false;
+            knowledge.hidden = true;
+            manualReaderSections.innerHTML = '<div class="empty">正在讀取文件內容…</div>';
+            try {
+                const item = await apiData(`/api/manuals/document?id=${encodeURIComponent(id)}`);
+                manualReaderCategory.textContent = item.category;
+                manualReaderTitle.textContent = item.title;
+                manualReaderFile.textContent = item.file_name;
+                manualReaderSections.innerHTML = item.sections.map((section, index) =>
+                    `<details class="training-section" ${index === 0 ? 'open' : ''}><summary><span>${String(index + 1).padStart(2, '0')}</span>${esc(section.heading)}</summary>
+                    <div>${esc(section.content).replace(/\n/g, '<br>')}</div></details>`).join('') || '<div class="empty">此文件沒有可顯示的段落。</div>'
+            } catch (error) { manualReaderSections.innerHTML = `<div class="error-note">${esc(error.message)}</div>` }
         }
         function renderAttendance(attendance) {
             currentAttendance = attendance;
@@ -258,9 +305,14 @@
             return Promise.all([
                 apiData('/api/dashboard'),
                 apiData('/api/knowledge'),
+                apiData('/api/manuals'),
                 apiData('/api/public')])
-        }).then(([dashboard, knowledgeItems, publicData]) => {
+        }).then(([dashboard, knowledgeItems, manualItems, publicData]) => {
             entries = knowledgeItems;
+            manuals = manualItems;
+            const categories = [...new Set(manuals.map(item => item.category))];
+            manualCategory.innerHTML = '<option value="">全部分類</option>' +
+                categories.map(item => `<option value="${esc(item)}">${esc(item)}</option>`).join('');
             announcement.textContent = publicData.settings.announcement || '今天也請留意交接紀錄。';
             metrics.innerHTML = dashboard.metrics.map((item, index) =>
                 `<article class="metric-card">
@@ -288,7 +340,22 @@
         clockOutButton.onclick = () => clock('CLOCK_OUT');
         employeeLeave.onclick = leaveSystem;
         search.addEventListener('input', renderKnowledge);
+        manualCategory.addEventListener('change', renderKnowledge);
+        knowledgeTabs.onclick = event => {
+            const button = event.target.closest('[data-knowledge-mode]');
+            if (!button) return;
+            knowledgeMode = button.dataset.knowledgeMode;
+            knowledgeTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
+            manualCategoryField.hidden = knowledgeMode !== 'manuals';
+            search.placeholder = knowledgeMode === 'manuals' ? '搜尋文件名稱或分類…' : '請輸入欲查詢內容…';
+            manualReader.hidden = true;
+            knowledge.hidden = false;
+            renderKnowledge()
+        };
+        closeManual.onclick = () => { manualReader.hidden = true; knowledge.hidden = false };
         knowledge.onclick = event => {
+            const manualButton = event.target.closest('[data-manual-id]');
+            if (manualButton) { openManual(manualButton.dataset.manualId); return }
             const button = event.target.closest('[data-id]');
             if (!button) return;
             const item = entries.find(entry => entry.id === button.dataset.id);

@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 import re
+import uuid
 from datetime import date
 from typing import Any
 from urllib.parse import parse_qs, urlparse
@@ -19,7 +21,10 @@ ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
 ALLOWED_ACCESS_MODES = {"CLOCK_IN", "ACCESS_ONLY"}
 ALLOWED_GENDERS = {"男", "女", "其他"}
 ALLOWED_OPERATION_REVIEW_STATUSES = {"要求補件", "審核通過", "已退回"}
-ALLOWED_QUESTION_TYPES = {"single_choice", "multiple_choice", "reading", "essay"}
+ALLOWED_QUESTION_TYPES = {"single_choice", "multiple_choice", "reading", "fill_blank", "matching", "essay"}
+ALLOWED_QUESTION_DOMAINS = {"academic", "practical"}
+ALLOWED_QUESTION_STATUSES = {"draft", "published", "disabled"}
+ALLOWED_TRAINING_MODES = {"practice", "mock"}
 ALLOWED_ESSAY_REVIEW_STATUSES = {"審核通過", "需修正"}
 MAX_STAFF_PHOTO_BYTES = 5 * 1024 * 1024
 PRIVATE_NOTE_PATTERN = re.compile(
@@ -157,9 +162,9 @@ def validate_operations_manual_state(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         document_id = int(payload.get("id"))
     except (TypeError, ValueError) as exc:
-        raise InputError("營運SOP文件編號不正確") from exc
+        raise InputError("SOP文件編號不正確") from exc
     if document_id <= 0 or not isinstance(payload.get("is_active"), bool):
-        raise InputError("營運SOP文件狀態不正確")
+        raise InputError("SOP文件狀態不正確")
     return {"id": document_id, "is_active": payload["is_active"]}
 
 
@@ -167,51 +172,255 @@ def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         question_id = int(payload.get("id") or 0)
         document_id = int(payload.get("document_id") or 0) or None
+        subject_id = int(payload.get("subject_id") or 0)
+        chapter_id = int(payload.get("chapter_id") or 0)
     except (TypeError, ValueError) as exc:
         raise InputError("題目或文件編號不正確") from exc
+    if subject_id <= 0 or chapter_id <= 0:
+        raise InputError("請選擇科目與章節")
+    domain = _text(payload.get("domain") or "academic", "題庫領域", 20)
+    if domain not in ALLOWED_QUESTION_DOMAINS:
+        raise InputError("題庫領域不正確")
     question_type = _text(payload.get("question_type") or "single_choice", "題型", 30)
     if question_type not in ALLOWED_QUESTION_TYPES:
         raise InputError("題型不正確")
+    if (domain == "practical") != (question_type == "essay"):
+        raise InputError("術科僅能使用申論題，申論題也必須歸入術科")
+    status = _text(payload.get("status") or "draft", "題目狀態", 20)
+    if status not in ALLOWED_QUESTION_STATUSES:
+        raise InputError("題目狀態不正確")
     options_value = payload.get("options")
     if not isinstance(options_value, list):
         raise InputError("選項格式不正確")
-    options = [_text(value, f"選項 {index + 1}", 200) for index, value in enumerate(options_value)]
+    options = [_text(value, f"選項 {index + 1}", 1000) for index, value in enumerate(options_value)]
     answers_value = payload.get("answers", [])
     if not isinstance(answers_value, list):
         raise InputError("正確答案格式不正確")
-    try:
-        answers = sorted({int(value) for value in answers_value})
-    except (TypeError, ValueError) as exc:
-        raise InputError("正確答案格式不正確") from exc
+    if question_type in {"single_choice", "multiple_choice", "reading"}:
+        try:
+            answers: list[Any] = sorted({int(value) for value in answers_value})
+        except (TypeError, ValueError) as exc:
+            raise InputError("正確答案格式不正確") from exc
+    else:
+        answers = [_text(value, f"答案 {index + 1}", 1000) for index, value in enumerate(answers_value)]
     passage = _text(payload.get("passage"), "閱讀文章", 5000, required=False)
     if question_type == "essay":
         if options or answers:
             raise InputError("申論題不可設定選項或標準答案")
-    else:
+    elif question_type in {"single_choice", "multiple_choice", "reading"}:
         if not 2 <= len(options) <= 6:
-            raise InputError("選擇題必須有 2 到 6 個選項")
+            if status == "published":
+                raise InputError("選擇題必須有 2 到 6 個選項")
         if not answers or any(answer < 0 or answer >= len(options) for answer in answers):
-            raise InputError("正確答案超出選項範圍")
+            if status == "published":
+                raise InputError("正確答案超出選項範圍")
         if question_type in {"single_choice", "reading"} and len(answers) != 1:
-            raise InputError("單選題與閱讀測驗只能設定一個正確答案")
+            if status == "published":
+                raise InputError("單選題與閱讀測驗只能設定一個正確答案")
     if question_type == "reading" and not passage:
-        raise InputError("閱讀測驗必須提供閱讀文章")
+        if status == "published":
+            raise InputError("閱讀測驗必須提供閱讀文章")
+    content_blocks_value = payload.get("content_blocks")
+    if content_blocks_value in (None, []):
+        content_blocks = [{"type": "text", "content": _text(payload.get("question"), "題目", 500)}]
+    elif not isinstance(content_blocks_value, list):
+        raise InputError("題目內容格式不正確")
+    else:
+        content_blocks = []
+        for index, block in enumerate(content_blocks_value):
+            if not isinstance(block, dict) or block.get("type") not in {"text", "code"}:
+                raise InputError("題目內容只支援文字與程式碼區塊")
+            content_blocks.append({
+                "type": block["type"],
+                "content": _text(block.get("content"), f"內容區塊 {index + 1}", 5000),
+            })
+    structure = payload.get("structure") or {}
+    if not isinstance(structure, dict):
+        raise InputError("題型結構不正確")
+    if status == "published" and question_type in {"fill_blank", "matching"}:
+        expected_key = "blanks" if question_type == "fill_blank" else "left"
+        if not structure.get(expected_key) or not answers:
+            raise InputError("發布前必須完成題型結構與正確答案")
     return {
         "id": question_id,
         "document_id": document_id,
+        "subject_id": subject_id,
+        "chapter_id": chapter_id,
+        "domain": domain,
         "question_type": question_type,
-        "category": _text(payload.get("category"), "題目分類", 50),
+        "category": _text(payload.get("category"), "題目分類", 50, required=False),
+        "chapter_name": _text(payload.get("chapter_name"), "章節名稱", 120, required=False),
         "question": _text(payload.get("question"), "題目", 500),
+        "content_blocks": content_blocks,
+        "structure": structure,
         "passage": passage,
         "options": options,
         "answers": answers,
+        "status": status,
         "explanation": _text(
             payload.get("explanation"),
             "答案解說",
             1000,
-            required=question_type != "essay",
+            required=status == "published" and question_type != "essay",
         ),
     }
+
+
+def _positive_int_list(value: Any, label: str) -> list[int]:
+    if value in (None, ""):
+        return []
+    if not isinstance(value, list):
+        raise InputError(f"{label}格式不正確")
+    try:
+        result = sorted({int(item) for item in value})
+    except (TypeError, ValueError) as exc:
+        raise InputError(f"{label}格式不正確") from exc
+    if any(item <= 0 for item in result):
+        raise InputError(f"{label}格式不正確")
+    return result
+
+
+def validate_training_start(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        subject_id = int(payload.get("subject_id"))
+        question_count = int(10 if payload.get("question_count") in (None, "") else payload.get("question_count"))
+    except (TypeError, ValueError) as exc:
+        raise InputError("科目或題數不正確") from exc
+    mode = _text(payload.get("mode") or "practice", "作答模式", 20)
+    if mode not in ALLOWED_TRAINING_MODES or subject_id <= 0:
+        raise InputError("作答模式或科目不正確")
+    if question_count not in {0, 10, 20}:
+        raise InputError("練習題數只接受 10、20 或全部")
+    question_types_value = payload.get("question_types") or []
+    if not isinstance(question_types_value, list):
+        raise InputError("題型篩選格式不正確")
+    question_types = sorted({str(value) for value in question_types_value})
+    allowed_academic = ALLOWED_QUESTION_TYPES - {"essay"}
+    if any(value not in allowed_academic for value in question_types):
+        raise InputError("題型篩選不正確")
+    return {
+        "subject_id": subject_id,
+        "mode": mode,
+        "question_count": question_count,
+        "chapter_ids": _positive_int_list(payload.get("chapter_ids"), "章節篩選"),
+        "source_ids": _positive_int_list(payload.get("source_ids"), "來源篩選"),
+        "question_types": question_types,
+    }
+
+
+def _session_id(value: Any) -> str:
+    try:
+        return str(uuid.UUID(str(value)))
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise InputError("作答階段編號不正確") from exc
+
+
+def validate_training_answer(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        order = int(payload.get("order"))
+    except (TypeError, ValueError) as exc:
+        raise InputError("題號不正確") from exc
+    response = payload.get("response") or {}
+    if not isinstance(response, dict) or not isinstance(response.get("answers", []), list):
+        raise InputError("作答內容格式不正確")
+    if order <= 0 or len(json.dumps(response, ensure_ascii=False)) > 12000:
+        raise InputError("作答內容不正確或過長")
+    return {
+        "session_id": _session_id(payload.get("session_id")),
+        "order": order,
+        "response": response,
+        "flagged": bool(payload.get("flagged")),
+    }
+
+
+def validate_training_session_action(payload: dict[str, Any]) -> str:
+    return _session_id(payload.get("session_id"))
+
+
+def validate_training_wrong_remove(payload: dict[str, Any]) -> int:
+    try:
+        question_id = int(payload.get("question_id"))
+    except (TypeError, ValueError) as exc:
+        raise InputError("題目編號不正確") from exc
+    if question_id <= 0:
+        raise InputError("題目編號不正確")
+    return question_id
+
+
+def validate_training_subject(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        subject_id = int(payload.get("id") or 0)
+        question_count = int(payload.get("mock_question_count") or 40)
+        duration = int(payload.get("mock_duration_minutes") or 45)
+        pass_score = int(payload.get("mock_pass_score") or 70)
+    except (TypeError, ValueError) as exc:
+        raise InputError("科目設定格式不正確") from exc
+    domain = _text(payload.get("domain"), "題庫領域", 20)
+    if domain not in ALLOWED_QUESTION_DOMAINS:
+        raise InputError("題庫領域不正確")
+    if domain == "academic" and not (1 <= question_count <= 200 and 1 <= duration <= 300 and 1 <= pass_score <= 100):
+        raise InputError("模考設定超出允許範圍")
+    if domain == "practical":
+        question_count = duration = pass_score = 0
+    return {
+        "id": subject_id,
+        "domain": domain,
+        "name": _text(payload.get("name"), "科目名稱", 100),
+        "mock_question_count": question_count,
+        "mock_duration_minutes": duration,
+        "mock_pass_score": pass_score,
+        "is_active": bool(payload.get("is_active", True)),
+    }
+
+
+def validate_training_chapter(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        chapter_id = int(payload.get("id") or 0)
+        subject_id = int(payload.get("subject_id"))
+        display_order = int(payload.get("display_order") or 0)
+    except (TypeError, ValueError) as exc:
+        raise InputError("章節設定格式不正確") from exc
+    code = _text(payload.get("code"), "章節代碼", 30).upper()
+    if not re.fullmatch(r"[A-Z0-9_-]+", code) or subject_id <= 0 or not 0 <= display_order <= 9999:
+        raise InputError("章節設定不正確")
+    return {
+        "id": chapter_id,
+        "subject_id": subject_id,
+        "code": code,
+        "name": _text(payload.get("name"), "章節名稱", 120),
+        "display_order": display_order,
+        "is_active": bool(payload.get("is_active", True)),
+    }
+
+
+def validate_training_question_status(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        question_id = int(payload.get("id"))
+    except (TypeError, ValueError) as exc:
+        raise InputError("題目編號不正確") from exc
+    status = _text(payload.get("status"), "題目狀態", 20)
+    if question_id <= 0 or status not in ALLOWED_QUESTION_STATUSES:
+        raise InputError("題目狀態不正確")
+    return {"id": question_id, "status": status}
+
+
+def validate_training_question_bulk(payload: dict[str, Any]) -> dict[str, Any]:
+    ids = _positive_int_list(payload.get("ids"), "題目清單")
+    if not ids or len(ids) > 500:
+        raise InputError("請選擇 1 至 500 題")
+    status_value = str(payload.get("status") or "").strip()
+    if status_value and status_value not in ALLOWED_QUESTION_STATUSES:
+        raise InputError("批次狀態不正確")
+    try:
+        subject_id = int(payload.get("subject_id") or 0) or None
+        chapter_id = int(payload.get("chapter_id") or 0) or None
+    except (TypeError, ValueError) as exc:
+        raise InputError("批次分類格式不正確") from exc
+    if bool(chapter_id) != bool(subject_id):
+        raise InputError("批次分類必須同時指定科目與章節")
+    if not status_value and not subject_id:
+        raise InputError("請指定要套用的狀態或分類")
+    return {"ids": ids, "status": status_value or None, "subject_id": subject_id, "chapter_id": chapter_id}
 
 
 def validate_compliance_answer(payload: dict[str, Any]) -> dict[str, Any]:

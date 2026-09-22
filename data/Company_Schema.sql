@@ -303,3 +303,99 @@ CREATE TABLE [dbo].[Company_TrainingAnswer](
 	CONSTRAINT [FK_Company_TrainingAnswer_Reviewer] FOREIGN KEY([reviewed_by]) REFERENCES [dbo].[Company_Staff]([employee_id])
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
+
+/* 題庫分類、員工作答階段與錯題追蹤；正式遷移仍由 backend/data.py 冪等執行。 */
+CREATE TABLE [dbo].[Company_TrainingSubject](
+	[subject_id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[domain] [nvarchar](20) NOT NULL,
+	[subject_name] [nvarchar](100) NOT NULL,
+	[mock_question_count] [int] NOT NULL DEFAULT ((40)),
+	[mock_duration_minutes] [int] NOT NULL DEFAULT ((45)),
+	[mock_pass_score] [int] NOT NULL DEFAULT ((70)),
+	[is_active] [bit] NOT NULL DEFAULT ((1)),
+	CONSTRAINT [UQ_Company_TrainingSubject] UNIQUE ([domain],[subject_name])
+) ON [PRIMARY]
+GO
+
+CREATE TABLE [dbo].[Company_TrainingChapter](
+	[chapter_id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[subject_id] [int] NOT NULL,
+	[chapter_code] [nvarchar](30) NOT NULL,
+	[chapter_name] [nvarchar](120) NOT NULL,
+	[display_order] [int] NOT NULL DEFAULT ((0)),
+	[is_active] [bit] NOT NULL DEFAULT ((1)),
+	CONSTRAINT [FK_Company_TrainingChapter_Subject] FOREIGN KEY([subject_id]) REFERENCES [dbo].[Company_TrainingSubject]([subject_id]),
+	CONSTRAINT [UQ_Company_TrainingChapter] UNIQUE ([subject_id],[chapter_code])
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[Company_TrainingDocument] ADD
+	[source_kind] [nvarchar](30) NOT NULL DEFAULT (N'manual'),
+	[parse_status] [nvarchar](30) NULL,
+	[parse_message] [nvarchar](1000) NULL
+GO
+
+ALTER TABLE [dbo].[Company_TrainingQuestion] ADD
+	[domain] [nvarchar](20) NOT NULL DEFAULT (N'academic'),
+	[subject_id] [int] NULL,
+	[chapter_id] [int] NULL,
+	[content_json] [nvarchar](max) NULL,
+	[structure_json] [nvarchar](max) NULL,
+	[source_locator] [nvarchar](300) NULL,
+	[source_question_key] [nvarchar](200) NULL,
+	[source_fingerprint] [char](64) NULL,
+	[parse_confidence] [decimal](5,2) NULL,
+	[parse_warnings_json] [nvarchar](max) NULL,
+	[status] [nvarchar](20) NOT NULL DEFAULT (N'published'),
+	[admin_locked] [bit] NOT NULL DEFAULT ((0)),
+	[updated_at] [datetime2](7) NOT NULL DEFAULT (sysdatetime()),
+	CONSTRAINT [FK_Company_TrainingQuestion_Subject] FOREIGN KEY([subject_id]) REFERENCES [dbo].[Company_TrainingSubject]([subject_id]),
+	CONSTRAINT [FK_Company_TrainingQuestion_Chapter] FOREIGN KEY([chapter_id]) REFERENCES [dbo].[Company_TrainingChapter]([chapter_id])
+GO
+
+CREATE UNIQUE INDEX [UX_Company_TrainingQuestion_Fingerprint]
+ON [dbo].[Company_TrainingQuestion]([source_fingerprint]) WHERE [source_fingerprint] IS NOT NULL
+GO
+
+CREATE TABLE [dbo].[Company_TrainingSession](
+	[session_id] [uniqueidentifier] NOT NULL PRIMARY KEY,
+	[employee_id] [nvarchar](20) NOT NULL,
+	[subject_id] [int] NOT NULL,
+	[mode] [nvarchar](20) NOT NULL,
+	[status] [nvarchar](20) NOT NULL DEFAULT (N'in_progress'),
+	[config_json] [nvarchar](max) NOT NULL,
+	[started_at] [datetime2](7) NOT NULL DEFAULT (sysutcdatetime()),
+	[expires_at] [datetime2](7) NULL,
+	[submitted_at] [datetime2](7) NULL,
+	[score] [decimal](5,2) NULL,
+	CONSTRAINT [FK_Company_TrainingSession_Employee] FOREIGN KEY([employee_id]) REFERENCES [dbo].[Company_Staff]([employee_id]),
+	CONSTRAINT [FK_Company_TrainingSession_Subject] FOREIGN KEY([subject_id]) REFERENCES [dbo].[Company_TrainingSubject]([subject_id])
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+CREATE TABLE [dbo].[Company_TrainingSessionQuestion](
+	[session_question_id] [bigint] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[session_id] [uniqueidentifier] NOT NULL,
+	[question_id] [int] NOT NULL,
+	[question_order] [int] NOT NULL,
+	[snapshot_json] [nvarchar](max) NOT NULL,
+	[response_json] [nvarchar](max) NULL,
+	[is_flagged] [bit] NOT NULL DEFAULT ((0)),
+	[is_correct] [bit] NULL,
+	[answered_at] [datetime2](7) NULL,
+	CONSTRAINT [FK_Company_TrainingSessionQuestion_Session] FOREIGN KEY([session_id]) REFERENCES [dbo].[Company_TrainingSession]([session_id]) ON DELETE CASCADE,
+	CONSTRAINT [FK_Company_TrainingSessionQuestion_Question] FOREIGN KEY([question_id]) REFERENCES [dbo].[Company_TrainingQuestion]([question_id]),
+	CONSTRAINT [UQ_Company_TrainingSessionQuestion_Order] UNIQUE ([session_id],[question_order])
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+CREATE TABLE [dbo].[Company_TrainingWrongQuestion](
+	[employee_id] [nvarchar](20) NOT NULL,
+	[question_id] [int] NOT NULL,
+	[added_at] [datetime2](7) NOT NULL DEFAULT (sysutcdatetime()),
+	[removed_at] [datetime2](7) NULL,
+	CONSTRAINT [PK_Company_TrainingWrongQuestion] PRIMARY KEY ([employee_id],[question_id]),
+	CONSTRAINT [FK_Company_TrainingWrongQuestion_Employee] FOREIGN KEY([employee_id]) REFERENCES [dbo].[Company_Staff]([employee_id]),
+	CONSTRAINT [FK_Company_TrainingWrongQuestion_Question] FOREIGN KEY([question_id]) REFERENCES [dbo].[Company_TrainingQuestion]([question_id])
+) ON [PRIMARY]
+GO

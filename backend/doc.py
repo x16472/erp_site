@@ -1,4 +1,4 @@
-"""營運SOP文件的轉換、文字擷取與資料庫同步。
+"""SOP文件的轉換、文字擷取與資料庫同步。
 舊版*.doc優先使用 LibreOffice 無介面轉成快取*.docx；
 若本機沒有LibreOffice，才在 Windows使用 Microsoft Word COM。原始文件永遠不會被修改。
 支援 Word、Excel 與 PDF 文件。
@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import re
 import shutil
@@ -28,6 +30,19 @@ SECTION_LENGTH = 2600
 SYNC_LOCK = threading.Lock()
 EXCEL_SUFFIXES = frozenset({".xlsx", ".xlsm", ".xltx", ".xltm", ".xls"})
 PDF_SUFFIXES = frozenset({".pdf"})
+OCR_LANGUAGES = "chi_tra+eng"
+OCR_DPI = 300
+MIN_NATIVE_TEXT_LENGTH = 80
+QUESTION_START_PATTERN = re.compile(
+    r"(?m)^(?:題目\s*)?(?P<number>\d{1,3})\s*[.、)]?\s*"
+    r"(?:\((?P<answer>[A-F](?:\s*[A-F])*)\))?\s*(?P<stem>\S.*)$"
+)
+OPTION_PATTERN = re.compile(
+    r"(?m)^\s*(?P<marked>[(（]\s*(?:✅|✓|✔)?\s*[)）])?\s*"
+    r"(?P<label>[A-F])\s*[.、．:]\s*(?P<text>.+?)(?=\n\s*(?:[(（]\s*(?:✅|✓|✔)?\s*[)）])?\s*[A-F]\s*[.、．:]|\Z)",
+    re.DOTALL,
+)
+CHAPTER_PATTERN = re.compile(r"(?i)\bCH\s*0?(\d{1,2})\b\s*[:：-]?\s*([^\n]{0,80})")
 # 目的是「精簡＋方便未來擴充關鍵字」，用資料驅動的寫法會更乾淨、更易維護
 _CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "財務行政": ("會計", "財務", "出納", "帳務", "稅務"),
@@ -39,7 +54,7 @@ _CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
 
 
 class DocumentImportError(RuntimeError):
-    """營運SOP文件無法轉換、擷取或同步時使用的安全例外。"""
+    """SOP文件無法轉換、擷取或同步時使用的安全例外。"""
 
 
 def _source_files(suffix: str) -> list[Path]:
@@ -207,7 +222,7 @@ def _extract_word_sections(path: Path) -> list[dict[str, str]]:
             if rows:
                 blocks.append(("\n".join(rows), "表格"))
     except Exception as exc:
-        raise DocumentImportError(f"無法讀取營運SOP文件：{path.name}") from exc
+        raise DocumentImportError(f"無法讀取SOP文件：{path.name}") from exc
 
     title = path.stem
     sections: list[dict[str, str]] = []
@@ -365,7 +380,7 @@ def read_operations_manuals() -> list[dict[str, Any]]:
             stat = source.stat()
             sections = _extract_sections(readable)
         except OSError as exc:
-            raise DocumentImportError(f"無法存取營運SOP文件：{source.name}") from exc
+            raise DocumentImportError(f"無法存取SOP文件：{source.name}") from exc
         result.append(
             {
                 "file_name": source.name,
@@ -377,6 +392,319 @@ def read_operations_manuals() -> list[dict[str, Any]]:
             }
         )
     return result
+
+
+def _native_text_is_usable(text: str) -> bool:
+    """判斷 PDF 文字層是否足以供題目解析，避免把空白或亂碼當成成功。"""
+    compact = re.sub(r"\s+", "", text)
+    if len(compact) < MIN_NATIVE_TEXT_LENGTH:
+        return False
+    replacement_ratio = compact.count("�") / max(1, len(compact))
+    readable = sum(character.isalnum() or "\u4e00" <= character <= "\u9fff" for character in compact)
+    return replacement_ratio < 0.02 and readable / len(compact) >= 0.45
+
+
+def _tesseract_executable() -> str:
+    executable = shutil.which("tesseract")
+    known = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+    if not executable and known.is_file():
+        executable = str(known)
+    if not executable:
+        raise DocumentImportError(
+            "找不到 Tesseract OCR；請安裝 Tesseract 並加入 chi_tra、eng 語言資料。"
+        )
+    return executable
+
+
+def _ocr_pdf_page(path: Path, page_index: int) -> str:
+    """以 300 DPI 與繁中／英文模型 OCR 單一掃描頁面。"""
+    try:
+        import fitz
+        import pytesseract
+        from PIL import Image
+    except ImportError as exc:
+        raise DocumentImportError(
+            "缺少 PyMuPDF、Pillow 或 pytesseract，無法辨識掃描型 PDF。"
+        ) from exc
+
+    pytesseract.pytesseract.tesseract_cmd = _tesseract_executable()
+    try:
+        languages = set(pytesseract.get_languages(config=""))
+    except Exception as exc:
+        raise DocumentImportError("無法讀取 Tesseract 語言資料。") from exc
+    missing_languages = {"chi_tra", "eng"} - languages
+    if missing_languages:
+        raise DocumentImportError(
+            f"Tesseract 缺少語言資料：{', '.join(sorted(missing_languages))}。"
+        )
+    try:
+        with fitz.open(path) as pdf:
+            page = pdf.load_page(page_index)
+            scale = OCR_DPI / 72
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+            image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+            return pytesseract.image_to_string(
+                image,
+                lang=OCR_LANGUAGES,
+                config="--oem 1 --psm 3",
+            )
+    except DocumentImportError:
+        raise
+    except Exception as exc:
+        raise DocumentImportError(f"PDF 第 {page_index + 1} 頁 OCR 失敗：{path.name}") from exc
+
+
+def _pdf_pages_for_questions(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    """逐頁取得 PDF 文字；只有原生文字不足的頁面才啟動 OCR。"""
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:
+        raise DocumentImportError("缺少 pypdf，無法讀取 PDF 文件。") from exc
+
+    warnings: list[str] = []
+    pages: list[dict[str, Any]] = []
+    ocr_unavailable = ""
+    try:
+        reader = PdfReader(path)
+        if reader.is_encrypted and not reader.decrypt(""):
+            raise DocumentImportError(f"PDF 文件受密碼保護，無法讀取：{path.name}")
+        for page_index, page in enumerate(reader.pages):
+            native = page.extract_text() or ""
+            method = "native"
+            if not _native_text_is_usable(native):
+                method = "ocr"
+                if ocr_unavailable:
+                    native = ""
+                else:
+                    try:
+                        native = _ocr_pdf_page(path, page_index)
+                    except DocumentImportError as exc:
+                        message = str(exc)
+                        warnings.append(f"第 {page_index + 1} 頁：{message}")
+                        if message.startswith(("找不到 Tesseract", "缺少 PyMuPDF", "無法讀取 Tesseract", "Tesseract 缺少")):
+                            ocr_unavailable = message
+                        native = ""
+            pages.append({"page": page_index + 1, "text": native, "method": method})
+    except DocumentImportError:
+        raise
+    except Exception as exc:
+        raise DocumentImportError(f"無法讀取題庫 PDF：{path.name}") from exc
+    return pages, warnings
+
+
+def _word_pages_for_questions(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    sections = _extract_word_sections(path)
+    return [
+        {"page": index, "text": f"{section['heading']}\n{section['content']}", "method": "native"}
+        for index, section in enumerate(sections, 1)
+    ], []
+
+
+def _question_content_blocks(text: str) -> list[dict[str, str]]:
+    """將題幹拆成安全的文字與程式碼區塊，不產生任意 HTML。"""
+    lines = [line.rstrip() for line in text.strip().splitlines()]
+    blocks: list[dict[str, str]] = []
+    current_type = "text"
+    current: list[str] = []
+    code_pattern = re.compile(
+        r"^\s*(?:>>>|\.\.\.|#|(?:async\s+)?def\s+|class\s+|from\s+\S+\s+import\s+|import\s+|"
+        r"if\s+|elif\s+|else:|for\s+|while\s+|try:|except\b|finally:|return\b|print\s*\(|"
+        r"[A-Za-z_]\w*\s*(?:=|\+=|-=|\*=|/=)).*"
+    )
+
+    def flush() -> None:
+        nonlocal current
+        value = "\n".join(current).strip("\n")
+        if value:
+            blocks.append({"type": current_type, "content": value})
+        current = []
+
+    for line in lines:
+        detected = "code" if code_pattern.match(line) else "text"
+        if current and detected != current_type:
+            flush()
+        current_type = detected
+        current.append(line)
+    flush()
+    return blocks or [{"type": "text", "content": text.strip()}]
+
+
+def _normalize_option_text(value: str) -> str:
+    return re.sub(r"\n{3,}", "\n\n", value.strip())[:1000]
+
+
+def _parse_question_block(
+    block: str,
+    *,
+    number: str,
+    answer_marker: str,
+    source: Path,
+    page_number: int,
+    chapter_code: str,
+    chapter_name: str,
+) -> dict[str, Any] | None:
+    first_line, _, remainder = block.partition("\n")
+    start = QUESTION_START_PATTERN.match(first_line.strip())
+    if not start:
+        return None
+    stem_head = start.group("stem").strip()
+    option_matches = list(OPTION_PATTERN.finditer(remainder))
+    first_option_start = option_matches[0].start() if option_matches else len(remainder)
+    stem = "\n".join(part for part in (stem_head, remainder[:first_option_start].strip()) if part).strip()
+    options = [_normalize_option_text(match.group("text")) for match in option_matches]
+    marked_answers = [
+        ord(match.group("label")) - ord("A")
+        for match in option_matches
+        if match.group("marked") and re.search(r"✅|✓|✔", match.group("marked"))
+    ]
+    explicit_answers = [ord(label) - ord("A") for label in re.findall(r"[A-F]", answer_marker or "")]
+    answers = sorted(set(explicit_answers or marked_answers))
+    explanation_match = re.search(r"(?is)(?:答案解析|解析|解說)\s*[:：]\s*(.+)$", block)
+    explanation = explanation_match.group(1).strip()[:4000] if explanation_match else ""
+    warnings: list[str] = []
+
+    is_fill_blank = bool(re.search(r"_{3,}\s*(?:\(\d+\))?\s*_{0,}", stem))
+    is_matching = any(keyword in block for keyword in ("移至右側", "配對", "每種資料類型可能"))
+    if is_matching:
+        question_type = "matching"
+    elif is_fill_blank:
+        question_type = "fill_blank"
+    elif len(answers) > 1:
+        question_type = "multiple_choice"
+    else:
+        question_type = "single_choice"
+
+    if question_type in {"single_choice", "multiple_choice"} and len(options) < 2:
+        return None
+    if not answers:
+        warnings.append("未可靠辨識正確答案")
+    if not explanation:
+        warnings.append("來源未提供明確解析")
+    if question_type == "matching":
+        warnings.append("配對項目需由管理員確認")
+    if question_type == "fill_blank":
+        warnings.append("填空選項需由管理員確認")
+
+    subject = "ITS Python" if "python" in source.name.casefold() else _category(source.name)
+    source_key = f"{source.name}:{page_number}:{number}"
+    normalized = re.sub(r"\s+", " ", stem).strip().casefold()
+    fingerprint = hashlib.sha256(f"{source.name}|{number}|{normalized}".encode("utf-8")).hexdigest()
+    confidence = 0.45
+    confidence += 0.18 if len(options) >= 2 else 0
+    confidence += 0.18 if answers else 0
+    confidence += 0.10 if explanation else 0
+    confidence += 0.05 if chapter_code else 0
+    return {
+        "domain": "academic",
+        "subject": subject,
+        "chapter_code": chapter_code or "UNSORTED",
+        "chapter": chapter_name or "待分類",
+        "source_document": source.name,
+        "source_locator": f"第 {page_number} 頁／題號 {number}",
+        "source_question_key": source_key[:200],
+        "source_fingerprint": fingerprint,
+        "question_type": question_type,
+        "stem_blocks": _question_content_blocks(stem),
+        "question": stem[:500],
+        "options": options,
+        "answers": answers,
+        "structure": {"blanks": [], "matching_pairs": []},
+        "explanation": explanation,
+        "parse_confidence": round(min(confidence, 0.99), 2),
+        "parse_warnings": warnings,
+        "status": "draft",
+        "admin_locked": False,
+    }
+
+
+def _parse_questions_from_pages(source: Path, pages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    questions: list[dict[str, Any]] = []
+    chapter_code = ""
+    chapter_name = ""
+    for page in pages:
+        text = re.sub(r"\r\n?", "\n", page["text"] or "")
+        chapter = CHAPTER_PATTERN.search(text)
+        if chapter:
+            chapter_code = f"CH{int(chapter.group(1)):02d}"
+            chapter_name = chapter.group(2).strip(" ：:-") or chapter_code
+        starts = list(QUESTION_START_PATTERN.finditer(text))
+        for index, match in enumerate(starts):
+            end = starts[index + 1].start() if index + 1 < len(starts) else len(text)
+            block = text[match.start():end].strip()
+            parsed = _parse_question_block(
+                block,
+                number=match.group("number"),
+                answer_marker=match.group("answer") or "",
+                source=source,
+                page_number=int(page["page"]),
+                chapter_code=chapter_code,
+                chapter_name=chapter_name,
+            )
+            if parsed:
+                questions.append(parsed)
+    return questions
+
+
+def read_training_question_drafts() -> dict[str, Any]:
+    """從題庫來源建立結構化草稿；個別文件失敗不會中斷整批。"""
+    drafts: list[dict[str, Any]] = []
+    warnings: list[dict[str, str]] = []
+    failures: list[dict[str, str]] = []
+    sources = [
+        path
+        for suffix in (".docx", ".pdf")
+        for path in _source_files(suffix)
+    ]
+    for source in sources:
+        try:
+            if source.suffix.casefold() == ".pdf":
+                pages, source_warnings = _pdf_pages_for_questions(source)
+            else:
+                pages, source_warnings = _word_pages_for_questions(source)
+            drafts.extend(_parse_questions_from_pages(source, pages))
+            for message in source_warnings:
+                detail = {"source": source.name, "message": message}
+                if any(marker in message for marker in (
+                    "找不到 Tesseract", "缺少 PyMuPDF", "無法讀取 Tesseract", "Tesseract 缺少",
+                )):
+                    failures.append(detail)
+                else:
+                    warnings.append(detail)
+        except DocumentImportError as exc:
+            failures.append({"source": source.name, "message": str(exc)})
+    return {
+        "questions": drafts,
+        "warnings": warnings,
+        "failures": failures,
+        "sources": len(sources),
+    }
+
+
+def sync_training_sources(*, ensure_schema: bool = True) -> dict[str, Any]:
+    """同步 SOP 與題目草稿，回傳可供 MIS 顯示的完整報告。"""
+    try:
+        from . import data
+    except ImportError:
+        import data
+
+    with SYNC_LOCK:
+        if ensure_schema:
+            data.ensure_application_schema()
+        documents = read_operations_manuals()
+        document_count = data.upsert_operations_manuals(documents)
+        parsed = read_training_question_drafts()
+        imported = data.import_training_question_drafts(
+            parsed["questions"], parsed["warnings"], parsed["failures"],
+        )
+        return {
+            "documents": document_count,
+            "sources": parsed["sources"],
+            "parsed": len(parsed["questions"]),
+            "pending_review": imported["created"] + imported["updated"],
+            "warnings": parsed["warnings"],
+            "failures": parsed["failures"],
+            **imported,
+        }
 
 
 def sync_operations_manuals(*, ensure_schema: bool = True) -> int:
@@ -398,13 +726,13 @@ def main() -> None:
     args = parser.parse_args()
     try:
         if args.sync:
-            print(f"已同步 {sync_operations_manuals()} 份營運SOP文件。")
+            print(f"已同步 {sync_operations_manuals()} 份SOP文件。")
         else:
             documents = read_operations_manuals()
             sections = sum(len(item["sections"]) for item in documents)
             print(f"已讀取 {len(documents)} 份文件，共 {sections} 個段落區塊。")
     except DocumentImportError as exc:
-        raise SystemExit(f"營運SOP文件處理失敗：{exc}") from exc
+        raise SystemExit(f"SOP文件處理失敗：{exc}") from exc
 
 
 if __name__ == "__main__":

@@ -221,6 +221,28 @@ class Handler(BaseHTTPRequestHandler):
             except data.DatabaseUnavailable as exc:
                 return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
+        if parsed.path.startswith("/api/training/"):
+            try:
+                session = self.require_employee()
+                if not session:
+                    return
+                query = parse_qs(parsed.query)
+                if parsed.path == "/api/training/catalog":
+                    result = data.training_catalog(session["employee_id"])
+                elif parsed.path == "/api/training/session":
+                    result = data.training_session(query.get("id", [""])[0], session["employee_id"])
+                elif parsed.path == "/api/training/wrong":
+                    result = data.training_wrong_questions(session["employee_id"])
+                elif parsed.path == "/api/training/practical":
+                    result = data.practical_questions(session["employee_id"])
+                else:
+                    return self.send_not_found()
+                return self.send_json({"data": result})
+            except ValueError as exc:
+                return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+
         employee_routes = {
             "/api/dashboard": data.dashboard,
             "/api/knowledge": data.knowledge,
@@ -297,6 +319,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"data": data.compliance_questions_admin()})
                 if parsed.path == "/api/admin/compliance/answers":
                     return self.send_json({"data": data.compliance_essay_answers_admin()})
+                if parsed.path == "/api/admin/training/taxonomy":
+                    return self.send_json({"data": data.training_taxonomy_admin()})
             except ValueError as exc:
                 return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
             except data.DatabaseUnavailable as exc:
@@ -341,6 +365,36 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 item = user_input.validate_compliance_answer(self.read_json())
                 return self.send_json({"data": data.grade_compliance_answer(item, session["employee_id"])})
+            if parsed.path == "/api/training/session/start":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                item = user_input.validate_training_start(self.read_json())
+                return self.send_json({"data": data.start_training_session(item, session["employee_id"])}, 201)
+            if parsed.path == "/api/training/session/answer":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                item = user_input.validate_training_answer(self.read_json())
+                return self.send_json({"data": data.save_training_answer(item, session["employee_id"])})
+            if parsed.path == "/api/training/session/submit":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                session_id = user_input.validate_training_session_action(self.read_json())
+                return self.send_json({"data": data.submit_training_session(session_id, session["employee_id"])})
+            if parsed.path == "/api/training/wrong/remove":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                question_id = user_input.validate_training_wrong_remove(self.read_json())
+                return self.send_json({"data": data.remove_training_wrong(question_id, session["employee_id"])})
+            if parsed.path == "/api/training/practical/answer":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                item = user_input.validate_compliance_answer(self.read_json())
+                return self.send_json({"data": data.grade_compliance_answer(item, session["employee_id"])})
             if parsed.path == "/api/attendance/clock":
                 session = self.require_employee()
                 if not session or not self.require_csrf(session):
@@ -380,14 +434,31 @@ class Handler(BaseHTTPRequestHandler):
                     department = user_input.validate_department(self.read_json())
                     return self.send_json({"data": data.save_department(department, session["username"])})
                 if parsed.path == "/api/admin/manuals/sync":
-                    documents = operations_manuals.sync_operations_manuals(ensure_schema=False)
-                    return self.send_json({"data": {"documents": documents}})
+                    report = operations_manuals.sync_training_sources(ensure_schema=False)
+                    return self.send_json({"data": report})
                 if parsed.path == "/api/admin/manuals/document":
                     item = user_input.validate_operations_manual_state(self.read_json())
                     return self.send_json({"data": data.set_operations_manual_state(item["id"], item["is_active"])})
                 if parsed.path == "/api/admin/compliance/question":
                     item = user_input.validate_compliance_question(self.read_json())
                     return self.send_json({"data": data.save_compliance_question(item)})
+                if parsed.path == "/api/admin/training/question/status":
+                    item = user_input.validate_training_question_status(self.read_json())
+                    return self.send_json({"data": data.set_training_question_status(item["id"], item["status"])})
+                if parsed.path == "/api/admin/training/question/reimport":
+                    question_id = user_input.validate_training_wrong_remove(self.read_json())
+                    data.unlock_training_question_import(question_id)
+                    report = operations_manuals.sync_training_sources(ensure_schema=False)
+                    return self.send_json({"data": report})
+                if parsed.path == "/api/admin/training/questions/bulk":
+                    item = user_input.validate_training_question_bulk(self.read_json())
+                    return self.send_json({"data": data.update_training_questions_bulk(item)})
+                if parsed.path == "/api/admin/training/subject":
+                    item = user_input.validate_training_subject(self.read_json())
+                    return self.send_json({"data": data.save_training_subject(item)})
+                if parsed.path == "/api/admin/training/chapter":
+                    item = user_input.validate_training_chapter(self.read_json())
+                    return self.send_json({"data": data.save_training_chapter(item)})
                 if parsed.path == "/api/admin/compliance/answer/review":
                     item = user_input.validate_essay_review(self.read_json())
                     return self.send_json({"data": data.review_compliance_essay(item, session["employee_id"])})
@@ -606,7 +677,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="啟動銀盾共同體營運中心")
     parser.add_argument("--host", default=os.environ.get("SILVER_SHIELD_HOST", "0.0.0.0"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("SILVER_SHIELD_PORT", "80")))
-    parser.add_argument("--skip-doc-sync", action="store_true", help="略過啟動時的營運SOP文件同步")
+    parser.add_argument("--skip-doc-sync", action="store_true", help="略過啟動時的SOP文件同步")
     args = parser.parse_args()
     data.ensure_application_schema()
     if not args.skip_doc_sync:
@@ -614,7 +685,7 @@ def main() -> None:
             count = operations_manuals.sync_operations_manuals(ensure_schema=False)
             print(f"營運SOP資料：已同步 {count} 份文件")
         except (operations_manuals.DocumentImportError, data.DatabaseUnavailable) as exc:
-            print(f"營運SOP文件暫時無法同步：{exc}")
+            print(f"SOP文件暫時無法同步：{exc}")
     server = ApplicationServer((args.host, args.port), Handler)
     print(f"銀盾共同體營運中心：http://{args.host}:{args.port}")
     if args.host == "0.0.0.0":
