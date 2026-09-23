@@ -1,34 +1,254 @@
 import { apiData, employeeLoginUrl, escapeHtml, jsonRequest } from './script.js';
 
-let csrf='',catalog={subjects:[],chapters:[],sources:[]},activeSubject=null,activeSession=null,questionIndex=0,timerHandle=null;
-const $=selector=>document.querySelector(selector),esc=escapeHtml;
-const request=(path,options={})=>apiData(path,options,'題庫服務暫時無法使用');
-const writeRequest=(path,payload)=>jsonRequest(path,payload,{csrf,fallbackMessage:'題庫服務暫時無法使用'});
-const domainTabs=$('#domainTabs'),academicPanel=$('#academicPanel'),practicalPanel=$('#practicalPanel'),academicHome=$('#academicHome'),subjectGrid=$('#subjectGrid'),setupView=$('#setupView'),setupForm=$('#setupForm'),setupStatus=$('#setupStatus'),chapterChoices=$('#chapterChoices'),sourceChoices=$('#sourceChoices'),sessionView=$('#sessionView'),resultView=$('#resultView'),wrongView=$('#wrongView'),questionNavigator=$('#questionNavigator'),questionContent=$('#questionContent'),answerArea=$('#answerArea'),answerFeedback=$('#answerFeedback'),sessionProgress=$('#sessionProgress');
-function showAcademic(view){[academicHome,setupView,sessionView,resultView,wrongView].forEach(item=>item.hidden=item!==view)}
-function renderBlocks(blocks){return(blocks||[]).map(block=>block.type==='code'?`<pre class="question-code"><code>${esc(block.content)}</code></pre>`:`<div class="question-text">${esc(block.content).replace(/\n/g,'<br>')}</div>`).join('')}
-function renderCatalog(){const subjects=catalog.subjects.filter(item=>item.domain==='academic');subjectGrid.innerHTML=subjects.length?subjects.map(subject=>{const chapters=catalog.chapters.filter(item=>item.subject_id===subject.id);return`<article class="subject-card"><span class="eyebrow">ACADEMIC</span><h3>${esc(subject.name)}</h3><p>${subject.question_count} 題已發布 · ${subject.mock_question_count} 題模擬考</p><div class="subject-progress">${chapters.map(chapter=>`<div><span>${esc(chapter.name)} <small>${chapter.attempted_count}/${chapter.question_count} 題</small></span><div class="progress-track"><i style="width:${chapter.progress_percent}%"></i></div></div>`).join('')||'<small>尚未建立章節</small>'}</div><button class="btn" data-subject="${subject.id}">選擇科目</button></article>`}).join(''):'<div class="empty">目前沒有已啟用的學科科目。</div>';$('#wrongCount').textContent=catalog.wrong_count||0;
-$('#resumeSession').hidden=!catalog.resumable}
-function openSetup(subjectId){activeSubject=catalog.subjects.find(item=>item.id===Number(subjectId));if(!activeSubject)return;setupForm.reset();setupForm.elements.subject_id.value=activeSubject.id;$('#setupTitle').textContent=activeSubject.name;$('#setupMeta').textContent=`模擬考規則：${activeSubject.mock_question_count} 題／${activeSubject.mock_duration_minutes} 分鐘／${activeSubject.mock_pass_score} 分及格`;$('#mockRule').textContent=$('#setupMeta').textContent.replace('模擬考規則：','');const chapters=catalog.chapters.filter(item=>item.subject_id===activeSubject.id);chapterChoices.innerHTML=chapters.map(item=>`<label><input type="checkbox" name="chapter_id" value="${item.id}">${esc(item.code)} ${esc(item.name)}（${item.question_count}）</label>`).join('')||'<span class="hint">目前沒有章節</span>';const sources=catalog.sources.filter(item=>item.subject_id===activeSubject.id);sourceChoices.innerHTML=sources.map(item=>`<label><input type="checkbox" name="source_id" value="${item.id}">${esc(item.title)}</label>`).join('')||'<span class="hint">目前沒有來源篩選</span>';setupStatus.textContent='';showAcademic(setupView)}
-function sessionQuestion(){return activeSession.questions[questionIndex]}
-function answerValues(question){if(question.question_type==='fill_blank')return[...answerArea.querySelectorAll('[data-blank]')].map(input=>input.value);if(question.question_type==='matching')return[...answerArea.querySelectorAll('[data-match]')].map(select=>select.value);return[...answerArea.querySelectorAll('[name="answer"]:checked')].map(input=>Number(input.value))}
-function renderAnswerArea(question){const saved=question.response?.answers||[];if(question.question_type==='fill_blank'){const blanks=question.structure?.blanks||[];answerArea.innerHTML=blanks.length?blanks.map((blank,index)=>`<label class="field"><span>${esc(blank.label||`空格 ${index+1}`)}</span><select data-blank><option value="">請選擇</option>${(blank.options||[]).map(option=>`<option ${saved[index]===option?'selected':''}>${esc(option)}</option>`).join('')}</select></label>`).join(''):'<div class="error-note">此填空題尚未完成結構設定，請通知管理員。</div>';return}if(question.question_type==='matching'){const left=question.structure?.left||[],right=question.structure?.right||[];answerArea.innerHTML=left.length&&right.length?left.map((item,index)=>`<label class="field match-row"><span>${esc(item)}</span><select data-match><option value="">請選擇配對</option>${right.map(option=>`<option ${saved[index]===option?'selected':''}>${esc(option)}</option>`).join('')}</select></label>`).join(''):'<div class="error-note">此配對題尚未完成結構設定，請通知管理員。</div>';return}const multiple=question.question_type==='multiple_choice';answerArea.innerHTML=(question.options||[]).map((option,index)=>`<label class="quiz-option answer-label"><input name="answer" type="${multiple?'checkbox':'radio'}" value="${index}" ${saved.includes(index)?'checked':''}><span>${String.fromCharCode(65+index)}. ${esc(option)}</span></label>`).join('')}
-function renderNavigator(){questionNavigator.innerHTML=activeSession.questions.map((question,index)=>`<button class="${index===questionIndex?'active':''} ${question.response?.answers?.length?'answered':''} ${question.flagged?'flagged':''}" data-question-index="${index}">${index+1}</button>`).join('')}
-function renderQuestion(){const question=sessionQuestion();if(!question)return;$('#sessionMode').textContent=activeSession.mode==='mock'?'模擬考':'分類練習';$('#sessionTitle').textContent=`${question.subject}｜${question.chapter}`;sessionProgress.style.width=`${(questionIndex+1)/activeSession.questions.length*100}%`;questionContent.innerHTML=`<p class="hint">第 ${questionIndex+1} 題，共 ${activeSession.questions.length} 題 · ${esc(question.source||'人工建立')} ${esc(question.source_locator||'')}</p>${question.passage?`<article class="reading-passage">${esc(question.passage).replace(/\n/g,'<br>')}</article>`:''}${renderBlocks(question.content_blocks)}`;renderAnswerArea(question);answerFeedback.textContent='';$('#previousQuestion').disabled=questionIndex===0;$('#nextQuestion').disabled=questionIndex===activeSession.questions.length-1;$('#flagQuestion').classList.toggle('active',Boolean(question.flagged));$('#submitSession').textContent=activeSession.mode==='mock'?'交卷':'完成練習';renderNavigator()}
-function startTimer(){clearInterval(timerHandle);$('#sessionClock').hidden=activeSession.mode!=='mock';if(!activeSession.expires_at||activeSession.mode!=='mock')return;const tick=()=>{const remaining=new Date(activeSession.expires_at).getTime()-Date.now();if(remaining<=0){clearInterval(timerHandle);submitSession(true);return}const minutes=Math.floor(remaining/60000),seconds=Math.floor(remaining%60000/1000);$('#countdown').textContent=`${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`};tick();timerHandle=setInterval(tick,1000)}
-function openSession(session){activeSession=session;questionIndex=0;if(session.status==='submitted')return renderResult(session);showAcademic(sessionView);renderQuestion();startTimer()}
-async function saveCurrent(showMessage=true){const question=sessionQuestion(),answers=answerValues(question),result=await writeRequest('/api/training/session/answer',{session_id:activeSession.id,order:question.order,response:{answers},flagged:Boolean(question.flagged)});question.response={answers};if(activeSession.mode==='practice'){answerFeedback.textContent=`${result.correct?'答對了。':'答案不正確。'} ${result.explanation||'此題尚無解析。'}`;answerFeedback.className=`quiz-feedback ${result.correct?'success-note':'error-note'}`}else if(showMessage)answerFeedback.textContent='答案已儲存。';renderNavigator();return result}
-async function navigateQuestion(index){if(activeSession.mode==='mock'){try{await saveCurrent(false)}catch(error){answerFeedback.textContent=error.message;return}}questionIndex=index;renderQuestion()}
-async function submitSession(timeout=false){if(!timeout&&activeSession.mode==='mock'){const unanswered=activeSession.questions.filter((question,index)=>{const answers=index===questionIndex?answerValues(question):(question.response?.answers||[]);return !answers.length}).length;if(!confirm(`確定要交卷嗎？目前尚有 ${unanswered} 題未作答，仍會一併送出。`))return}try{await saveCurrent(false)}catch(_){ }const result=await writeRequest('/api/training/session/submit',{session_id:activeSession.id});renderResult(result)}
-function renderReviewQuestion(question){const answerText=(question.answers||[]).map(value=>typeof value==='number'?String.fromCharCode(65+value):value).join('、')||'由人工審核';return`<details class="review-question ${question.correct?'correct':'wrong'}"><summary>第 ${question.order} 題｜${question.correct?'答對':'答錯或未作答'}</summary>${renderBlocks(question.content_blocks)}<p>正確答案：${esc(answerText)}</p><p>${esc(question.explanation||'此題尚無解析。')}</p></details>`}
-function renderResult(session){clearInterval(timerHandle);activeSession=session;showAcademic(resultView);const passScore=session.config?.pass_score,passed=passScore==null||Number(session.score)>=Number(passScore),chapterMap={};session.questions.forEach(question=>{const name=question.chapter||'未分類';chapterMap[name]??={total:0,correct:0};chapterMap[name].total++;chapterMap[name].correct+=question.correct?1:0});const chapterStats=Object.entries(chapterMap).map(([name,value])=>`<article class="metric-card"><p>${esc(name)}</p><strong>${Math.round(value.correct*100/value.total)}%</strong><small>${value.correct} / ${value.total} 題</small></article>`).join('');resultView.innerHTML=`<div class="result-hero"><span class="eyebrow">RESULT</span><h2>${passed?'已完成本次題組':'本次尚未達及格標準'}</h2><strong>${Number(session.score||0).toFixed(1)} 分</strong>${passScore!=null?`<p>及格標準 ${passScore} 分</p>`:''}</div><div class="metric-grid">${chapterStats}</div><div class="review-list">${session.questions.map(renderReviewQuestion).join('')}</div><div class="actions"><button class="btn" id="backToSubjects">返回題庫首頁</button></div>`;resultView.querySelector('#backToSubjects').onclick=async()=>{await loadCatalog();showAcademic(academicHome)}}
-async function loadWrong(){showAcademic(wrongView);const items=await request('/api/training/wrong');$('#wrongList').innerHTML=items.length?items.map(item=>`<article class="wrong-card" data-wrong-card="${item.id}"><div><span class="tag">${esc(item.subject)}｜${esc(item.chapter)}</span>${renderBlocks(item.content_blocks)}<p class="hint">正確答案：${esc((item.answers||[]).map(value=>typeof value==='number'?String.fromCharCode(65+value):value).join('、'))}</p><p>${esc(item.explanation||'此題尚無解析。')}</p></div><button class="btn secondary" data-remove-wrong="${item.id}">從錯題本移除</button></article>`).join(''):'<div class="empty">目前沒有待複習錯題。</div>'}
-async function loadPractical(){const items=await request('/api/training/practical');$('#practicalList').innerHTML=items.length?items.map(item=>`<article class="portal-card practical-card"><header><span class="tag">${esc(item.subject)}｜${esc(item.chapter||'未分類')}</span><span class="tag">${esc(item.answer_status||'尚未作答')}</span></header>${renderBlocks(item.content_blocks)}${item.feedback?`<p class="error-note">審核回饋：${esc(item.feedback)}</p>`:''}<form data-practical="${item.id}"><label class="field"><span>申論答案</span><textarea name="answer_text" rows="10" maxlength="5000" required></textarea></label><button class="btn" type="submit">送交人工審核</button><p aria-live="polite"></p></form></article>`).join(''):'<div class="empty">目前沒有已發布的術科題目。</div>'}
-async function loadCatalog(){catalog=await request('/api/training/catalog');renderCatalog()}
-domainTabs.onclick=event=>{const button=event.target.closest('[data-domain]');if(!button)return;domainTabs.querySelectorAll('button').forEach(item=>item.classList.toggle('active',item===button));const academic=button.dataset.domain==='academic';academicPanel.hidden=!academic;practicalPanel.hidden=academic;if(!academic)loadPractical().catch(error=>$('#practicalList').innerHTML=`<div class="error-note">${esc(error.message)}</div>`)};
-subjectGrid.onclick=event=>{const button=event.target.closest('[data-subject]');if(button)openSetup(button.dataset.subject)};$('#cancelSetup').onclick=()=>showAcademic(academicHome);setupForm.onchange=event=>{if(event.target.name==='mode')setupForm.elements.question_count.disabled=event.target.value==='mock'};
-setupForm.onsubmit=async event=>{event.preventDefault();const values=new FormData(setupForm);setupStatus.textContent='正在建立題組…';try{const session=await writeRequest('/api/training/session/start',{subject_id:Number(values.get('subject_id')),mode:values.get('mode'),question_count:Number(values.get('question_count')),chapter_ids:values.getAll('chapter_id').map(Number),source_ids:values.getAll('source_id').map(Number),question_types:values.getAll('question_type')});openSession(session)}catch(error){setupStatus.className='error-note';setupStatus.textContent=error.message}};
-questionNavigator.onclick=event=>{const button=event.target.closest('[data-question-index]');if(button)navigateQuestion(Number(button.dataset.questionIndex))};$('#previousQuestion').onclick=()=>{if(questionIndex>0)navigateQuestion(questionIndex-1)};$('#nextQuestion').onclick=()=>{if(questionIndex<activeSession.questions.length-1)navigateQuestion(questionIndex+1)};$('#flagQuestion').onclick=async()=>{const question=sessionQuestion();question.flagged=!question.flagged;await saveCurrent(false);renderQuestion()};$('#saveAnswer').onclick=()=>saveCurrent().catch(error=>answerFeedback.textContent=error.message);$('#submitSession').onclick=()=>submitSession(false);
-$('#resumeSession').onclick=async()=>openSession(await request(`/api/training/session?id=${encodeURIComponent(catalog.resumable.id)}`));$('#openWrong').onclick=()=>loadWrong().catch(error=>$('#wrongList').innerHTML=`<div class="error-note">${esc(error.message)}</div>`);$('#closeWrong').onclick=()=>showAcademic(academicHome);$('#wrongList').onclick=async event=>{const button=event.target.closest('[data-remove-wrong]');if(!button)return;await writeRequest('/api/training/wrong/remove',{question_id:Number(button.dataset.removeWrong)});button.closest('[data-wrong-card]').remove();await loadCatalog()};
-$('#practicalList').onsubmit=async event=>{const form=event.target.closest('[data-practical]');if(!form)return;event.preventDefault();const status=form.querySelector('p');status.textContent='送出中…';try{await writeRequest('/api/training/practical/answer',{question_id:Number(form.dataset.practical),answers:[],answer_text:form.elements.answer_text.value});status.className='success-note';status.textContent='已送交人工審核。';form.elements.answer_text.disabled=true}catch(error){status.className='error-note';status.textContent=error.message}};
-request('/api/employee/session').then(session=>{if(!session.authenticated)return location.replace(employeeLoginUrl);csrf=session.csrf;return loadCatalog()}).then(()=>{$('#apiState').textContent='題庫資料已同步';$('#apiState').classList.add('ok')}).catch(error=>{$('#apiState').textContent='題庫服務未連線';subjectGrid.innerHTML=`<div class="error-note">${esc(error.message)}</div>`});
+let csrf = '', catalog = {
+    subjects: [], chapters: [], sources: []
+},
+    activeSubject = null,
+    activeSession = null,
+    questionIndex = 0,
+    timerHandle = null;
+const $ = selector => document.querySelector(selector), esc = escapeHtml;
+const request = (path, options = {}) => apiData(path, options, '題庫服務暫時無法使用');
+const writeRequest = (path, payload) => jsonRequest(path, payload, {
+    csrf, fallbackMessage: '題庫服務暫時無法使用'
+});
+const domainTabs = $('#domainTabs'),
+    academicPanel = $('#academicPanel'),
+    practicalPanel = $('#practicalPanel'),
+    academicHome = $('#academicHome'),
+    subjectGrid = $('#subjectGrid'),
+    setupView = $('#setupView'),
+    setupForm = $('#setupForm'),
+    setupStatus = $('#setupStatus'),
+    chapterChoices = $('#chapterChoices'),
+    sourceChoices = $('#sourceChoices'),
+    sessionView = $('#sessionView'),
+    resultView = $('#resultView'),
+    wrongView = $('#wrongView'),
+    questionNavigator = $('#questionNavigator'),
+    questionContent = $('#questionContent'),
+    answerArea = $('#answerArea'),
+    answerFeedback = $('#answerFeedback'),
+    sessionProgress = $('#sessionProgress');
+function showAcademic(view) {
+    [academicHome, setupView, sessionView, resultView, wrongView].forEach(item => item.hidden = item !== view)
+}
+function renderBlocks(blocks) { return (blocks || []).map(block => block.type === 'code' ? `<pre class="question-code"><code>${esc(block.content)}</code></pre>` : `<div class="question-text">${esc(block.content).replace(/\n/g, '<br>')}</div>`).join('') }
+function renderCatalog() {
+    const subjects = catalog.subjects.filter(item => item.domain === 'academic');
+    subjectGrid.innerHTML = subjects.length ? subjects.map(subject => {
+        const chapters = catalog.chapters.filter(item => item.subject_id === subject.id);
+        return `<article class="subject-card"><span class="eyebrow">ACADEMIC</span><h3>${esc(subject.name)}</h3><p>${subject.question_count} 題已發布 · ${subject.mock_question_count} 題模擬考</p><div class="subject-progress">${chapters.map(chapter => `<div><span>${esc(chapter.name)}
+    <small>${chapter.attempted_count}/${chapter.question_count} 題</small></span><div class="progress-track"><i style="width:${chapter.progress_percent}%"></i></div></div>`).join('') || '<small>尚未建立章節</small>'}</div><button class="btn" data-subject="${subject.id}">選擇科目</button></article>`
+    }).join('') : '<div class="empty">目前沒有已啟用的學科科目。</div>';
+
+}
+function openSetup(subjectId) {
+    activeSubject = catalog.subjects.find(item => item.id === Number(subjectId));
+    if (!activeSubject) return;
+    setupForm.reset();
+    setupForm.elements.subject_id.value = activeSubject.id;
+    $('#setupTitle').textContent = activeSubject.name;
+    $('#setupMeta').textContent = `模擬考規則：${activeSubject.mock_question_count} 題／${activeSubject.mock_duration_minutes} 分鐘／${activeSubject.mock_pass_score} 分及格`;
+    $('#mockRule').textContent = $('#setupMeta').textContent.replace('模擬考規則：', '');
+    const chapters = catalog.chapters.filter(item => item.subject_id === activeSubject.id);
+    chapterChoices.innerHTML = chapters.map(item => `<label><input type="checkbox" name="chapter_id" value="${item.id}">${esc(item.code)} ${esc(item.name)}（${item.question_count}）</label>`).join('') || '<span class="hint">目前沒有章節</span>'; const sources = catalog.sources.filter(item => item.subject_id === activeSubject.id);
+    sourceChoices.innerHTML = sources.map(item => `<label><input type="checkbox" name="source_id" value="${item.id}">${esc(item.title)}</label>`).join('') || '<span class="hint">目前沒有來源篩選</span>';
+    setupStatus.textContent = '';
+    showAcademic(setupView)
+}
+function sessionQuestion() { return activeSession.questions[questionIndex] }
+function answerValues(question) {
+    if (question.question_type === 'fill_blank') return [...answerArea.querySelectorAll('[data-blank]')].map(input => input.value);
+    if (question.question_type === 'matching') return [...answerArea.querySelectorAll('[data-match]')].map(select => select.value);
+    return [...answerArea.querySelectorAll('[name="answer"]:checked')].map(input => Number(input.value))
+}
+function renderAnswerArea(question) {
+    const saved = question.response?.answers || [];
+    if (question.question_type === 'fill_blank') {
+        const blanks = question.structure?.blanks || [];
+        answerArea.innerHTML = blanks.length ? blanks.map((blank, index) => `<label class="field"><span>${esc(blank.label || `空格 ${index + 1}`)}</span><select data-blank><option value="">請選擇</option>${(blank.options || []).map(option => `<option ${saved[index] === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select></label>`).join('') : '<div class="error-note">此填空題尚未完成結構設定，請通知管理員。</div>'; return
+    } if (question.question_type === 'matching') {
+        const left = question.structure?.left || [], right = question.structure?.right || [];
+        answerArea.innerHTML = left.length && right.length ? left.map((item, index) => `<label class="field match-row"><span>${esc(item)}</span><select data-match><option value="">請選擇配對</option>${right.map(option => `<option ${saved[index] === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select></label>`).join('') : '<div class="error-note">此配對題尚未完成結構設定，請通知管理員。</div>'; return
+    } const multiple = question.question_type === 'multiple_choice'; answerArea.innerHTML = (question.options || []).map((option, index) => `<label class="quiz-option answer-label"><input name="answer" type="${multiple ? 'checkbox' : 'radio'}" value="${index}" ${saved.includes(index) ? 'checked' : ''}><span>${String.fromCharCode(65 + index)}. ${esc(option)}</span></label>`).join('')
+}
+function renderNavigator() { questionNavigator.innerHTML = activeSession.questions.map((question, index) => `<button class="${index === questionIndex ? 'active' : ''} ${question.response?.answers?.length ? 'answered' : ''} ${question.flagged ? 'flagged' : ''}" data-question-index="${index}">${index + 1}</button>`).join('') }
+function renderQuestion() {
+    const question = sessionQuestion();
+    if (!question) return;
+    $('#sessionMode').textContent = activeSession.mode === 'mock' ? '模擬考' : '分類練習';
+    $('#sessionTitle').textContent = `${question.subject}｜${question.chapter}`;
+    sessionProgress.style.width = `${(questionIndex + 1) / activeSession.questions.length * 100}%`;
+    questionContent.innerHTML = `<p class="hint">第 ${questionIndex + 1} 題，共 ${activeSession.questions.length} 題 · ${esc(question.source || '人工建立')} ${esc(question.source_locator || '')}</p>${question.passage ? `<article class="reading-passage">${esc(question.passage).replace(/\n/g, '<br>')}</article>` : ''}${renderBlocks(question.content_blocks)}`;
+    renderAnswerArea(question); answerFeedback.textContent = '';
+    $('#previousQuestion').disabled = questionIndex === 0;
+    $('#nextQuestion').disabled = questionIndex === activeSession.questions.length - 1;
+    $('#flagQuestion').classList.toggle('active', Boolean(question.flagged));
+    $('#submitSession').textContent = activeSession.mode === 'mock' ? '交卷' : '完成練習';
+    renderNavigator()
+}
+function startTimer() {
+    clearInterval(timerHandle);
+    $('#sessionClock').hidden = activeSession.mode !== 'mock';
+    if (!activeSession.expires_at || activeSession.mode !== 'mock') return;
+    const tick = () => {
+        const remaining = new Date(activeSession.expires_at).getTime() - Date.now();
+        if (remaining <= 0) {
+            clearInterval(timerHandle);
+            submitSession(true); return
+        } const minutes = Math.floor(remaining / 60000), seconds = Math.floor(remaining % 60000 / 1000);
+        $('#countdown').textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    }; tick(); timerHandle = setInterval(tick, 1000)
+}
+function openSession(session) {
+    activeSession = session; questionIndex = 0;
+    if (session.status === 'submitted') return renderResult(session); showAcademic(sessionView); renderQuestion(); startTimer()
+}
+async function saveCurrent(showMessage = true) {
+    const question = sessionQuestion(), answers = answerValues(question), result = await writeRequest('/api/training/session/answer', { session_id: activeSession.id, order: question.order, response: { answers }, flagged: Boolean(question.flagged) });
+    question.response = { answers };
+    if (activeSession.mode === 'practice') {
+        answerFeedback.textContent = `${result.correct ? '答對了。' : '答案不正確。'} ${result.explanation || '此題尚無解析。'}`;
+        answerFeedback.className = `quiz-feedback ${result.correct ? 'success-note' : 'error-note'}`
+    } else if (showMessage) answerFeedback.textContent = '答案已儲存。';
+    renderNavigator(); return result
+}
+async function navigateQuestion(index) {
+    if (activeSession.mode === 'mock') {
+        try { await saveCurrent(false) } catch (error) {
+            answerFeedback.textContent = error.message;
+            return
+        }
+    } questionIndex = index; renderQuestion()
+}
+async function submitSession(timeout = false) {
+    if (!timeout && activeSession.mode === 'mock') {
+        const unanswered = activeSession.questions.filter((question, index) => {
+            const answers = index === questionIndex ? answerValues(question) : (question.response?.answers || []);
+            return !answers.length
+        }).length; if (!confirm(`確定要交卷嗎？目前尚有 ${unanswered} 題未作答，仍會一併送出。`)) return
+    } try { await saveCurrent(false) } catch (_) { } const result = await writeRequest('/api/training/session/submit', { session_id: activeSession.id }); renderResult(result)
+}
+function renderReviewQuestion(question) { const answerText = (question.answers || []).map(value => typeof value === 'number' ? String.fromCharCode(65 + value) : value).join('、') || '由人工審核'; return `<details class="review-question ${question.correct ? 'correct' : 'wrong'}"><summary>第 ${question.order} 題｜${question.correct ? '答對' : '答錯或未作答'}</summary>${renderBlocks(question.content_blocks)}<p>正確答案：${esc(answerText)}</p><p>${esc(question.explanation || '此題尚無解析。')}</p></details>` }
+function renderResult(session) {
+    clearInterval(timerHandle);
+    activeSession = session;
+    showAcademic(resultView);
+    const passScore = session.config?.pass_score,
+        passed = passScore == null || Number(session.score) >= Number(passScore),
+        chapterMap = {};
+    session.questions.forEach(question => {
+        const name = question.chapter || '未分類';
+        chapterMap[name] ??= { total: 0, correct: 0 };
+        chapterMap[name].total++;
+        chapterMap[name].correct += question.correct ? 1 : 0
+    }); const chapterStats = Object.entries(chapterMap).map(([name, value]) => `<article class="metric-card"><p>${esc(name)}</p><strong>${Math.round(value.correct * 100 / value.total)}%</strong><small>${value.correct} / ${value.total} 題</small></article>`).join(''); resultView.innerHTML = `<div class="result-hero"><span class="eyebrow">RESULT</span><h2>${passed ? '已完成本次題組' : '本次尚未達及格標準'}</h2><strong>${Number(session.score || 0).toFixed(1)} 分</strong>${passScore != null ? `<p>及格標準 ${passScore} 分</p>` : ''}</div><div class="metric-grid">${chapterStats}</div><div class="review-list">${session.questions.map(renderReviewQuestion).join('')}</div><div class="actions"><button class="btn" id="backToSubjects">返回題庫首頁</button></div>`;
+    resultView.querySelector('#backToSubjects').onclick = async () => {
+        await loadCatalog();
+        showAcademic(academicHome)
+    }
+}
+async function loadWrong() {
+    showAcademic(wrongView); const items = await request('/api/training/wrong');
+    $('#wrongList').innerHTML = items.length ? items.map(item => `<article class="wrong-card" data-wrong-card="${item.id}"><div><span class="tag">${esc(item.subject)}｜${esc(item.chapter)}</span>${renderBlocks(item.content_blocks)}<p class="hint">正確答案：${esc((item.answers || []).map(value => typeof value === 'number' ? String.fromCharCode(65 + value) : value).join('、'))}</p><p>${esc(item.explanation || '此題尚無解析。')}</p></div><button class="btn secondary" data-remove-wrong="${item.id}">從錯題本移除</button></article>`).join('') : '<div class="empty">目前沒有待複習錯題。</div>'
+}
+async function loadPractical() {
+    const items = await request('/api/training/practical');
+    $('#practicalList').innerHTML = items.length ? items.map(item => `<article class="portal-card practical-card"><header><span class="tag">${esc(item.subject)}｜${esc(item.chapter || '未分類')}</span><span class="tag">${esc(item.answer_status || '尚未作答')}</span></header>${renderBlocks(item.content_blocks)}${item.feedback ? `<p class="error-note">審核回饋：${esc(item.feedback)}</p>` : ''}<form data-practical="${item.id}"><label class="field"><span>申論答案</span><textarea name="answer_text" rows="10" maxlength="5000" required></textarea></label><button class="btn" type="submit">送交人工審核</button><p aria-live="polite"></p></form></article>`).join('') : '<div class="empty">目前沒有已發布的術科題目。</div>'
+}
+async function loadCatalog() {
+    catalog = await request('/api/training/catalog');
+    renderCatalog()
+}
+domainTabs.onclick = event => {
+    const button = event.target.closest('[data-domain]');
+    if (!button) return;
+    domainTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
+    const academic = button.dataset.domain === 'academic';
+    academicPanel.hidden = !academic;
+    practicalPanel.hidden = academic;
+    if (!academic) loadPractical().catch(error => $('#practicalList').innerHTML = `<div class="error-note">${esc(error.message)}</div>`)
+};
+subjectGrid.onclick = event => {
+    const button = event.target.closest('[data-subject]');
+    if (button) openSetup(button.dataset.subject)
+};
+$('#cancelSetup').onclick = () => showAcademic(academicHome);
+setupForm.onchange = event => {
+    if (event.target.name === 'mode') setupForm.elements.question_count.disabled = event.target.value === 'mock'
+};
+setupForm.onsubmit = async event => {
+    event.preventDefault();
+    const values = new FormData(setupForm);
+    setupStatus.textContent = '正在建立題組…';
+    try {
+        const session = await writeRequest('/api/training/session/start', {
+            subject_id: Number(values.get('subject_id')),
+            mode: values.get('mode'),
+            question_count: Number(values.get('question_count')),
+            chapter_ids: values.getAll('chapter_id').map(Number),
+            source_ids: values.getAll('source_id').map(Number),
+            question_types: values.getAll('question_type')
+        }); openSession(session)
+    } catch (error) {
+        setupStatus.className = 'error-note';
+        setupStatus.textContent = error.message
+    }
+};
+questionNavigator.onclick = event => {
+    const button = event.target.closest('[data-question-index]');
+    if (button) navigateQuestion(Number(button.dataset.questionIndex))
+}; $('#previousQuestion').onclick = () => {
+    if (questionIndex > 0) navigateQuestion(questionIndex - 1)
+};
+$('#nextQuestion').onclick = () => {
+    if (questionIndex < activeSession.questions.length - 1) navigateQuestion(questionIndex + 1)
+};
+$('#flagQuestion').onclick = async () => {
+    const question = sessionQuestion();
+    question.flagged = !question.flagged;
+    await saveCurrent(false);
+    renderQuestion()
+}; $('#saveAnswer').onclick = () => saveCurrent().catch(error => answerFeedback.textContent = error.message);
+$('#submitSession').onclick = () => submitSession(false);
+$('#resumeSession').onclick = async () => openSession(await request(`/api/training/session?id=${encodeURIComponent(catalog.resumable.id)}`));
+$('#openWrong').onclick = () => loadWrong().catch(error => $('#wrongList').innerHTML = `<div class="error-note">${esc(error.message)}</div>`);
+$('#closeWrong').onclick = () => showAcademic(academicHome);
+$('#wrongList').onclick = async event => {
+    const button = event.target.closest('[data-remove-wrong]');
+    if (!button) return; await writeRequest('/api/training/wrong/remove',
+        { question_id: Number(button.dataset.removeWrong) });
+    button.closest('[data-wrong-card]').remove();
+    await loadCatalog()
+};
+$('#practicalList').onsubmit = async event => {
+    const form = event.target.closest('[data-practical]');
+    if (!form) return; event.preventDefault();
+    const status = form.querySelector('p');
+    status.textContent = '送出中…';
+    try {
+        await writeRequest('/api/training/practical/answer',
+            {
+                question_id: Number(form.dataset.practical),
+                answers: [],
+                answer_text: form.elements.answer_text.value
+            }); status.className = 'success-note';
+        status.textContent = '已送交人工審核。';
+        form.elements.answer_text.disabled = true
+    } catch (error) {
+        status.className = 'error-note';
+        status.textContent = error.message
+    }
+};
+request('/api/employee/session').then(session => {
+    if (!session.authenticated) return location.replace(employeeLoginUrl);
+    csrf = session.csrf;
+    return loadCatalog()
+}).then(() => {
+    $('#apiState').textContent = '題庫資料已同步';
+    $('#apiState').classList.add('ok')
+}).catch(error => {
+    $('#apiState').textContent = '題庫服務未連線';
+    subjectGrid.innerHTML = `<div class="error-note">${esc(error.message)}</div>`
+});

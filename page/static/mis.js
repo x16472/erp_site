@@ -202,8 +202,8 @@ submissionList.onsubmit = async event => {
     const submitter = event.submitter;
     try {
         await request('/api/admin/submission/review', {
-            method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrf},
-            body: JSON.stringify({id: form.dataset.reviewId, status: submitter.value, message: form.elements.message.value})
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ id: form.dataset.reviewId, status: submitter.value, message: form.elements.message.value })
         });
         submissions = await request('/api/admin/submissions');
         renderQueue()
@@ -244,14 +244,18 @@ function renderBulkChapters() {
 bulkSubject.onchange = renderBulkChapters;
 subjectForm.onsubmit = async event => {
     event.preventDefault(); const values = Object.fromEntries(new FormData(subjectForm));
-    await request('/api/admin/training/subject', { method: 'POST', headers: {'Content-Type':'application/json','X-CSRF-Token':csrf},
-        body: JSON.stringify({...values,id:Number(values.id||0),mock_question_count:Number(values.mock_question_count),mock_duration_minutes:Number(values.mock_duration_minutes),mock_pass_score:Number(values.mock_pass_score),is_active:subjectForm.elements.is_active.checked}) });
+    await request('/api/admin/training/subject', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        body: JSON.stringify({ ...values, id: Number(values.id || 0), mock_question_count: Number(values.mock_question_count), mock_duration_minutes: Number(values.mock_duration_minutes), mock_pass_score: Number(values.mock_pass_score), is_active: subjectForm.elements.is_active.checked })
+    });
     trainingTaxonomy = await request('/api/admin/training/taxonomy'); renderTrainingTaxonomy(); subjectForm.reset()
 };
 chapterForm.onsubmit = async event => {
     event.preventDefault(); const values = Object.fromEntries(new FormData(chapterForm));
-    await request('/api/admin/training/chapter', { method: 'POST', headers: {'Content-Type':'application/json','X-CSRF-Token':csrf},
-        body: JSON.stringify({...values,id:Number(values.id||0),subject_id:Number(values.subject_id),display_order:Number(values.display_order||0),is_active:chapterForm.elements.is_active.checked}) });
+    await request('/api/admin/training/chapter', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        body: JSON.stringify({ ...values, id: Number(values.id || 0), subject_id: Number(values.subject_id), display_order: Number(values.display_order || 0), is_active: chapterForm.elements.is_active.checked })
+    });
     trainingTaxonomy = await request('/api/admin/training/taxonomy'); renderTrainingTaxonomy(); chapterForm.reset()
 };
 document.querySelector('#resetSubject').onclick = () => subjectForm.reset();
@@ -260,12 +264,12 @@ taxonomyList.onclick = event => {
     const button = event.target.closest('[data-subject-edit]'), chapterButton = event.target.closest('[data-chapter-edit]');
     if (button) {
         const item = trainingTaxonomy.subjects.find(row => row.id === Number(button.dataset.subjectEdit)); if (!item) return;
-        Object.entries({id:item.id,domain:item.domain,name:item.name,mock_question_count:item.mock_question_count,mock_duration_minutes:item.mock_duration_minutes,mock_pass_score:item.mock_pass_score}).forEach(([name,value]) => subjectForm.elements[name].value = value);
+        Object.entries({ id: item.id, domain: item.domain, name: item.name, mock_question_count: item.mock_question_count, mock_duration_minutes: item.mock_duration_minutes, mock_pass_score: item.mock_pass_score }).forEach(([name, value]) => subjectForm.elements[name].value = value);
         subjectForm.elements.is_active.checked = item.is_active
     }
     if (chapterButton) {
         const item = trainingTaxonomy.chapters.find(row => row.id === Number(chapterButton.dataset.chapterEdit)); if (!item) return;
-        Object.entries({id:item.id,subject_id:item.subject_id,code:item.code,name:item.name,display_order:item.display_order}).forEach(([name,value]) => chapterForm.elements[name].value = value);
+        Object.entries({ id: item.id, subject_id: item.subject_id, code: item.code, name: item.name, display_order: item.display_order }).forEach(([name, value]) => chapterForm.elements[name].value = value);
         chapterForm.elements.is_active.checked = item.is_active
     }
 };
@@ -369,7 +373,7 @@ questionList.onclick = async event => {
             questionForm.elements.passage.value = item.passage || '';
             questionForm.elements.options.value = item.options.join('\n');
             questionForm.elements.answers.value = item.answers.map(value => value + 1).join(',');
-            if (['fill_blank','matching'].includes(item.question_type)) questionForm.elements.answers.value = item.answers.join('\n');
+            if (['fill_blank', 'matching'].includes(item.question_type)) questionForm.elements.answers.value = item.answers.join('\n');
             questionForm.elements.structure.value = JSON.stringify(item.structure || {}, null, 2);
             questionForm.elements.explanation.value = item.explanation;
             questionForm.elements.question.focus()
@@ -377,13 +381,17 @@ questionList.onclick = async event => {
     }
     const statusButton = event.target.closest('[data-question-status]');
     if (statusButton) {
-        await request('/api/admin/training/question/status', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
-            body:JSON.stringify({id:Number(statusButton.dataset.questionStatus),status:statusButton.dataset.status})});
+        await request('/api/admin/training/question/status', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ id: Number(statusButton.dataset.questionStatus), status: statusButton.dataset.status })
+        });
         complianceQuestions = await request('/api/admin/compliance/questions'); renderQuestions()
     }
     if (reimport && confirm('此操作會解除管理員保護，並重新解析來源。\n\n將覆寫：題幹、選項或配對資料、正解、解析、分類、來源位置與解析警告。\n\n確定繼續？')) {
-        await request('/api/admin/training/question/reimport', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
-            body:JSON.stringify({question_id:Number(reimport.dataset.questionReimport)})});
+        await request('/api/admin/training/question/reimport', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ question_id: Number(reimport.dataset.questionReimport) })
+        });
         complianceQuestions = await request('/api/admin/compliance/questions'); renderQuestions()
     }
     if (disable && confirm('確定停用此題目？')) {
@@ -399,9 +407,9 @@ questionForm.onsubmit = async event => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(questionForm));
     const essay = values.question_type === 'essay';
-    const structured = ['fill_blank','matching'].includes(values.question_type);
+    const structured = ['fill_blank', 'matching'].includes(values.question_type);
     let structure = {};
-    try { structure = values.structure ? JSON.parse(values.structure) : {} } catch (_) { questionStatus.className='error-note'; questionStatus.textContent='題型結構必須是有效 JSON。'; return }
+    try { structure = values.structure ? JSON.parse(values.structure) : {} } catch (_) { questionStatus.className = 'error-note'; questionStatus.textContent = '題型結構必須是有效 JSON。'; return }
     const payload = {
         ...values, id: Number(values.id || 0),
         document_id: Number(values.document_id || 0) || null,
@@ -409,7 +417,7 @@ questionForm.onsubmit = async event => {
         chapter_name: questionChapter.selectedOptions[0]?.textContent || '',
         options: essay || structured ? [] : values.options.split(/\r?\n/).map(value => value.trim()).filter(Boolean),
         answers: essay ? [] : structured ? values.answers.split(/\r?\n/).map(value => value.trim()).filter(Boolean) : values.answers.split(/[,，、\s]+/).filter(Boolean).map(value => Number(value) - 1),
-        content_blocks: [{type:'text',content:values.question}], structure,
+        content_blocks: [{ type: 'text', content: values.question }], structure,
         passage: values.passage || '',
         explanation: essay ? '' : values.explanation
     };
@@ -442,9 +450,11 @@ document.querySelector('#applyQuestionBulk').onclick = async () => {
     const ids = [...questionList.querySelectorAll('[data-question-select]:checked')].map(item => Number(item.dataset.questionSelect));
     if (!ids.length) return alert('請先勾選題目。');
     if (bulkSubject.value && !bulkChapter.value) return alert('變更分類時請同時選擇章節。');
-    await request('/api/admin/training/questions/bulk', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({
-        ids,subject_id:Number(bulkSubject.value||0)||null,chapter_id:Number(bulkChapter.value||0)||null,status:bulkStatus.value
-    })});
+    await request('/api/admin/training/questions/bulk', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({
+            ids, subject_id: Number(bulkSubject.value || 0) || null, chapter_id: Number(bulkChapter.value || 0) || null, status: bulkStatus.value
+        })
+    });
     complianceQuestions = await request('/api/admin/compliance/questions'); renderQuestions()
 };
 function renderEssayAnswers() {
@@ -464,8 +474,8 @@ essayAnswerList.onsubmit = async event => {
     event.preventDefault();
     try {
         await request('/api/admin/compliance/answer/review', {
-            method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrf},
-            body: JSON.stringify({id: Number(form.dataset.essayReview), status: event.submitter.value, feedback: form.elements.feedback.value})
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ id: Number(form.dataset.essayReview), status: event.submitter.value, feedback: form.elements.feedback.value })
         });
         essayAnswers = await request('/api/admin/compliance/answers');
         renderEssayAnswers()

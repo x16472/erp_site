@@ -1,6 +1,7 @@
 import { apiData, requireEmployee } from './script.js';
 
-const DEFAULT_URL = 'https://www.youtube.com/watch?v=BsvIwqyiaJw';
+const DEFAULT_YT_URL = 'https://www.youtube.com/watch?v=BsvIwqyiaJw';
+const DEFAULT_BLBL_URL = 'https://player.bilibili.com/player.html?isOutside=true&aid=117109296273608';
 const youtubeForm = document.querySelector('#youtubeForm'),
     youtubeUrl = document.querySelector('#youtubeUrl'),
     youtubePlayer = document.querySelector('#youtubePlayer'),
@@ -47,4 +48,5 @@ youtubeForm.addEventListener('submit', event => {
     resolveVideo(youtubeUrl.value);
 });
 const savedUrl = localStorage.getItem('YoutubeVideo');
-resolveVideo(savedUrl || DEFAULT_URL, false);
+resolveVideo(savedUrl || DEFAULT_YT_URL, false);
+resolveVideo(savedUrl || DEFAULT_BLBL_URL, false);
