@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>企業入口網站｜銀盾Silver Shield</title>
     <meta name="description" content="銀盾共同體以家族為核心，以誠信與慷慨連結商務、製造、服務與資源產業。">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./static/style.css">
 </head>
 
 <body class="public-body" data-theme="shield">
@@ -177,7 +177,8 @@
             </div>
         </section>
     </main>
-    <footer class="public-footer">
+</body>
+<footer class="public-footer">
         <div>
             <h3>銀盾共同體</h3>
             <p>LIVE AND LET LIVE.｜以誠信、慷慨與專業連結每一份事業。</p>
@@ -196,75 +197,5 @@
             <a href="mis.html">後台管理區</a>
         </div>
     </footer>
-    <script>
-        const apiFetch = (path, options = {}) => fetch(path, {
-            credentials: 'include', ...options
-        });
-        const apiData = async (path, options = {}) => {
-            const response = await apiFetch(path, options);
-            const body = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(body.error || '資料服務暫時無法使用');
-            return body.data
-        };
-        const esc = value => {
-            const node = document.createElement('div');
-            node.textContent = value ?? '';
-            return node.innerHTML
-        };
-        const menuButton = document.querySelector('#menuButton'),
-            publicNav = document.querySelector('#publicNav'),
-            heroTitle = document.querySelector('#heroTitle'),
-            heroSubtitle = document.querySelector('#heroSubtitle'),
-            announcement = document.querySelector('#announcement'),
-            publicStats = document.querySelector('#campus'),
-            staffGrid = document.querySelector('#staffGrid'),
-            departmentFilter = document.querySelector('#departmentFilter'),
-            teamCount = document.querySelector('#teamCount');
-        menuButton.onclick = () => publicNav.classList.toggle('open');
-        apiData('/api/public').then(data => {
-            const settings = data.settings;
-            document.body.dataset.theme = settings.theme;
-            heroTitle.textContent = settings.hero_title;
-            heroSubtitle.textContent = settings.hero_subtitle;
-            announcement.textContent = settings.announcement;
-            publicStats.innerHTML = data.stats.map(item =>
-                `<div class="public-stat"><b>${new Intl.NumberFormat('zh-TW').format(item.value)}</b>
-                <span>${esc(item.label)}</span></div>`).join('');
-        }).catch(error => {
-            announcement.textContent = error.message;
-            publicStats.innerHTML = '<div class="error-note">企業資料暫時無法載入。</div>'
-        });
-        function renderStaff(staff) {
-            teamCount.textContent = `共 ${staff.length} 位夥伴`;
-            staffGrid.innerHTML = staff.map(item =>
-                `<article class="staff-card"><img src="${item.photo_file ?
-                    `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/appicon.png'}" alt="${esc(item.display_name)}">
-                    <div>
-                        <span>${esc(item.department)}</span>
-                        <h3>${esc(item.display_name)}</h3>
-                        <b>${esc(item.position)}</b><p>${esc(item.traits || '以專業支援共同體營運')}</p>
-                    </div>
-                </article>`).join('') || '<div class="empty">此部門目前沒有可公開的專業團隊資料。</div>'; staffGrid.querySelectorAll('img').forEach(image => image.addEventListener('error',
-                        () => { image.src = 'static/appicon.png' }, { once: true }))
-        }
-        async function loadStaff() {
-            staffGrid.innerHTML = '<div class="empty">正在整理專業團隊…</div>';
-            try {
-                renderStaff(await apiData(`/api/staff/public?department=${encodeURIComponent(departmentFilter.value)}`))
-            } catch (error) {
-                staffGrid.innerHTML = `<div class="error-note">${esc(error.message)}</div>`
-            }
-        }
-        apiData('/api/staff/departments').then(items => {
-            departmentFilter.replaceChildren(new Option('全部部門', ''));
-            items.forEach(item => departmentFilter.add(new Option(`${item.department}（${item.staff_count}）`, item.department)));
-            loadStaff()
-        }).catch(error => {
-            departmentFilter.disabled = true;
-            staffGrid.innerHTML = `<div class="error-note">${esc(error.message)}</div>`
-        });
-        departmentFilter.onchange = loadStaff;
-    </script>
-</body>
-
+    <script type="module" src="./static/index.js" defer></script>
 </html>

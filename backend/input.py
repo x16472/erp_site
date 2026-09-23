@@ -168,7 +168,67 @@ def validate_operations_manual_state(payload: dict[str, Any]) -> dict[str, Any]:
     return {"id": document_id, "is_active": payload["is_active"]}
 
 
+def _require_published(status: str, condition: bool, message: str) -> None:
+    """只有 status == 'published' 才強制檢查"""
+    if status == "published" and not condition:
+        raise InputError(message)
+
+
+def _validate_choice_type(
+    question_type: str,
+    options: list[str],
+    answers: list[int],
+    status: str,
+) -> None:
+    _require_published(
+        status,
+        2 <= len(options) <= 6,
+        "選擇題必須有 2 到 6 個選項",
+    )
+    _require_published(
+        status,
+        bool(answers) and all(0 <= a < len(options) for a in answers),
+        "正確答案超出選項範圍",
+    )
+    if question_type in {"single_choice", "reading"}:
+        _require_published(
+            status,
+            len(answers) == 1,
+            "單選題與閱讀測驗只能設定一個正確答案",
+        )
+
+
+def _validate_essay(options: list, answers: list) -> None:
+    if options or answers:
+        raise InputError("申論題不可設定選項或標準答案")
+
+
+def _validate_reading(passage: str, status: str) -> None:
+    _require_published(status, bool(passage), "閱讀測驗必須提供閱讀文章")
+
+
+def _validate_structure(
+    question_type: str,
+    structure: dict,
+    answers: list,
+    status: str,
+) -> None:
+    if question_type == "fill_blank":
+        key = "blanks"
+    elif question_type == "matching":
+        key = "left"
+    else:
+        return
+
+    _require_published(
+        status,
+        bool(structure.get(key)) and bool(answers),
+        "發布前必須完成題型結構與正確答案",
+    )
+
+
 def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
+    # --- 基本 ID 與必要欄位 ---
     try:
         question_id = int(payload.get("id") or 0)
         document_id = int(payload.get("document_id") or 0) or None
@@ -176,71 +236,79 @@ def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
         chapter_id = int(payload.get("chapter_id") or 0)
     except (TypeError, ValueError) as exc:
         raise InputError("題目或文件編號不正確") from exc
+
     if subject_id <= 0 or chapter_id <= 0:
         raise InputError("請選擇科目與章節")
+
     domain = _text(payload.get("domain") or "academic", "題庫領域", 20)
     if domain not in ALLOWED_QUESTION_DOMAINS:
         raise InputError("題庫領域不正確")
+
     question_type = _text(payload.get("question_type") or "single_choice", "題型", 30)
     if question_type not in ALLOWED_QUESTION_TYPES:
         raise InputError("題型不正確")
+
     if (domain == "practical") != (question_type == "essay"):
         raise InputError("術科僅能使用申論題，申論題也必須歸入術科")
+
     status = _text(payload.get("status") or "draft", "題目狀態", 20)
     if status not in ALLOWED_QUESTION_STATUSES:
         raise InputError("題目狀態不正確")
+
+    # --- options ---
     options_value = payload.get("options")
     if not isinstance(options_value, list):
         raise InputError("選項格式不正確")
-    options = [_text(value, f"選項 {index + 1}", 1000) for index, value in enumerate(options_value)]
+    options = [_text(v, f"選項 {i + 1}", 1000) for i, v in enumerate(options_value)]
+
+    # --- answers ---
     answers_value = payload.get("answers", [])
     if not isinstance(answers_value, list):
         raise InputError("正確答案格式不正確")
+
     if question_type in {"single_choice", "multiple_choice", "reading"}:
         try:
-            answers: list[Any] = sorted({int(value) for value in answers_value})
+            answers = sorted({int(v) for v in answers_value})
         except (TypeError, ValueError) as exc:
             raise InputError("正確答案格式不正確") from exc
     else:
-        answers = [_text(value, f"答案 {index + 1}", 1000) for index, value in enumerate(answers_value)]
+        answers = [_text(v, f"答案 {i + 1}", 1000) for i, v in enumerate(answers_value)]
+
     passage = _text(payload.get("passage"), "閱讀文章", 5000, required=False)
+
+    # --- 依題型驗證 ---
     if question_type == "essay":
-        if options or answers:
-            raise InputError("申論題不可設定選項或標準答案")
+        _validate_essay(options, answers)
     elif question_type in {"single_choice", "multiple_choice", "reading"}:
-        if not 2 <= len(options) <= 6:
-            if status == "published":
-                raise InputError("選擇題必須有 2 到 6 個選項")
-        if not answers or any(answer < 0 or answer >= len(options) for answer in answers):
-            if status == "published":
-                raise InputError("正確答案超出選項範圍")
-        if question_type in {"single_choice", "reading"} and len(answers) != 1:
-            if status == "published":
-                raise InputError("單選題與閱讀測驗只能設定一個正確答案")
-    if question_type == "reading" and not passage:
-        if status == "published":
-            raise InputError("閱讀測驗必須提供閱讀文章")
+        _validate_choice_type(question_type, options, answers, status)
+        if question_type == "reading":
+            _validate_reading(passage, status)
+
+    # --- content_blocks ---
     content_blocks_value = payload.get("content_blocks")
     if content_blocks_value in (None, []):
-        content_blocks = [{"type": "text", "content": _text(payload.get("question"), "題目", 500)}]
+        content_blocks = [
+            {"type": "text", "content": _text(payload.get("question"), "題目", 500)}
+        ]
     elif not isinstance(content_blocks_value, list):
         raise InputError("題目內容格式不正確")
     else:
         content_blocks = []
-        for index, block in enumerate(content_blocks_value):
+        for i, block in enumerate(content_blocks_value):
             if not isinstance(block, dict) or block.get("type") not in {"text", "code"}:
                 raise InputError("題目內容只支援文字與程式碼區塊")
             content_blocks.append({
                 "type": block["type"],
-                "content": _text(block.get("content"), f"內容區塊 {index + 1}", 5000),
+                "content": _text(block.get("content"), f"內容區塊 {i + 1}", 5000),
             })
+
+    # --- structure ---
     structure = payload.get("structure") or {}
     if not isinstance(structure, dict):
         raise InputError("題型結構不正確")
-    if status == "published" and question_type in {"fill_blank", "matching"}:
-        expected_key = "blanks" if question_type == "fill_blank" else "left"
-        if not structure.get(expected_key) or not answers:
-            raise InputError("發布前必須完成題型結構與正確答案")
+
+    _validate_structure(question_type, structure, answers, status)
+
     return {
         "id": question_id,
         "document_id": document_id,
@@ -264,8 +332,6 @@ def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
             required=status == "published" and question_type != "essay",
         ),
     }
-
-
 def _positive_int_list(value: Any, label: str) -> list[int]:
     if value in (None, ""):
         return []
