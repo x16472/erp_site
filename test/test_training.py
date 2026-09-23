@@ -7,15 +7,18 @@ from unittest import mock
 from backend import data, doc
 from backend import input as user_input
 
+"""用於辨識答案專區"""
 
 class TrainingDocumentParserTests(unittest.TestCase):
     def test_choice_question_is_split_into_structured_fields(self) -> None:
-        block = """01 (C) 下列哪一個函式可讀取使用者輸入？
+        block = """
+01 (C) 下列哪一個函式可讀取使用者輸入？
 A. print()
 B. len()
 C. input()
 D. type()
-解析：input 會從主控台讀取文字。"""
+解析：input 會從主控台讀取文字。
+"""
         result = doc._parse_question_block(
             block,
             number="01",
@@ -33,9 +36,11 @@ D. type()
         self.assertEqual(result["explanation"], "input 會從主控台讀取文字。")
 
     def test_question_without_answer_stays_reviewable_draft(self) -> None:
-        block = """02 下列何者正確？
+        block ="""
+02 下列何者正確？
 A. 第一項
-B. 第二項"""
+B. 第二項
+"""
         result = doc._parse_question_block(
             block,
             number="02",
