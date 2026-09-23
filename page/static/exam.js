@@ -143,14 +143,17 @@ function renderResult(session) {
         chapterMap[name] ??= { total: 0, correct: 0 };
         chapterMap[name].total++;
         chapterMap[name].correct += question.correct ? 1 : 0
-    }); const chapterStats = Object.entries(chapterMap).map(([name, value]) => `<article class="metric-card"><p>${esc(name)}</p><strong>${Math.round(value.correct * 100 / value.total)}%</strong><small>${value.correct} / ${value.total} 題</small></article>`).join(''); resultView.innerHTML = `<div class="result-hero"><span class="eyebrow">RESULT</span><h2>${passed ? '已完成本次題組' : '本次尚未達及格標準'}</h2><strong>${Number(session.score || 0).toFixed(1)} 分</strong>${passScore != null ? `<p>及格標準 ${passScore} 分</p>` : ''}</div><div class="metric-grid">${chapterStats}</div><div class="review-list">${session.questions.map(renderReviewQuestion).join('')}</div><div class="actions"><button class="btn" id="backToSubjects">返回題庫首頁</button></div>`;
+    });
+    const chapterStats = Object.entries(chapterMap).map(([name, value]) => `<article class="metric-card"><p>${esc(name)}</p><strong>${Math.round(value.correct * 100 / value.total)}%</strong><small>${value.correct} / ${value.total} 題</small></article>`).join('');
+    resultView.innerHTML = `<div class="result-hero"><span class="eyebrow">RESULT</span><h2>${passed ? '已完成本次題組' : '本次尚未達及格標準'}</h2><strong>${Number(session.score || 0).toFixed(1)} 分</strong>${passScore != null ? `<p>及格標準 ${passScore} 分</p>` : ''}</div><div class="metric-grid">${chapterStats}</div><div class="review-list">${session.questions.map(renderReviewQuestion).join('')}</div><div class="actions"><button class="btn" id="backToSubjects">返回題庫首頁</button></div>`;
     resultView.querySelector('#backToSubjects').onclick = async () => {
         await loadCatalog();
         showAcademic(academicHome)
     }
 }
 async function loadWrong() {
-    showAcademic(wrongView); const items = await request('/api/training/wrong');
+    showAcademic(wrongView);
+    const items = await request('/api/training/wrong');
     $('#wrongList').innerHTML = items.length ? items.map(item => `<article class="wrong-card" data-wrong-card="${item.id}"><div><span class="tag">${esc(item.subject)}｜${esc(item.chapter)}</span>${renderBlocks(item.content_blocks)}<p class="hint">正確答案：${esc((item.answers || []).map(value => typeof value === 'number' ? String.fromCharCode(65 + value) : value).join('、'))}</p><p>${esc(item.explanation || '此題尚無解析。')}</p></div><button class="btn secondary" data-remove-wrong="${item.id}">從錯題本移除</button></article>`).join('') : '<div class="empty">目前沒有待複習錯題。</div>'
 }
 async function loadPractical() {

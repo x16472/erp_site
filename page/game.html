@@ -63,18 +63,58 @@
                         </div>
                         <a class="btn secondary" id="openYoutube" href="https://www.youtube.com/watch?v=BsvIwqyiaJw"
                             target="_blank" rel="noopener noreferrer">YouTube 開啟</a>
-                </section>
-                <section class="portal-card">
-                    <div class="bilibili-player">
-                        <iframe
-                            src="https://player.bilibili.com/player.html?isOutside=true&aid=117109296273608"
-                            width="720" height="480" scrolling="no" border="1" frameborder="yes" framespacing="0" allowfullscreen="false">
-                        </iframe>
                     </div>
                 </section>
-
+                <section class="portal-card">
+                        <div class="card-head">
+                            <div><span class="eyebrow">KNOWLEDGE &amp; MANUALS</span>
+                                <h2>知識與營運SOP檢索</h2>
+                                <p>搜尋知識條目，或查閱同步後的營運文件與段落。</p>
+                            </div>
+                        </div>
+                        <nav class="admin-tabs" id="knowledgeTabs">
+                            <button class="active" data-knowledge-mode="entries">知識條目</button>
+                            <button data-knowledge-mode="manuals">營運SOP</button>
+                        </nav>
+                        <div class="metric-grid" id="metrics">
+                            <article class="metric-card">
+                                <p>正在載入統計數據…</p>
+                            </article>
+                        </div>
+                        <section class="training-reader" id="manualReader" hidden>
+                            <button class="btn secondary" id="closeManual" type="button">
+                                返回文件列表</button>
+                                    <div class="card-head"><div><span class="eyebrow" id="manualReaderCategory"></span>
+                                        <h2 id="manualReaderTitle"></h2><p id="manualReaderFile"></p></div></div>
+                            <div class="training-sections" id="manualReaderSections"></div>
+                        </section>
+                        <div class="training-toolbar">
+                            <div class="search-box">
+                            <label class="sr-only" for="search">搜尋知識</label>
+                            <input id="search" type="search" placeholder="請輸入欲查詢內容…">
+                            <span>⌕</span>
+                            </div>
+                            <label class="field" id="manualCategoryField" hidden><span class="sr-only">SOP分類</span>
+                                <select id="manualCategory"><option value="">全部分類</option></select></label>
+                        </div>
+                        <div class="quick-links">
+                            <div class="knowledge-grid empty" id="knowledge">
+                                <div>正在載入條目…</div>
+                            </div>
+                        </div>
+                    </section>
             </div>
         </main>
+    </div>
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-box">
+            <button class="close" type="button" aria-label="關閉">×</button>
+            <span class="tag" id="modalCategory"></span>
+            <h2 id="modalTitle"></h2>
+            <p class="hint" id="modalSummary"></p>
+            <p id="modalDetail"></p>
+            <div class="success-note" id="modalRelated"></div>
+        </div>
     </div>
 </body>
 <footer></footer>
