@@ -1,7 +1,14 @@
 import { apiData, requireEmployee } from './script.js';
 
-const DEFAULT_URL = 'https://www.youtube.com/watch?v=fxnjjVyMd7g';
-const youtubeForm = document.querySelector('#youtubeForm'), youtubeUrl = document.querySelector('#youtubeUrl'), youtubePlayer = document.querySelector('#youtubePlayer'), youtubeStatus = document.querySelector('#youtubeStatus'), playerState = document.querySelector('#playerState'), videoTitle = document.querySelector('#videoTitle'), openYoutube = document.querySelector('#openYoutube'), submitButton = youtubeForm.querySelector('button[type="submit"]');
+const DEFAULT_URL = 'https://www.youtube.com/watch?v=BsvIwqyiaJw';
+const youtubeForm = document.querySelector('#youtubeForm'),
+    youtubeUrl = document.querySelector('#youtubeUrl'),
+    youtubePlayer = document.querySelector('#youtubePlayer'),
+    youtubeStatus = document.querySelector('#youtubeStatus'),
+    playerState = document.querySelector('#playerState'),
+    videoTitle = document.querySelector('#videoTitle'),
+    openYoutube = document.querySelector('#openYoutube'),
+    submitButton = youtubeForm.querySelector('button[type="submit"]');
 const employeeAccess = requireEmployee();
 async function resolveVideo(url, remember = true) {
     const controller = new AbortController(),
@@ -22,7 +29,7 @@ async function resolveVideo(url, remember = true) {
         videoTitle.textContent = video.title;
         openYoutube.href = video.watch_url;
         youtubeUrl.value = video.watch_url;
-        if (remember) localStorage.setItem('silverShieldTrainingVideo', video.watch_url);
+        if (remember) localStorage.setItem('YoutubeVideo', video.watch_url);
         youtubeStatus.className = 'hint success-note';
         youtubeStatus.textContent = '後端已驗證網址並取得 YouTube 影片標題。';
         playerState.textContent = '播放器已更新';
@@ -39,5 +46,5 @@ youtubeForm.addEventListener('submit', event => {
     event.preventDefault();
     resolveVideo(youtubeUrl.value);
 });
-const savedUrl = localStorage.getItem('silverShieldTrainingVideo');
+const savedUrl = localStorage.getItem('YoutubeVideo');
 resolveVideo(savedUrl || DEFAULT_URL, false);
