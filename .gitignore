@@ -6,5 +6,7 @@
 __pycache__/
 *.pyc
 data/*.db
-data/exam/.converted/
-data/exam/
+data/*
+data/*.bak
+!data/staff.csv
+!data/Company_Schema.sql
