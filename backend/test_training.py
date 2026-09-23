@@ -4,8 +4,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from backend import data
-from backend import doc
+from backend import data, doc
 from backend import input as user_input
 
 
