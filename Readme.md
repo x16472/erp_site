@@ -28,9 +28,9 @@ erp_site/
 │  └─ Company_Schema.sql   # 資料表結構參考
 ├─ page/
 │  ├─ *.html               # 各功能頁面
-│  └─ static/
+│  └─ static/              # 靜態物件專用區
 │     ├─ script.js         # 全站共用 ES module
-│     ├─ <頁面名稱>.js     # 各頁專屬事件與畫面邏輯
+│     ├─ <頁面名稱>.js      # 各頁專屬事件與畫面邏輯
 │     ├─ style.css         # 全站共用樣式
 │     ├─ png/              # 網站圖片
 │     └─ staff/            # 員工照片
@@ -49,7 +49,7 @@ erp_site/
 | `home.html` | 員工工作台、公告、校時與打卡操作 |
 | `sales.html` | 營運資料填報、審閱歷程與補充回覆 |
 | `exam.html` | 學科練習、模擬考、錯題本與術科申論 |
-| `game.html` | YouTube／Bilibili 宣導影音、知識條目與營運 SOP |
+| `game.html` | YouTube宣導影音、知識條目與營運 SOP |
 | `staff.html` | 員工、部門與出缺勤管理 |
 | `mis.html` | 網站設定、待審佇列、資料查閱、文件與題庫管理 |
 
