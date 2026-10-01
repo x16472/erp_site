@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from backend import data, doc
+from backend import app, data, doc
 from backend import input as user_input
 
 """用於辨識答案專區"""
@@ -121,6 +121,46 @@ class TrainingResponseTests(unittest.TestCase):
         payload = data._public_session_payload(session, rows)
         self.assertNotIn("answers", payload["questions"][0])
         self.assertNotIn("explanation", payload["questions"][0])
+
+
+class SecurityAndPerformanceTests(unittest.TestCase):
+    def test_request_scope_reuses_and_closes_connection(self) -> None:
+        connection = mock.Mock()
+        with mock.patch.object(data, "_new_connection", return_value=connection) as create:
+            with data.connection_scope():
+                first = data.connect()
+                second = data.connect()
+
+        self.assertIs(first, second)
+        create.assert_called_once_with(True, True)
+        connection.close.assert_called_once_with()
+
+    def test_staff_csv_check_is_throttled(self) -> None:
+        connection = mock.MagicMock()
+        connection.__enter__.return_value = connection
+        original_checked_at = data._staff_sync_checked_at
+        self.addCleanup(setattr, data, "_staff_sync_checked_at", original_checked_at)
+        data._staff_sync_checked_at = None
+        with mock.patch.object(data, "monotonic", side_effect=[100.0, 100.0, 110.0]), \
+             mock.patch.object(data, "connect", return_value=connection) as connect, \
+             mock.patch.object(data, "_sync_staff_csv_cursor", return_value=0) as sync:
+            data.sync_staff_csv()
+            data.sync_staff_csv()
+
+        connect.assert_called_once_with(read_only=False, autocommit=False)
+        sync.assert_called_once_with(connection.cursor())
+
+    def test_youtube_resolver_requires_csrf(self) -> None:
+        handler = object.__new__(app.Handler)
+        handler.path = "/api/youtube/resolve"
+        handler.require_employee = mock.Mock(return_value={"csrf": "token"})
+        handler.require_csrf = mock.Mock(return_value=False)
+        handler.read_json = mock.Mock()
+
+        handler.do_POST()
+
+        handler.require_csrf.assert_called_once_with({"csrf": "token"})
+        handler.read_json.assert_not_called()
 
 
 if __name__ == "__main__":

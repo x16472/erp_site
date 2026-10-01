@@ -73,6 +73,11 @@ class ExternalServiceUnavailable(RuntimeError):
 class Handler(BaseHTTPRequestHandler):
     server_version = "SilverShieldOperations/1.0"
 
+    def handle_one_request(self) -> None:
+        """讓同一 HTTP 請求中的資料查詢共用連線。"""
+        with data.connection_scope():
+            super().handle_one_request()
+
     def security_headers(self) -> None:
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
@@ -110,33 +115,25 @@ class Handler(BaseHTTPRequestHandler):
             raise user_input.InputError("請求內容必須是物件")
         return payload
 
-    def session(self) -> dict | None:
+    def _active_session(self, cookie_name: str, sessions: dict[str, dict]) -> dict | None:
         cookie = SimpleCookie(self.headers.get("Cookie", ""))
-        token = cookie.get("silver_shield_admin")
+        token = cookie.get(cookie_name)
         if not token:
             return None
         now = time.time()
         with SESSION_LOCK:
-            session = SESSIONS.get(token.value)
+            session = sessions.get(token.value)
             if not session or session["expires"] <= now:
-                SESSIONS.pop(token.value, None)
+                sessions.pop(token.value, None)
                 return None
             session["expires"] = now + SESSION_TTL
             return session
 
+    def session(self) -> dict | None:
+        return self._active_session("silver_shield_admin", SESSIONS)
+
     def employee_session(self) -> dict | None:
-        cookie = SimpleCookie(self.headers.get("Cookie", ""))
-        token = cookie.get("silver_shield_employee")
-        if not token:
-            return None
-        now = time.time()
-        with SESSION_LOCK:
-            session = EMPLOYEE_SESSIONS.get(token.value)
-            if not session or session["expires"] <= now:
-                EMPLOYEE_SESSIONS.pop(token.value, None)
-                return None
-            session["expires"] = now + SESSION_TTL
-            return session
+        return self._active_session("silver_shield_employee", EMPLOYEE_SESSIONS)
 
     def require_admin(self, employee_session: dict | None = None) -> dict | None:
         session = self.session()
@@ -343,7 +340,8 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/api/employee/logout":
                 return self.employee_logout()
             if parsed.path == "/api/youtube/resolve":
-                if not self.require_employee():
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
                     return
                 item = user_input.validate_youtube(self.read_json())
                 return self.send_json({"data": youtube_metadata(item)})

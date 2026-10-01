@@ -22,10 +22,10 @@ async function resolveVideo(url, remember = true) {
     youtubeStatus.className = 'hint';
     youtubeStatus.textContent = '正在確認影片並取得標題…';
     try {
-        await videoEmployeeAccess;
+        const session = await videoEmployeeAccess;
         const video = await apiData('/api/youtube/resolve', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': session.csrf },
             body: JSON.stringify({ url }),
             signal: controller.signal,
         }, '影片資訊取得失敗');

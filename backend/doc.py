@@ -43,6 +43,11 @@ OPTION_PATTERN = re.compile(
     re.DOTALL,
 )
 CHAPTER_PATTERN = re.compile(r"(?i)\bCH\s*0?(\d{1,2})\b\s*[:：-]?\s*([^\n]{0,80})")
+QUESTION_CODE_PATTERN = re.compile(
+    r"^\s*(?:>>>|\.\.\.|#|(?:async\s+)?def\s+|class\s+|from\s+\S+\s+import\s+|import\s+|"
+    r"if\s+|elif\s+|else:|for\s+|while\s+|try:|except\b|finally:|return\b|print\s*\(|"
+    r"[A-Za-z_]\w*\s*(?:=|\+=|-=|\*=|/=)).*"
+)
 # 目的是「精簡＋方便未來擴充關鍵字」，用資料驅動的寫法會更乾淨、更易維護
 _CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "財務行政": ("會計", "財務", "出納", "帳務", "稅務"),
@@ -506,12 +511,6 @@ def _question_content_blocks(text: str) -> list[dict[str, str]]:
     blocks: list[dict[str, str]] = []
     current_type = "text"
     current: list[str] = []
-    code_pattern = re.compile(
-        r"^\s*(?:>>>|\.\.\.|#|(?:async\s+)?def\s+|class\s+|from\s+\S+\s+import\s+|import\s+|"
-        r"if\s+|elif\s+|else:|for\s+|while\s+|try:|except\b|finally:|return\b|print\s*\(|"
-        r"[A-Za-z_]\w*\s*(?:=|\+=|-=|\*=|/=)).*"
-    )
-
     def flush() -> None:
         nonlocal current
         value = "\n".join(current).strip("\n")
@@ -520,7 +519,7 @@ def _question_content_blocks(text: str) -> list[dict[str, str]]:
         current = []
 
     for line in lines:
-        detected = "code" if code_pattern.match(line) else "text"
+        detected = "code" if QUESTION_CODE_PATTERN.match(line) else "text"
         if current and detected != current_type:
             flush()
         current_type = detected
@@ -543,7 +542,7 @@ def _parse_question_block(
     chapter_code: str,
     chapter_name: str,
 ) -> dict[str, Any] | None:
-    first_line, _, remainder = block.partition("\n")
+    first_line, _, remainder = block.strip().partition("\n")
     start = QUESTION_START_PATTERN.match(first_line.strip())
     if not start:
         return None

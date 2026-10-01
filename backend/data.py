@@ -9,9 +9,11 @@ import json
 import sys
 import threading
 import uuid
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
+from time import monotonic
 from typing import Any
 
 try:
@@ -24,6 +26,9 @@ PROJECT_ROOT = BACKEND_ROOT.parent
 PAGE_ROOT = PROJECT_ROOT / "page"
 STAFF_CSV = PROJECT_ROOT / "data" / "staff.csv"
 STAFF_SYNC_LOCK = threading.Lock()
+STAFF_SYNC_INTERVAL_SECONDS = 30
+_staff_sync_checked_at: float | None = None
+_REQUEST_CONNECTIONS = threading.local()
 
 # 本機驗證環境可將依賴放在 .deps；正式環境請使用 requirements.txt。
 LOCAL_DEPS = PROJECT_ROOT / ".deps"
@@ -55,8 +60,8 @@ def _load_env() -> dict[str, str]:
     return values
 
 
-def connect(read_only: bool = True, autocommit: bool = True):
-    """建立 SQL Server 連線；一般查詢預設使用唯讀意圖。"""
+def _new_connection(read_only: bool, autocommit: bool):
+    """建立實體 SQL Server 連線；由 ``connect`` 決定是否在請求內複用。"""
     cfg = _load_env()
     required = ("DatabaseIP", "DatabasePort", "DatabaseName", "DatabaseUser", "DatabasePassword")
     missing = [key for key in required if not cfg.get(key)]
@@ -76,6 +81,39 @@ def connect(read_only: bool = True, autocommit: bool = True):
         return pyodbc.connect(connection_string, autocommit=autocommit)
     except pyodbc.Error as exc:
         raise DatabaseUnavailable("無法連線至 SQL Server，請檢查網路與資料庫設定。") from exc
+
+
+def connect(read_only: bool = True, autocommit: bool = True):
+    """取得 SQL Server 連線；HTTP 請求範圍內複用相同用途的連線。"""
+    connections = getattr(_REQUEST_CONNECTIONS, "connections", None)
+    key = (read_only, autocommit)
+    if connections is not None:
+        connection = connections.get(key)
+        if connection is None:
+            connection = _new_connection(read_only, autocommit)
+            connections[key] = connection
+        return connection
+    return _new_connection(read_only, autocommit)
+
+
+@contextmanager
+def connection_scope():
+    """在單一 HTTP 請求內複用連線，並於請求完成後確實釋放。"""
+    if getattr(_REQUEST_CONNECTIONS, "connections", None) is not None:
+        yield
+        return
+
+    connections: dict[tuple[bool, bool], Any] = {}
+    _REQUEST_CONNECTIONS.connections = connections
+    try:
+        yield
+    finally:
+        del _REQUEST_CONNECTIONS.connections
+        for connection in connections.values():
+            try:
+                connection.close()
+            except pyodbc.Error:
+                pass
 
 
 def admin_credentials() -> tuple[str, str]:
@@ -368,19 +406,7 @@ def knowledge() -> list[dict[str, Any]]:
 
 def _default_questions() -> list[dict[str, Any]]:
     """提供不含實際員工或客戶資料的商業營運檢核題目。"""
-    return [
-#         {"id": 1, "category": "資料治理",
-#           "question": "營運儀表板需要顯示人員規模時，最合適的做法是？",
-#           "options": [
-#               "公開完整員工主檔", "由後端回傳彙總人數", "顯示私人聯絡方式", "下載薪資明細"
-#               ],
-#           "answer": 1, "explanation": "彙總數字足以支援營運判斷，不需暴露成員個人資料。"},
-#         {"id": 2, "category": "合約覆核", "question": "建立商業合約或帳務紀錄前，應優先確認什麼？", "options": [
-#             "交易項目與授權範圍", "員工私人帳號", "客戶證件影本", "網站配色"
-#             ], "answer": 0, "explanation": "先確認交易標的、責任與授權，才能維持完整且可稽核的紀錄。"},
-#         {"id": 3, "category": "權限管理", "question": "專案協作人員的內部資料權限應採哪一種原則？", "options": ["永久管理權", "開放全部資料", "依工作範圍與期限開放", "共用管理員帳號"], "answer": 2, "explanation": "依實際職責與期限授權，才能符合最小權限原則。"},
-#         {"id": 4, "category": "工安管理", "question": "進入製造區或礦場前，最先應完成哪項程序？", "options": ["跳過現場點名", "確認防護裝備與作業許可", "自行修改機具設定", "將安全資料公開轉傳"], "answer": 1, "explanation": "高風險作業必須先確認個人防護、現場授權與設備狀態。"},
-    ]
+    return []
 
 
 APPLICATION_TABLES = (
@@ -850,13 +876,29 @@ def _sync_staff_csv_cursor(cursor) -> int:
     return imported
 
 
-def sync_staff_csv() -> int:
-    """掃描 data/staff.csv，並在檔案內容更新後同步 SQL Server。"""
+def sync_staff_csv(*, force: bool = False) -> int:
+    """至多每 30 秒檢查一次 staff.csv；管理流程可強制立即同步。"""
+    global _staff_sync_checked_at
+    checked_at = monotonic()
+    if (
+        not force
+        and _staff_sync_checked_at is not None
+        and checked_at - _staff_sync_checked_at < STAFF_SYNC_INTERVAL_SECONDS
+    ):
+        return 0
     with STAFF_SYNC_LOCK:
+        checked_at = monotonic()
+        if (
+            not force
+            and _staff_sync_checked_at is not None
+            and checked_at - _staff_sync_checked_at < STAFF_SYNC_INTERVAL_SECONDS
+        ):
+            return 0
         try:
             with connect(read_only=False, autocommit=False) as db:
                 imported = _sync_staff_csv_cursor(db.cursor())
                 db.commit()
+                _staff_sync_checked_at = checked_at
                 return imported
         except OSError as exc:
             raise DatabaseUnavailable("員工 CSV 無法讀取。") from exc
@@ -1539,13 +1581,19 @@ def _grade_snapshot(snapshot: dict[str, Any], response: dict[str, Any]) -> bool:
 
 
 def _record_wrong(cursor, employee_id: str, question_id: int) -> None:
-    cursor.execute("""
+    _record_wrong_many(cursor, [(employee_id, question_id)])
+
+
+def _record_wrong_many(cursor, records: list[tuple[str, int]]) -> None:
+    if not records:
+        return
+    cursor.executemany("""
         MERGE dbo.Company_TrainingWrongQuestion AS target
         USING (SELECT ? AS employee_id,? AS question_id) AS source
         ON target.employee_id=source.employee_id AND target.question_id=source.question_id
         WHEN MATCHED THEN UPDATE SET removed_at=NULL,added_at=SYSUTCDATETIME()
         WHEN NOT MATCHED THEN INSERT (employee_id,question_id) VALUES (source.employee_id,source.question_id);
-    """, employee_id, question_id)
+    """, records)
 
 
 def save_training_answer(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
@@ -1608,18 +1656,23 @@ def submit_training_session(session_id: str, employee_id: str) -> dict[str, Any]
         try:
             with connect(read_only=False, autocommit=False) as db:
                 cursor = db.cursor()
+                grade_updates: list[tuple[int, str, int]] = []
+                wrong_records: list[tuple[str, int]] = []
                 for row in rows:
                     snapshot = _loads_json(row["snapshot_json"], {})
                     response = _loads_json(row.get("response_json"), {})
                     correct = _grade_snapshot(snapshot, response)
                     correct_count += int(correct)
-                    cursor.execute("""
+                    grade_updates.append((int(correct), session_id, row["question_order"]))
+                    if not correct and response.get("answers") not in (None, [], ""):
+                        wrong_records.append((employee_id, row["question_id"]))
+                    row["is_correct"] = correct
+                if grade_updates:
+                    cursor.executemany("""
                         UPDATE dbo.Company_TrainingSessionQuestion SET is_correct=?
                         WHERE session_id=? AND question_order=?
-                    """, int(correct), session_id, row["question_order"])
-                    if not correct and response.get("answers") not in (None, [], ""):
-                        _record_wrong(cursor, employee_id, row["question_id"])
-                    row["is_correct"] = correct
+                    """, grade_updates)
+                _record_wrong_many(cursor, wrong_records)
                 score = round(correct_count * 100 / max(1, len(rows)), 2)
                 cursor.execute("""
                     UPDATE dbo.Company_TrainingSession
@@ -1743,32 +1796,44 @@ def import_training_question_drafts(
             failure_messages: dict[str, list[str]] = {}
             for failure in failures:
                 failure_messages.setdefault(failure.get("source", ""), []).append(failure.get("message", ""))
+            source_updates = []
             for source_name in set(draft_counts) | set(warning_messages) | set(failure_messages):
                 messages = failure_messages.get(source_name) or warning_messages.get(source_name, [])
-                cursor.execute("""
+                source_updates.append((
+                    "question_bank" if draft_counts.get(source_name) or failure_messages.get(source_name) else "manual",
+                    "failed" if failure_messages.get(source_name) else (
+                        "warning" if warning_messages.get(source_name) else "parsed"
+                    ),
+                    "；".join(messages)[:1000] or None,
+                    source_name,
+                ))
+            if source_updates:
+                cursor.executemany("""
                     UPDATE dbo.Company_TrainingDocument
                     SET source_kind=?,parse_status=?,parse_message=?
                     WHERE file_name=?
-                """, "question_bank" if draft_counts.get(source_name) or failure_messages.get(source_name) else "manual",
-                     "failed" if failure_messages.get(source_name) else (
-                         "warning" if warning_messages.get(source_name) else "parsed"
-                     ),
-                     "；".join(messages)[:1000] or None,
-                     source_name)
+                """, source_updates)
             seen: set[str] = set()
+            classification_cache: dict[tuple[str, str, str, str], tuple[int, int]] = {}
+            question_updates = []
+            question_inserts = []
             for draft in drafts:
                 fingerprint = draft["source_fingerprint"]
                 if fingerprint in seen:
                     result["duplicates"] += 1
                     continue
                 seen.add(fingerprint)
-                subject_id, chapter_id = _ensure_training_classification(
-                    cursor,
+                classification = (
                     draft.get("domain", "academic"),
                     draft.get("subject") or "未分類",
                     draft.get("chapter_code") or "UNSORTED",
                     draft.get("chapter") or "未分類",
                 )
+                if classification not in classification_cache:
+                    classification_cache[classification] = _ensure_training_classification(
+                        cursor, *classification,
+                    )
+                subject_id, chapter_id = classification_cache[classification]
                 document_id = documents.get(draft.get("source_document"))
                 previous = cursor.execute("""
                     SELECT question_id,admin_locked FROM dbo.Company_TrainingQuestion
@@ -1793,26 +1858,30 @@ def import_training_question_drafts(
                     json.dumps(draft.get("parse_warnings", []), ensure_ascii=False),
                 )
                 if previous:
-                    cursor.execute("""
-                        UPDATE dbo.Company_TrainingQuestion
-                        SET document_id=?,subject_id=?,chapter_id=?,domain=?,category=?,question=?,
-                            options_json=?,correct_index=?,explanation=?,question_type=?,answer_json=?,
-                            content_json=?,structure_json=?,source_locator=?,source_question_key=?,
-                            source_fingerprint=?,parse_confidence=?,parse_warnings_json=?,
-                            status=N'draft',is_active=0,updated_at=SYSDATETIME()
-                        WHERE question_id=? AND admin_locked=0
-                    """, *values, previous[0])
+                    question_updates.append((*values, previous[0]))
                     result["updated"] += 1
                 else:
-                    cursor.execute("""
-                        INSERT dbo.Company_TrainingQuestion
-                        (document_id,subject_id,chapter_id,domain,category,question,options_json,
-                         correct_index,explanation,question_type,answer_json,content_json,structure_json,
-                         source_locator,source_question_key,source_fingerprint,parse_confidence,
-                         parse_warnings_json,status,is_active,admin_locked)
-                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,N'draft',0,0)
-                    """, *values)
+                    question_inserts.append(values)
                     result["created"] += 1
+            if question_updates:
+                cursor.executemany("""
+                    UPDATE dbo.Company_TrainingQuestion
+                    SET document_id=?,subject_id=?,chapter_id=?,domain=?,category=?,question=?,
+                        options_json=?,correct_index=?,explanation=?,question_type=?,answer_json=?,
+                        content_json=?,structure_json=?,source_locator=?,source_question_key=?,
+                        source_fingerprint=?,parse_confidence=?,parse_warnings_json=?,
+                        status=N'draft',is_active=0,updated_at=SYSDATETIME()
+                    WHERE question_id=? AND admin_locked=0
+                """, question_updates)
+            if question_inserts:
+                cursor.executemany("""
+                    INSERT dbo.Company_TrainingQuestion
+                    (document_id,subject_id,chapter_id,domain,category,question,options_json,
+                     correct_index,explanation,question_type,answer_json,content_json,structure_json,
+                     source_locator,source_question_key,source_fingerprint,parse_confidence,
+                     parse_warnings_json,status,is_active,admin_locked)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,N'draft',0,0)
+                """, question_inserts)
             db.commit()
         return result
     except pyodbc.Error as exc:
