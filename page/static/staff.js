@@ -15,6 +15,16 @@ const apiState = document.querySelector('#apiState'),
     staffPhoto = document.querySelector('#staffPhoto'),
     photoPreview = document.querySelector('#photoPreview'),
     resetStaff = document.querySelector('#resetStaff'),
+    addStaff = document.querySelector('#addStaff'),
+    disableCurrentStaff = document.querySelector('#disableCurrentStaff'),
+    staffSearch = document.querySelector('#staffSearch'),
+    staffDirectoryTitle = document.querySelector('#staffDirectoryTitle'),
+    staffEditingLabel = document.querySelector('#staffEditingLabel'),
+    organizationTree = document.querySelector('#organizationTree'),
+    organizationSummary = document.querySelector('#organizationSummary'),
+    includeInactiveStaff = document.querySelector('#includeInactiveStaff'),
+    expandOrganization = document.querySelector('#expandOrganization'),
+    collapseOrganization = document.querySelector('#collapseOrganization'),
     filterForm = document.querySelector('#filterForm'),
     employeeFilter = document.querySelector('#employeeFilter'),
     attendanceBody = document.querySelector('#attendanceBody'),
@@ -27,8 +37,8 @@ const apiState = document.querySelector('#apiState'),
     departmentList = document.querySelector('#departmentList'),
     departmentStatus = document.querySelector('#departmentStatus'),
     resetDepartment = document.querySelector('#resetDepartment');
-let csrf = '', staffItems = [], departmentItems = [],
-    previewUrl = '';
+let csrf = '', staffItems = [], departmentItems = [], previewUrl = '',
+    selectedEmployeeId = '', selectedDepartment = '', staffSearchTerm = '';
 function showLogin() {
     loginShell.hidden = false;
     staffConsole.hidden = true;
@@ -38,23 +48,52 @@ function showLogin() {
 function photoUrl(item) {
     return item.photo_file ? `static/staff/${encodeURIComponent(item.photo_file)}` : 'static/appicon.png'
 }
+function visibleStaff() {
+    const keyword = staffSearchTerm.toLocaleLowerCase('zh-TW');
+    return staffItems.filter(item => {
+        if (!includeInactiveStaff.checked && !item.is_active) return false;
+        if (selectedDepartment && item.department !== selectedDepartment) return false;
+        if (!keyword) return true;
+        return [item.employee_id, item.display_name, item.department, item.position]
+            .some(value => String(value || '').toLocaleLowerCase('zh-TW').includes(keyword))
+    })
+}
+function renderOrganization() {
+    const companyStaff = staffItems.filter(item => includeInactiveStaff.checked || item.is_active);
+    const departments = departmentItems.filter(item => item.is_active || companyStaff.some(staff => staff.department === item.name));
+    organizationTree.innerHTML = `<button class="organization-node root-node ${selectedDepartment ? '' : 'active'}" type="button" data-department="">
+        <span>銀盾共同體</span><em>${companyStaff.length} 人</em></button>
+        <div class="organization-branches">${departments.map(department => {
+            const count = companyStaff.filter(item => item.department === department.name).length;
+            return `<button class="organization-node ${selectedDepartment === department.name ? 'active' : ''}" type="button" data-department="${esc(department.name)}">
+                <span>${esc(department.name)}</span><em>${count} 人</em></button>`
+        }).join('') || '<div class="empty">尚未建立部門</div>'}</div>`;
+    const selectedCount = selectedDepartment
+        ? companyStaff.filter(item => item.department === selectedDepartment).length
+        : companyStaff.length;
+    organizationSummary.textContent = `${selectedDepartment || '全公司'} · ${selectedCount} 位員工`
+}
 function renderStaff() {
-    staffList.innerHTML = staffItems.map(item =>
-        `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><img src="${photoUrl(item)}" alt="${esc(item.display_name)}">
-        <div><b>${esc(item.employee_id)}｜${esc(item.display_name)}</b>
-            <small>${esc(item.department)} · ${esc(item.position)}${item.is_active ? '' : ' · 已停用'}</small></div>
-            <div class="btn-group"><button class="btn secondary" data-edit="${esc(item.employee_id)}">編輯</button>
-                ${item.is_active ? `<button class="btn secondary" data-disable="${esc(item.employee_id)}">停用</button>` : ''}</div></article>`).join('') || '<div class="empty">目前沒有員工資料。</div>';
+    const items = visibleStaff();
+    staffDirectoryTitle.textContent = `${selectedDepartment ? `[${selectedDepartment}] ` : ''}員工清單（共 ${items.length} 人）`;
+    staffList.innerHTML = items.map(item =>
+        `<tr class="${selectedEmployeeId === item.employee_id ? 'selected' : ''} ${item.is_active ? '' : 'inactive'}" data-select="${esc(item.employee_id)}" tabindex="0">
+            <td>${esc(item.employee_id)}</td>
+            <td><span class="staff-name-cell"><img src="${photoUrl(item)}" alt=""><b>${esc(item.display_name)}</b></span></td>
+            <td>${esc(item.department)}</td><td>${esc(item.position)}</td><td>${esc(item.gender)}</td><td>${esc(item.age)}</td>
+            <td><span class="employment-status ${item.is_active ? 'active' : 'inactive'}">${item.is_active ? '在職' : '已停用'}</span></td></tr>`).join('') || '<tr><td colspan="7" class="empty">目前沒有符合條件的員工資料。</td></tr>';
     employeeFilter.innerHTML = '<option value="">全部員工</option>' + staffItems.filter(item => item.is_active).map(item =>
         `<option value="${esc(item.employee_id)}">${esc(item.employee_id)}｜${esc(item.display_name)}</option>`).join('');
-    bindImageFallbacks(staffList)
+    bindImageFallbacks(staffList);
+    renderOrganization()
 }
 async function loadStaff() {
     staffItems = await request('/api/admin/staff');
     renderStaff()
 }
 function renderDepartments() {
-    staffDepartment.innerHTML = '<option value="">請選擇部門</option>' + departmentItems.filter(item => item.is_active).map(item => `<option value="${esc(item.name)}">${esc(item.name)}</option>`).join(''); departmentList.innerHTML = departmentItems.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><div><b>${esc(item.name)}</b><small>${item.staff_count} 位在職員工${item.is_active ? '' : ' · 已停用'}</small></div><div class="btn-group"><button class="btn secondary" data-department-edit="${item.id}">編輯</button>${item.is_active ? `<button class="btn secondary" data-department-disable="${item.id}">停用</button>` : ''}</div></article>`).join('') || '<div class="empty">目前沒有部門資料。</div>'
+    staffDepartment.innerHTML = '<option value="">請選擇部門</option>' + departmentItems.filter(item => item.is_active).map(item => `<option value="${esc(item.name)}">${esc(item.name)}</option>`).join(''); departmentList.innerHTML = departmentItems.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><div><b>${esc(item.name)}</b><small>${item.staff_count} 位在職員工${item.is_active ? '' : ' · 已停用'}</small></div><div class="btn-group"><button class="btn secondary" data-department-edit="${item.id}">編輯</button>${item.is_active ? `<button class="btn secondary" data-department-disable="${item.id}">停用</button>` : ''}</div></article>`).join('') || '<div class="empty">目前沒有部門資料。</div>';
+    renderOrganization()
 }
 async function loadDepartments() {
     departmentItems = await request('/api/admin/departments'); renderDepartments()
@@ -78,29 +117,74 @@ const readPhoto = file => new Promise((resolve, reject) => {
 let focusingInvalid = false; staffForm.addEventListener('invalid', event => { if (focusingInvalid) return; focusingInvalid = true; event.target.focus(); staffStatus.className = 'error-note'; staffStatus.textContent = `請完成必填欄位：${event.target.closest('.field')?.querySelector('span')?.textContent || '員工資料'}`; setTimeout(() => { focusingInvalid = false }, 0) }, true);
 function resetStaffForm() {
     staffForm.reset();
-    staffForm.elements.employee_id.readOnly = false; staffForm.elements.employee_id.closest('.primary-key-field').classList.remove('locked'); photoPreview.src = 'static/appicon.png'; staffStatus.textContent = ''; if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = '' }
+    selectedEmployeeId = '';
+    staffForm.elements.employee_id.readOnly = false;
+    staffForm.elements.employee_id.closest('.primary-key-field').classList.remove('locked');
+    photoPreview.src = 'static/appicon.png';
+    staffEditingLabel.textContent = '新增員工';
+    disableCurrentStaff.disabled = true;
+    staffStatus.textContent = '';
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = '' }
+    renderStaff()
 }
 staffPhoto.onchange = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     const file = staffPhoto.files[0]; previewUrl = file ? URL.createObjectURL(file) : '';
     photoPreview.src = previewUrl || 'static/appicon.png'
 };
-staffList.onclick = async event => {
-    const edit = event.target.closest('[data-edit]'),
-        disable = event.target.closest('[data-disable]');
-    if (edit) {
-        const item = staffItems.find(row => row.employee_id === edit.dataset.edit);
-        if (!item) return;
-        for (const name of ['employee_id', 'display_name', 'gender', 'age', 'department', 'position', 'traits', 'biography']) staffForm.elements[name].value = item[name] ?? ''; staffForm.elements.employee_id.readOnly = true; staffForm.elements.employee_id.closest('.primary-key-field').classList.add('locked'); photoPreview.src = photoUrl(item); staffForm.scrollIntoView({ behavior: 'smooth' })
-    } if (disable && confirm(`確定停用員工 ${disable.dataset.disable}？`)) {
-        await request('/api/admin/staff', {
-            method: 'DELETE', headers: {
-                'Content-Type': 'application/json', 'X-CSRF-Token': csrf
-            }, body: JSON.stringify({ employee_id: disable.dataset.disable })
-        }); await loadStaff();
-        await loadAttendance()
+function selectStaff(employeeId) {
+    const item = staffItems.find(row => row.employee_id === employeeId);
+    if (!item) return;
+    selectedEmployeeId = item.employee_id;
+    for (const name of ['employee_id', 'display_name', 'gender', 'age', 'department', 'position', 'traits', 'biography']) {
+        staffForm.elements[name].value = item[name] ?? ''
     }
+    staffForm.elements.employee_id.readOnly = true;
+    staffForm.elements.employee_id.closest('.primary-key-field').classList.add('locked');
+    photoPreview.src = photoUrl(item);
+    staffEditingLabel.textContent = `正在編輯：[${item.employee_id}] ${item.display_name}`;
+    disableCurrentStaff.disabled = !item.is_active;
+    staffStatus.textContent = '';
+    renderStaff()
+}
+async function deactivateStaff(employeeId) {
+    if (!employeeId || !confirm(`確定停用員工 ${employeeId}？`)) return;
+    await request('/api/admin/staff', {
+        method: 'DELETE', headers: {
+            'Content-Type': 'application/json', 'X-CSRF-Token': csrf
+        }, body: JSON.stringify({ employee_id: employeeId })
+    });
+    resetStaffForm();
+    await Promise.all([loadStaff(), loadAttendance()])
+}
+staffList.onclick = event => {
+    const row = event.target.closest('[data-select]');
+    if (row) selectStaff(row.dataset.select)
 };
+staffList.onkeydown = event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const row = event.target.closest('[data-select]');
+    if (row) { event.preventDefault(); selectStaff(row.dataset.select) }
+};
+organizationTree.onclick = event => {
+    const node = event.target.closest('[data-department]');
+    if (!node) return;
+    selectedDepartment = node.dataset.department;
+    renderStaff()
+};
+staffSearch.oninput = () => {
+    staffSearchTerm = staffSearch.value.trim();
+    renderStaff()
+};
+includeInactiveStaff.onchange = renderStaff;
+expandOrganization.onclick = () => organizationTree.classList.remove('collapsed');
+collapseOrganization.onclick = () => organizationTree.classList.add('collapsed');
+addStaff.onclick = () => {
+    resetStaffForm();
+    staffForm.elements.employee_id.focus();
+    staffForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+};
+disableCurrentStaff.onclick = () => deactivateStaff(selectedEmployeeId);
 staffForm.onsubmit = async event => {
     event.preventDefault();
     const submitter = event.submitter;

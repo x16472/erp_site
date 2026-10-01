@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>員工出缺勤｜銀盾共同體營運中心</title>
+    <title>員工管理｜銀盾共同體營運中心</title>
     <link rel="stylesheet" href="./static/style.css">
 </head>
 
@@ -19,7 +19,7 @@
                 <a href="sales.html">營運日報</a>
                 <a href="exam.html">題庫練習</a>
                 <a href="game.html">宣導影音</a>
-                <a class="active" href="staff.html">員工出缺勤</a>
+                <a class="active" href="staff.html">員工管理</a>
                 <a href="mis.html">後台管理</a>
             </nav>
             <p class="portal-foot">ADMIN ONLY · 需管理員登入</p>
@@ -28,7 +28,7 @@
             <header class="portal-topbar">
                 <div>
                     <span class="top-kicker">STAFF MANAGEMENT</span>
-                    <h1>員工出缺勤</h1>
+                    <h1>員工管理</h1>
                 </div>
                 <span class="api-state" id="apiState">檢查登入狀態</span>
             </header>
@@ -59,64 +59,117 @@
                     <button data-panel="attendancePanel">打卡紀錄</button>
                 </nav>
                 <section class="admin-panel active" id="staffPanel">
-                    <div class="portal-grid staff-maintenance">
-                        <form class="portal-card narrow" id="staffForm">
-                            <div class="card-head">
-                                <div><span class="eyebrow">STAFF PROFILE</span>
-                                    <h2>新增或更新員工</h2>
+                    <div class="staff-manager-workspace">
+                        <aside class="organization-pane" aria-label="公司組織架構">
+                            <div class="organization-head">
+                                <div>
+                                    <span class="eyebrow">ORGANIZATION</span>
+                                    <h2>組織架構</h2>
+                                </div>
+                                <div class="tree-actions">
+                                    <button type="button" id="expandOrganization">展開</button>
+                                    <button type="button" id="collapseOrganization">摺疊</button>
                                 </div>
                             </div>
-                            <label class="field primary-key-field">
-                                <span>員工編號（建立後不可變更）</span>
-                                <input name="employee_id" maxlength="10" pattern="[A-Za-z0-9_-]+" required>
+                            <label class="organization-option">
+                                <input id="includeInactiveStaff" type="checkbox">
+                                顯示已停用員工
                             </label>
-                            <label class="field"><span>姓名</span>
-                                <input name="display_name" maxlength="50" required></label>
-                            <div class="form-grid">
-                                <label class="field">
-                                    <span>性別</span>
-                                    <select name="gender" required>
-                                        <option value="">請選擇性別</option>
-                                        <option value="男">男</option>
-                                        <option value="女">女</option>
-                                        <option value="其他">其他</option>
-                                    </select></label><label class="field">
-                                    <span>年齡</span>
-                                    <input name="age" type="number" min="18" max="100" step="1" required>
-                                </label>
+                            <div class="organization-tree" id="organizationTree">
+                                <div class="empty">載入組織資料中…</div>
                             </div>
-                            <label class="field"><span>部門</span>
-                                <select name="department" id="staffDepartment" required>
-                                    <option value="">請先維護部門</option>
-                                </select></label>
-                            <label class="field"><span>職位</span>
-                                <input name="position" maxlength="50" required></label>
-                            <label class="field"><span>個性特質</span>
-                                <textarea name="traits" maxlength="200"></textarea></label>
-                            <label class="field"><span>背景簡述</span>
-                                <textarea name="biography" maxlength="1000"></textarea></label>
-                            <label class="field photo-upload"><span>個人照片（JPEG、PNG、WebP，最大 5 MB）</span>
-                                <input name="photo" id="staffPhoto" type="file"
-                                    accept="image/jpeg,image/png,image/webp">
-                                <small>上傳後會自動改成員工編號作為檔名。</small></label>
-                            <img class="staff-photo-preview" id="photoPreview" src="static/appicon.png" alt="員工照片預覽">
-                            <div class="actions">
-                                <button class="btn" type="submit">儲存員工資料</button>
-                                <button class="btn secondary" id="resetStaff" type="button">新增另一位</button>
-                            </div>
-                            <p id="staffStatus" aria-live="polite"></p>
-                        </form>
-                        <section class="portal-card wide">
-                            <div class="card-head">
-                                <div><span class="eyebrow">STAFF DIRECTORY</span>
-                                    <h2>員工名冊</h2>
-                                    <p>員工主檔固定依員工編號排列，便於管理與查核。</p>
+                            <p class="organization-summary" id="organizationSummary">全公司</p>
+                        </aside>
+
+                        <div class="staff-master-detail">
+                            <section class="staff-directory-pane">
+                                <div class="staff-directory-toolbar">
+                                    <div>
+                                        <span class="eyebrow">STAFF DIRECTORY</span>
+                                        <h2 id="staffDirectoryTitle">員工清單</h2>
+                                    </div>
+                                    <div class="staff-directory-actions">
+                                        <label class="staff-search">
+                                            <span class="sr-only">搜尋員工</span>
+                                            <input id="staffSearch" type="search" placeholder="搜尋姓名、編號、職稱…">
+                                        </label>
+                                        <button class="btn" id="addStaff" type="button">＋ 新增員工</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="staff-admin-list" id="staffList">
-                                <div class="empty">載入中…</div>
-                            </div>
-                        </section>
+                                <div class="staff-table-scroll">
+                                    <table class="staff-directory-table">
+                                        <thead>
+                                            <tr>
+                                                <th>員工編號</th>
+                                                <th>員工姓名</th>
+                                                <th>所屬部門</th>
+                                                <th>職稱</th>
+                                                <th>性別</th>
+                                                <th>年齡</th>
+                                                <th>在職狀態</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="staffList">
+                                            <tr><td colspan="7" class="empty">載入中…</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            <form class="staff-detail-pane" id="staffForm">
+                                <div class="staff-detail-title">
+                                    <div>
+                                        <span class="eyebrow">STAFF PROFILE</span>
+                                        <h2>員工明細與編輯</h2>
+                                    </div>
+                                    <span class="staff-editing-label" id="staffEditingLabel">新增員工</span>
+                                </div>
+                                <div class="staff-detail-body">
+                                    <div class="staff-photo-column">
+                                        <img class="staff-photo-preview" id="photoPreview" src="static/appicon.png" alt="員工照片預覽">
+                                        <label class="btn secondary photo-select-button" for="staffPhoto">更換照片</label>
+                                        <input class="sr-only" name="photo" id="staffPhoto" type="file"
+                                            accept="image/jpeg,image/png,image/webp">
+                                        <small>JPEG、PNG、WebP，最大 5 MB</small>
+                                    </div>
+                                    <div class="staff-fields">
+                                        <label class="field primary-key-field"><span>員工編號</span>
+                                            <input name="employee_id" maxlength="10" pattern="[A-Za-z0-9_-]+" required>
+                                        </label>
+                                        <label class="field"><span>姓名</span>
+                                            <input name="display_name" maxlength="50" required></label>
+                                        <label class="field"><span>部門</span>
+                                            <select name="department" id="staffDepartment" required>
+                                                <option value="">請先維護部門</option>
+                                            </select></label>
+                                        <label class="field"><span>職位</span>
+                                            <input name="position" maxlength="50" required></label>
+                                        <label class="field"><span>性別</span>
+                                            <select name="gender" required>
+                                                <option value="">請選擇性別</option>
+                                                <option value="男">男</option>
+                                                <option value="女">女</option>
+                                                <option value="其他">其他</option>
+                                            </select></label>
+                                        <label class="field"><span>年齡</span>
+                                            <input name="age" type="number" min="18" max="100" step="1" required>
+                                        </label>
+                                        <label class="field full"><span>個性特質</span>
+                                            <textarea name="traits" maxlength="200"></textarea></label>
+                                        <label class="field full"><span>背景簡述</span>
+                                            <textarea name="biography" maxlength="1000"></textarea></label>
+                                    </div>
+                                </div>
+                                <div class="staff-detail-footer">
+                                    <p id="staffStatus" aria-live="polite"></p>
+                                    <div class="actions">
+                                        <button class="btn secondary" id="resetStaff" type="button">還原／新增</button>
+                                        <button class="btn red" id="disableCurrentStaff" type="button" disabled>停用員工</button>
+                                        <button class="btn" type="submit">儲存修改</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </section>
                 <section class="admin-panel" id="departmentPanel">
