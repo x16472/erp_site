@@ -123,6 +123,47 @@ class TrainingResponseTests(unittest.TestCase):
         self.assertNotIn("explanation", payload["questions"][0])
 
 
+class DatabaseConnectionTests(unittest.TestCase):
+    def test_connection_string_includes_escaped_password(self) -> None:
+        config = {
+            "DatabaseIP": "db.example",
+            "DatabasePort": "1433",
+            "DatabaseName": "company;prod",
+            "DatabaseUser": "service}user",
+            "DatabasePassword": "p;ass}word",
+        }
+        with mock.patch.object(data, "_load_env", return_value=config), \
+             mock.patch.object(data.mssql_python, "connect") as connect:
+            data._new_connection(read_only=False, autocommit=False)
+
+        connect.assert_called_once_with(
+            "Server={db.example,1433};"
+            "Database={company;prod};"
+            "UID={service}}user};"
+            "PWD={p;ass}}word};"
+            "Encrypt=no;TrustServerCertificate=yes;",
+            autocommit=False,
+            timeout=5,
+        )
+
+    def test_read_only_connection_sets_application_intent(self) -> None:
+        config = {
+            "DatabaseIP": "db.example",
+            "DatabasePort": "1433",
+            "DatabaseName": "company",
+            "DatabaseUser": "service",
+            "DatabasePassword": "secret",
+        }
+        with mock.patch.object(data, "_load_env", return_value=config), \
+             mock.patch.object(data.mssql_python, "connect") as connect:
+            data._new_connection(read_only=True, autocommit=True)
+
+        connection_string = connect.call_args.args[0]
+        self.assertIn("ApplicationIntent=ReadOnly;", connection_string)
+        self.assertTrue(connect.call_args.kwargs["autocommit"])
+        self.assertEqual(connect.call_args.kwargs["timeout"], 5)
+
+
 class SecurityAndPerformanceTests(unittest.TestCase):
     def test_request_scope_reuses_and_closes_connection(self) -> None:
         connection = mock.Mock()

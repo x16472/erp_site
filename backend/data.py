@@ -36,9 +36,9 @@ if LOCAL_DEPS.is_dir():
     sys.path.insert(0, str(LOCAL_DEPS))
 
 try:
-    import pyodbc
+    import mssql_python
 except ImportError as exc:  # pragma: no cover - 僅在缺少執行環境時發生
-    raise RuntimeError("缺少 pyodbc，請先執行 pip install -r requirements.txt") from exc
+    raise RuntimeError("缺少 mssql-python，請先執行 pip install -r requirements.txt") from exc
 
 
 class DatabaseUnavailable(RuntimeError):
@@ -60,6 +60,11 @@ def _load_env() -> dict[str, str]:
     return values
 
 
+def _connection_value(value: str) -> str:
+    """Quote a connection-string value, including embedded braces."""
+    return "{" + value.replace("}", "}}") + "}"
+
+
 def _new_connection(read_only: bool, autocommit: bool):
     """建立實體 SQL Server 連線；由 ``connect`` 決定是否在請求內複用。"""
     cfg = _load_env()
@@ -68,18 +73,18 @@ def _new_connection(read_only: bool, autocommit: bool):
     if missing:
         raise DatabaseUnavailable(f"缺少資料庫設定：{', '.join(missing)}")
 
-    driver = cfg.get("DatabaseDriver", "ODBC Driver 17 for SQL Server")
+    server = f"{cfg['DatabaseIP']},{cfg['DatabasePort']}"
     connection_string = (
-        f"DRIVER={{{driver}}};"
-        f"SERVER={cfg['DatabaseIP']},{cfg['DatabasePort']};"
-        f"DATABASE={cfg['DatabaseName']};"
-        f"UID={cfg['DatabaseUser']};PWD={cfg['DatabasePassword']};"
-        "Encrypt=no;TrustServerCertificate=yes;Connection Timeout=5;"
+        f"Server={_connection_value(server)};"
+        f"Database={_connection_value(cfg['DatabaseName'])};"
+        f"UID={_connection_value(cfg['DatabaseUser'])};"
+        f"PWD={_connection_value(cfg['DatabasePassword'])};"
+        "Encrypt=no;TrustServerCertificate=yes;"
         + ("ApplicationIntent=ReadOnly;" if read_only else "")
     )
     try:
-        return pyodbc.connect(connection_string, autocommit=autocommit)
-    except pyodbc.Error as exc:
+        return mssql_python.connect(connection_string, autocommit=autocommit, timeout=5)
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("無法連線至 SQL Server，請檢查網路與資料庫設定。") from exc
 
 
@@ -112,7 +117,7 @@ def connection_scope():
         for connection in connections.values():
             try:
                 connection.close()
-            except pyodbc.Error:
+            except mssql_python.Error:
                 pass
 
 
@@ -136,7 +141,7 @@ def _fetch(query: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
             return [dict(zip(columns, (_json_value(value) for value in row))) for row in cursor.fetchall()]
     except DatabaseUnavailable:
         raise
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("SQL Server 查詢失敗，請由管理者確認資料表結構。") from exc
 
 
@@ -323,7 +328,7 @@ def save_site_settings(settings: dict[str, str], actor: str) -> dict[str, str]:
                  settings["theme"], settings["hero_title"], settings["hero_subtitle"], settings["announcement"], actor)
             db.commit()
         return settings
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("網站設定寫入失敗，請確認管理帳號的資料表權限。") from exc
 
 
@@ -818,7 +823,7 @@ def ensure_application_schema() -> dict[str, Any]:
             """)
             db.commit()
         return {"tables": list(APPLICATION_TABLES + WORKFLOW_TABLES), "status": "ready"}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("網站應用資料表建立失敗，請確認資料庫帳號具備建表權限。") from exc
 
 
@@ -902,7 +907,7 @@ def sync_staff_csv(*, force: bool = False) -> int:
                 return imported
         except OSError as exc:
             raise DatabaseUnavailable("員工 CSV 無法讀取。") from exc
-        except pyodbc.Error as exc:
+        except mssql_python.Error as exc:
             raise DatabaseUnavailable("員工 CSV 同步失敗。") from exc
 
 
@@ -979,7 +984,7 @@ def server_time() -> dict[str, Any]:
             "work_date": current["work_date"].isoformat(),
             "source": "SERVER_CLOCK",
         }
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("無法取得 SQL Server 校時資料。") from exc
 
 
@@ -1045,9 +1050,9 @@ def save_department(item: dict[str, Any], actor: str) -> dict[str, Any]:
                         OUTPUT inserted.department_id VALUES (?,?)
                     """, item["name"], actor).fetchone()[0]
         return {"id": department_id, "name": item["name"], "is_active": True}
-    except pyodbc.IntegrityError as exc:
+    except mssql_python.IntegrityError as exc:
         raise ValueError("部門名稱已存在") from exc
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("部門資料儲存失敗。") from exc
 
 
@@ -1070,7 +1075,7 @@ def deactivate_department(department_id: int, actor: str) -> dict[str, Any]:
                 WHERE department_id=?
             """, actor, department_id)
         return {"id": department_id, "is_active": False}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("部門停用失敗。") from exc
 
 
@@ -1098,7 +1103,7 @@ def save_staff(item: dict[str, Any], actor: str, photo_file: str | None = None) 
             """, item["employee_id"], item["display_name"], item["gender"], item["age"], item["department"], item["position"], item["traits"], item["biography"], photo, actor,
                  item["employee_id"], item["display_name"], item["gender"], item["age"], item["department"], item["position"], item["traits"], item["biography"], photo, actor)
         return {**item, "photo_file": photo, "is_active": True}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("員工資料儲存失敗。") from exc
 
 
@@ -1110,7 +1115,7 @@ def deactivate_staff(employee_id: str, actor: str) -> dict[str, Any]:
             if cursor.rowcount == 0:
                 raise ValueError("找不到指定員工")
         return {"employee_id": employee_id, "is_active": False}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("員工資料停用失敗。") from exc
 
 
@@ -1148,7 +1153,7 @@ def clock_attendance(item: dict[str, str], source_ip: str) -> dict[str, Any]:
             """, item["employee_id"], item["action"], current["local_time"], current["utc_time"], current["work_date"], source_ip)
             db.commit()
         return {"employee_id": item["employee_id"], "action": item["action"], "clocked_at": current["iso_time"]}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("打卡寫入失敗。") from exc
 
 
@@ -1182,7 +1187,7 @@ def add_operation(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
             """, submission_id, employee_id)
             db.commit()
         return {"id": submission_id, **item, "submitted_by": employee_id, "status": "待審核", "submitted_at": _json_value(row[0])}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("營運紀錄寫入失敗。") from exc
 
 
@@ -1247,7 +1252,7 @@ def review_operation(item: dict[str, str], reviewer_id: str) -> dict[str, Any]:
             """, item["id"], action_types[item["status"]], item["message"] or None, reviewer_id)
             db.commit()
         return {"id": item["id"], "status": item["status"]}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("營運日報審閱失敗。") from exc
 
 
@@ -1274,7 +1279,7 @@ def reply_operation(item: dict[str, str], employee_id: str) -> dict[str, Any]:
             """, item["id"], item["message"], employee_id)
             db.commit()
         return {"id": item["id"], "status": "員工已回覆"}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("營運日報回覆失敗。") from exc
 
 
@@ -1310,7 +1315,7 @@ def upsert_operations_manuals(documents: list[dict[str, Any]]) -> int:
                     """, document_id, order, section["heading"], section["content"])
             db.commit()
         return len(documents)
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("SOP文件寫入失敗。") from exc
 
 
@@ -1536,7 +1541,7 @@ def start_training_session(item: dict[str, Any], employee_id: str) -> dict[str, 
                     VALUES (?,?,?,?)
                 """, session_id, row["id"], order, json.dumps(_question_snapshot(row), ensure_ascii=False))
             db.commit()
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("無法建立本次題組。") from exc
     return training_session(session_id, employee_id)
 
@@ -1626,7 +1631,7 @@ def save_training_answer(item: dict[str, Any], employee_id: str) -> dict[str, An
                  int(correct), item["session_id"], item["order"])
             if not correct and item["response"].get("answers") not in (None, [], ""):
                 _record_wrong(cursor, employee_id, row["question_id"])
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("作答儲存失敗。") from exc
     result = {"saved": True, "flagged": item["flagged"]}
     if row["mode"] == "practice":
@@ -1681,7 +1686,7 @@ def submit_training_session(session_id: str, employee_id: str) -> dict[str, Any]
                 """, score, session_id, employee_id)
                 db.commit()
             session.update({"status": "submitted", "score": score, "submitted_at": datetime.now(timezone.utc).isoformat()})
-        except pyodbc.Error as exc:
+        except mssql_python.Error as exc:
             raise DatabaseUnavailable("交卷失敗。") from exc
     return _public_session_payload(session, rows, include_review=True)
 
@@ -1711,7 +1716,7 @@ def remove_training_wrong(question_id: int, employee_id: str) -> dict[str, Any]:
                 WHERE employee_id=? AND question_id=? AND removed_at IS NULL
             """, employee_id, question_id)
         return {"id": question_id, "removed": True}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("無法移除錯題。") from exc
 
 
@@ -1884,7 +1889,7 @@ def import_training_question_drafts(
                 """, question_inserts)
             db.commit()
         return result
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("題庫草稿匯入失敗。") from exc
 
 
@@ -1933,7 +1938,7 @@ def save_training_subject(item: dict[str, Any]) -> dict[str, Any]:
                 """, item["domain"], item["name"], item["mock_question_count"],
                      item["mock_duration_minutes"], item["mock_pass_score"], int(item["is_active"])).fetchone()[0]
         return {**item, "id": int(subject_id)}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("科目設定儲存失敗。") from exc
 
 
@@ -1966,7 +1971,7 @@ def save_training_chapter(item: dict[str, Any]) -> dict[str, Any]:
                 """, item["subject_id"], item["code"], item["name"], item["display_order"],
                      int(item["is_active"])).fetchone()[0]
         return {**item, "id": int(chapter_id)}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("章節設定儲存失敗。") from exc
 
 
@@ -1981,7 +1986,7 @@ def set_operations_manual_state(document_id: int, is_active: bool) -> dict[str, 
             if cursor.rowcount == 0:
                 raise ValueError("找不到指定SOP文件")
         return {"id": document_id, "is_active": is_active}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("SOP文件狀態更新失敗。") from exc
 
 
@@ -2046,7 +2051,7 @@ def save_compliance_question(item: dict[str, Any]) -> dict[str, Any]:
                      item["question_type"], answer_json, content_json, structure_json,
                      item["passage"] or None, item["status"], is_active).fetchone()[0]
         return {**item, "id": question_id, "is_active": bool(is_active), "admin_locked": True}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("營運檢核題庫儲存失敗。") from exc
 
 
@@ -2068,7 +2073,7 @@ def grade_compliance_answer(item: dict[str, Any], employee_id: str) -> dict[str,
                     OUTPUT inserted.answer_id VALUES (?,?,?)
                 """, item["question_id"], employee_id, item["answer_text"]).fetchone()[0]
             return {"id": answer_id, "status": "待審核", "is_essay": True}
-        except pyodbc.Error as exc:
+        except mssql_python.Error as exc:
             raise DatabaseUnavailable("申論答案送審失敗。") from exc
 
     options = json.loads(question["options_json"])
@@ -2131,7 +2136,7 @@ def review_compliance_essay(item: dict[str, Any], reviewer_id: str) -> dict[str,
             if cursor.rowcount == 0:
                 raise ValueError("找不到指定申論答案")
         return {"id": item["id"], "status": item["status"]}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("申論答案審核失敗。") from exc
 
 
@@ -2146,7 +2151,7 @@ def deactivate_compliance_question(question_id: int) -> dict[str, Any]:
             if cursor.rowcount == 0:
                 raise ValueError("找不到指定題目")
         return {"id": question_id, "is_active": False}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("營運檢核題庫停用失敗。") from exc
 
 
@@ -2178,7 +2183,7 @@ def set_training_question_status(question_id: int, status: str) -> dict[str, Any
                 WHERE question_id=?
             """, status, int(status == "published"), question_id)
         return {"id": question_id, "status": status, "is_active": status == "published"}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("題目狀態更新失敗。") from exc
 
 
@@ -2195,7 +2200,7 @@ def unlock_training_question_import(question_id: int) -> dict[str, Any]:
             if cursor.rowcount == 0:
                 raise ValueError("此題目沒有可重新匯入的來源")
         return {"id": question_id, "unlocked": True}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("無法解除題目的匯入保護。") from exc
 
 
@@ -2219,5 +2224,5 @@ def update_training_questions_bulk(item: dict[str, Any]) -> dict[str, Any]:
             for question_id in item["ids"]:
                 set_training_question_status(question_id, item["status"])
         return {"updated": len(item["ids"]), **item}
-    except pyodbc.Error as exc:
+    except mssql_python.Error as exc:
         raise DatabaseUnavailable("題目批次更新失敗。") from exc

@@ -1,6 +1,6 @@
 # 銀盾共同體營運中心
 
-銀盾共同體營運中心是一套整合公開官網、員工入口與 MIS 管理功能的企業營運平台。系統以前端原生 HTML、CSS、JavaScript 搭配 Python 原生 HTTP 服務實作，由同一個服務提供網頁、靜態資源與 API，並透過 `pyodbc` 連接 SQL Server。
+銀盾共同體營運中心是一套整合公開官網、員工入口與 MIS 管理功能的企業營運平台。系統以前端原生 HTML、CSS、JavaScript 搭配 Python 原生 HTTP 服務實作，由同一個服務提供網頁、靜態資源與 API，並透過 Microsoft `mssql-python` 連接 SQL Server。
 
 目前涵蓋以下用途：
 
@@ -38,7 +38,7 @@ SQL Server
 | --- | --- |
 | 後端 | Python 3.12、`http.server.ThreadingHTTPServer` |
 | 前端 | HTML5、CSS、原生 JavaScript ES modules |
-| 資料庫 | Microsoft SQL Server、ODBC Driver 17、`pyodbc` |
+| 資料庫 | Microsoft SQL Server、Microsoft `mssql-python` |
 | 文件處理 | `python-docx`、`openpyxl`、`xlrd`、`pypdf` |
 | PDF 與 OCR | PyMuPDF、Pillow、Tesseract、`pytesseract` |
 | 測試 | Python `unittest` |
@@ -130,7 +130,7 @@ erp_site/
 
 - Windows
 - Python 3.12
-- Microsoft ODBC Driver 17 for SQL Server
+- Microsoft `mssql-python` Python 套件（不需另外安裝 ODBC Driver）
 - 可連線且具備應用資料表權限的 SQL Server
 - 處理掃描型 PDF 時需額外安裝 Tesseract OCR，以及 `chi_tra`、`eng` 語言資料
 - 處理舊版 DOC 時需安裝 LibreOffice 或 Microsoft Word
@@ -147,17 +147,16 @@ python -m venv .venv
 在專案根目錄建立 `.env`：
 
 ```dotenv
-DatabaseIP=資料庫位址
+DatabaseIP=SQL Server IP 位址
 DatabasePort=1433
 DatabaseName=資料庫名稱
 DatabaseUser=資料庫帳號
 DatabasePassword=資料庫密碼
-DatabaseDriver=ODBC Driver 17 for SQL Server
 BackendWebAdminUser=MIS管理員帳號
 BackendWebAdminPassword=MIS管理員密碼
 ```
 
-`DatabaseDriver` 可省略，預設為 `ODBC Driver 17 for SQL Server`。`.env` 含有敏感資訊，已由 `.gitignore` 排除，請勿提交或公開其內容。
+資料庫透過 Microsoft `mssql-python` 直接以 `DatabaseIP,DatabasePort` 連線 SQL Server，不需要 ODBC Driver。既有 `.env` 若仍包含 `DatabaseDriver`，該設定會被忽略，可以刪除。連線字串會安全引用各設定值，密碼包含分號或右大括號時也能正確傳遞。`.env` 含有敏感資訊，已由 `.gitignore` 排除，請勿提交或公開其內容。
 
 服務也接受以下選用環境變數：
 

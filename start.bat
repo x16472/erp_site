@@ -11,7 +11,7 @@ if not exist "%PYTHON%" (
   exit /b 1
 )
 
-"%PYTHON%" -c "import pyodbc, docx, openpyxl, pypdf, xlrd" >nul 2>&1
+"%PYTHON%" -c "import mssql_python, docx, openpyxl, pypdf, xlrd" >nul 2>&1
 if errorlevel 1 (
   echo Required Python packages are missing.
   echo Run: .venv\Scripts\python.exe -m pip install -r requirements.txt
