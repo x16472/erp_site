@@ -142,7 +142,7 @@ def _fetch(query: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
     except DatabaseUnavailable:
         raise
     except mssql_python.Error as exc:
-        raise DatabaseUnavailable("SQL Server 查詢失敗，請由管理者確認資料表結構。") from exc
+        raise DatabaseUnavailable(f"SQL 失敗，底層錯誤：\r\n{exc.message}") from exc
 
 
 def _json_value(value: Any) -> Any:
