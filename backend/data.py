@@ -85,20 +85,33 @@ def _new_connection(read_only: bool, autocommit: bool):
     try:
         return mssql_python.connect(connection_string, autocommit=autocommit, timeout=5)
     except mssql_python.Error as exc:
-        raise DatabaseUnavailable("無法連線至 SQL Server，請檢查網路與資料庫設定。") from exc
+        raise DatabaseUnavailable("無法連線至 SQL Server，請檢查網路與資料庫設定。\r\n錯誤訊息：",exc) from exc
 
 
+@contextmanager
 def connect(read_only: bool = True, autocommit: bool = True):
-    """取得 SQL Server 連線；HTTP 請求範圍內複用相同用途的連線。"""
+    """借用 SQL Server 連線；請求內的連線由 connection_scope 統一釋放。"""
     connections = getattr(_REQUEST_CONNECTIONS, "connections", None)
+    if connections is None:
+        with _new_connection(read_only, autocommit) as connection:
+            yield connection
+        return
+
     key = (read_only, autocommit)
-    if connections is not None:
-        connection = connections.get(key)
-        if connection is None:
-            connection = _new_connection(read_only, autocommit)
-            connections[key] = connection
-        return connection
-    return _new_connection(read_only, autocommit)
+    connection = connections.get(key)
+    if connection is None:
+        connection = _new_connection(read_only, autocommit)
+        connections[key] = connection
+    try:
+        yield connection
+    except BaseException:
+        # 查詢失敗後不再借出可能已失效或處於未完成交易的連線。
+        connections.pop(key, None)
+        try:
+            connection.close()
+        except mssql_python.Error:
+            pass
+        raise
 
 
 @contextmanager
