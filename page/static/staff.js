@@ -2,7 +2,8 @@ import { apiData, bindAdminAccess, bindImageFallbacks, bindTabs, escapeHtml } fr
 
 const request = (path, options = {}) => apiData(path, options, '操作失敗');
 const esc = escapeHtml;
-const apiState = document.querySelector('#apiState'),
+const
+    apiState = document.querySelector('#apiState'),
     loginShell = document.querySelector('#loginShell'),
     staffConsole = document.querySelector('#staffConsole'),
     loginForm = document.querySelector('#loginForm'),
@@ -62,12 +63,12 @@ function renderOrganization() {
     const companyStaff = staffItems.filter(item => includeInactiveStaff.checked || item.is_active);
     const departments = departmentItems.filter(item => item.is_active || companyStaff.some(staff => staff.department === item.name));
     organizationTree.innerHTML = `<button class="organization-node root-node ${selectedDepartment ? '' : 'active'}" type="button" data-department="">
-        <span>銀盾共同體</span><em>${companyStaff.length} 人</em></button>
+        <span>銀盾共同體</span><em>${companyStaff.length}人</em></button>
         <div class="organization-branches">${departments.map(department => {
-            const count = companyStaff.filter(item => item.department === department.name).length;
-            return `<button class="organization-node ${selectedDepartment === department.name ? 'active' : ''}" type="button" data-department="${esc(department.name)}">
+        const count = companyStaff.filter(item => item.department === department.name).length;
+        return `<button class="organization-node ${selectedDepartment === department.name ? 'active' : ''}" type="button" data-department="${esc(department.name)}">
                 <span>${esc(department.name)}</span><em>${count} 人</em></button>`
-        }).join('') || '<div class="empty">尚未建立部門</div>'}</div>`;
+    }).join('') || '<div class="empty">尚未建立部門</div>'}</div>`;
     const selectedCount = selectedDepartment
         ? companyStaff.filter(item => item.department === selectedDepartment).length
         : companyStaff.length;

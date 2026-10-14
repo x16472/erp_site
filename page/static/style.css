@@ -7,9 +7,9 @@
     --ink: #26344a;
     --muted: #6f7a8c;
     --paper: #f7f6f1;
-    --white: #fff;
-    --line: #e4e7e7;
-    --shadow: 0 18px 50px rgba(28, 48, 75, .11);
+    --white: #fcfcfc;
+    --line: #00000040;
+    --shadow: 0 5px 10px #0400367c;
     --radius: 20px
 }
 
@@ -65,7 +65,7 @@ img {
     border: 0;
     border-radius: 12px;
     background: var(--blue);
-    color: #fff;
+    color: var(--ink);
     text-decoration: none;
     font-weight: 800;
     cursor: pointer
@@ -125,10 +125,6 @@ img {
     color: #087daa;
     font-size: 11px;
     font-weight: 800
-}
-
-.hint {
-    color: var(--muted)
 }
 
 .error-note,
@@ -2198,10 +2194,6 @@ img {
 
 .employee-access-card .btn {
     min-height: 52px
-}
-
-.employee-access-card .hint {
-    font-size: 13px
 }
 
 /*第 94 行需求：公開網站、入口打卡與待審工作區*/

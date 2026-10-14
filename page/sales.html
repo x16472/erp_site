@@ -19,16 +19,15 @@
                 <a class="active" href="sales.html">營運日報</a>
                 <a href="exam.html">題庫練習</a>
                 <a href="game.html">宣導影音</a>
-                <a href="staff.html">員工出缺勤</a>
+                <a href="staff.html">員工管理</a>
                 <a href="mis.html">後台管理</a>
             </nav>
             <p class="portal-foot">OPERATION INPUT · 待審資料</p>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <div><span class="top-kicker">OPERATION COLLECTION</span>
-                    <h1>資料蒐集</h1>
-                </div><span class="api-state" id="apiState">準備填報</span>
+                <span class="top-kicker"><h1>資料蒐集</h1>OPERATION COLLECTION</span>
+                <span class="api-state" id="apiState">準備填報</span>
             </header>
             <div class="portal-content">
                 <section class="admin-panel active">
@@ -56,8 +55,8 @@
                                             <option>其他</option>
                                         </select></label><label class="field"><span>數量</span><input type="number"
                                             name="count" min="0" max="9999" value="0" required></label><label
-                                        class="field full"><span>備註</span><textarea name="note" maxlength="200"
-                                            placeholder="只填寫作業摘要，請勿輸入個人資料、敏感資訊及其他個資。"></textarea></label></div>
+                                        class="field full"><span>備註</span>
+                                        <textarea name="note" maxlength="200"                                          placeholder="只填寫摘要，請勿輸入個人資料、敏感資訊。"></textarea></label></div>
                                 <div class="actions"><button class="btn" type="submit">送交 MIS 審核</button><button
                                         class="btn secondary" type="reset">清除</button></div>
                                 <p id="formStatus" aria-live="polite"></p>
@@ -70,7 +69,7 @@
                                 </div>
                             </div>
                             <div class="success-note">只記錄彙總數量與營運摘要，嚴禁輸入任何可辨識個人的隱私資訊。</div>
-                            <p class="hint">資料會寫入專用待審資料表，由後台管理員確認後再處理；不會直接修改其他營運資料。</p>
+                            <p>資料會寫入專用待審資料表，由後台管理員確認後再處理；不會直接修改其他營運資料。</p>
                             <div id="lastSubmission"></div>
                             <div class="process-list compact" id="process">
                                 <div class="empty">正在讀取填報摘要…</div>
