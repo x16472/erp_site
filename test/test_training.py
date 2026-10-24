@@ -167,14 +167,14 @@ class DatabaseConnectionTests(unittest.TestCase):
 class SecurityAndPerformanceTests(unittest.TestCase):
     def test_request_scope_reuses_and_closes_connection(self) -> None:
         connection = mock.MagicMock()
-        with mock.patch.object(data, "_new_connection", return_value=connection) as create:
-            with data.connection_scope():
-                with data.connect() as first:
-                    pass
-                with data.connect() as second:
-                    pass
-                connection.close.assert_not_called()
-                connection.__exit__.assert_not_called()
+        with mock.patch.object(data, "_new_connection", return_value=connection) as create, \
+             data.connection_scope():
+            with data.connect() as first:
+                pass
+            with data.connect() as second:
+                pass
+            connection.close.assert_not_called()
+            connection.__exit__.assert_not_called()
 
         self.assertIs(first, second)
         create.assert_called_once_with(True, True)
@@ -183,11 +183,10 @@ class SecurityAndPerformanceTests(unittest.TestCase):
     def test_failed_borrow_discards_request_connection(self) -> None:
         first_connection = mock.MagicMock()
         second_connection = mock.MagicMock()
-        with mock.patch.object(data, "_new_connection", side_effect=[first_connection, second_connection]) as create:
+        with mock.patch.object(data, "_new_connection", side_effect=[first_connection, second_connection]) as create:  # noqa: SIM117
             with data.connection_scope():
-                with self.assertRaises(ValueError):
-                    with data.connect():
-                        raise ValueError("查詢失敗")
+                with self.assertRaises(ValueError), data.connect():
+                    raise ValueError("查詢失敗")
                 with data.connect() as replacement:
                     self.assertIs(replacement, second_connection)
 
@@ -198,9 +197,8 @@ class SecurityAndPerformanceTests(unittest.TestCase):
     def test_connection_outside_request_uses_driver_context_manager(self) -> None:
         connection = mock.MagicMock()
         connection.__enter__.return_value = connection
-        with mock.patch.object(data, "_new_connection", return_value=connection):
-            with data.connect() as borrowed:
-                self.assertIs(borrowed, connection)
+        with mock.patch.object(data, "_new_connection", return_value=connection), data.connect() as borrowed:
+            self.assertIs(borrowed, connection)
 
         connection.__exit__.assert_called_once()
 
