@@ -1,0 +1,12 @@
+.env
+.agents/
+.deps/
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+data/*.db
+data/*
+data/*.bak
+!data/staff.csv
+!data/Company_Schema.sql
