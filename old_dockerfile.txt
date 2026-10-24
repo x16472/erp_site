@@ -1,0 +1,15 @@
+# 使用Windows Server Core 2022 基礎映像檔
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+# 設定映像檔的元數據（Metadata）標籤，此處用來註明該映像檔的作者或維護者信箱
+LABEL org.opencontainers.image.authors="dog0830430@gmail.com"
+# 在這裡定義變數 NAME
+ENV NAME="ERP_Site"
+# 在映像檔建置過程中執行命令，此處調用 Windows 的 DISM 工具來啟用 IIS 網頁伺服器功能，且不自動重啟
+# 啟用 IIS 功能
+RUN dism.exe /online /enable-feature /all /featurename:iis-webserver /NoRestart
+COPY index.htm c:/inetpub/wwwroot/index.htm
+CMD ["cmd"]
+# 使用標準 PowerShell 下載與靜默安裝 Python
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# 網址為真實的實體下載路徑，並固定安裝在 C:\Python311 目錄下

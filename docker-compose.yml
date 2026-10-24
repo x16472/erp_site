@@ -1,7 +1,12 @@
-version: '3.8'
 services:
   erp_service:
-    build: .                 # 讀取 Dockerfile
+    build:
+      context: .
+      dockerfile: dockerfile # 讀取 Dockerfile
+    image: erp-site:servercore-ltsc2022
     container_name: ERP_Site # 在這裡直接固定 Container 的名稱
+    restart: unless-stopped
     environment:
-      - NAME=ERP_Site        # 同時帶入容器內部的環境變數
+      NAME: ERP_Site   # 同時帶入容器內部的環境變數
+    ports:
+      - "80:80"
