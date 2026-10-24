@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  erp_service:
+    build: .                 # 讀取 Dockerfile
+    container_name: ERP_Site # 在這裡直接固定 Container 的名稱
+    environment:
+      - NAME=ERP_Site        # 同時帶入容器內部的環境變數
