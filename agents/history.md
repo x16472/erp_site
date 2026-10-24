@@ -1,5 +1,11 @@
 # 歷程
 
+## 2026-10-24｜依目前專案實作重寫 README
+
+重新整理 `Readme.md` 的功能總覽、系統架構、專案結構、環境設定、Windows 容器與本機執行步驟、文件及題庫同步、測試、權限與常見問題。補上 IIS／ARR 與 `C:/inetpub/wwwroot/` 部署方式，將過時的 `test/` 測試路徑修正為 `backend.test_training`；區分首頁健康檢查與資料庫健康 API，說明 `.env` 檔案讀取、image 內含帳密、尚無 volume／HTTPS、來源文件未打包及外部文件工具需求。
+
+依目前原始碼與設定檔核對文件路徑、命令及功能，完成 Markdown 區塊與 Git diff 格式檢查；本次僅修改文件，未啟動服務或連線資料庫。
+
 ## 2026-10-24｜統一 IIS 網站部署路徑
 
 依 Phoenix 指定，將 `dockerfile` 的 WORKDIR、backend、page、data、start.bat、.env、requirements.txt、venv 建置／檢查與啟動程序工作目錄統一為 `C:\inetpub\wwwroot`，保留原有 backend/page/data 專案結構及 IIS 至 Python 的反向代理。保留 Phoenix 已處理的 `# escape=` 與反引號續行設定。本次未調整 Compose、volume、HTTPS 或應用程式碼。

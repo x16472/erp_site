@@ -1,236 +1,247 @@
 # 銀盾共同體營運中心
 
-銀盾共同體營運中心是一套整合公開官網、員工入口與 MIS 管理功能的企業營運平台。系統以前端原生 HTML、CSS、JavaScript 搭配 Python 原生 HTTP 服務實作，由同一個服務提供網頁、靜態資源與 API，並透過 Microsoft `mssql-python` 連接 SQL Server。
+銀盾共同體營運中心整合企業官網、員工工作台與 MIS 後台，提供出勤管理、營運填報、教育訓練與企業宣導功能。前端使用原生 HTML、CSS 與 JavaScript，後端使用 Python HTTP 服務，業務資料存放於 SQL Server。
 
-目前涵蓋以下用途：
+目前提供 Windows 本機執行與 Windows 容器部署兩種方式。容器以 Windows Server Core LTSC 2022 為基底，啟用內建 IIS，並在網站目錄建立 Python venv。
 
-- 公開企業資訊、營運據點與專業團隊展示
-- 員工身分驗證、上下班打卡與出勤狀態查詢
-- 營運日報填報、補件回覆與管理端審核
-- 學科練習、模擬考、錯題本與術科申論
-- 宣導影音、知識條目與營運 SOP 查閱
-- 員工、部門、出缺勤、網站內容及教育資料管理
+## 功能總覽
+
+| 功能 | 說明 |
+| --- | --- |
+| 企業官網 | 企業資訊、產業據點、公開員工資料與部門篩選；後台可調整首頁文字與視覺主題 |
+| 員工入口 | 以有效員工編號登入，可選擇上班打卡或僅進入系統 |
+| 工作台與出勤 | 伺服器校時、出勤狀態、上下班打卡與常用入口 |
+| 員工管理 | 組織架構、員工搜尋與明細、員工照片、部門維護及打卡紀錄查詢 |
+| 營運填報 | 日報提交、個人填報歷程、補件回覆，以及管理端核准、退回與要求補件 |
+| 教育訓練 | 分類練習、模擬考、續作、逐題檢討、錯題本與術科申論 |
+| 文件與題庫 | SOP 查閱、來源文件同步、題目草稿審核、科目與章節維護、題目發布與停用 |
+| 企業宣導 | YouTube 影音載入與標題解析、知識及 SOP 檢索 |
+| MIS 後台 | 官網設定、資料表查閱、營運與申論審核、教育資料管理 |
+
+學科題型包含單選、多選、閱讀、程式碼填空與配對；術科申論由管理員人工審核。模擬考交卷前不回傳正解與解析，作答紀錄保留題目快照。
 
 ## 系統架構
 
-```text
-瀏覽器
-  ├─ 公開官網
-  ├─ 員工入口
-  └─ MIS 管理介面
-       │
-       ▼
-Python ThreadingHTTPServer
-  ├─ 頁面與靜態資源
-  ├─ 工作階段、CSRF 與輸入驗證
-  ├─ 營運及教育訓練 API
-  └─ 文件解析與同步
-       │
-       ▼
-SQL Server
+```mermaid
+flowchart LR
+    Browser[瀏覽器] --> IIS[IIS：80 埠]
+    IIS -->|ARR／URL Rewrite| Python[Python HTTP 服務：127.0.0.1:8000]
+    Python --> SQL[SQL Server]
+    Python --> Files[網頁、員工照片與來源文件]
 ```
 
-本專案不需要 Visual Studio Code Live Server，也沒有 Node.js 或 npm 建置流程。所有 HTML、ES modules、圖片與 `/api` 請求皆由 `backend.app` 以同一來源提供。
+上圖為容器部署架構。IIS 將網站與 API 請求轉送給 `backend.app`，由 Python 處理頁面、靜態資源、權限及資料存取。網站部署於 `C:/inetpub/wwwroot/`，保留 `backend/`、`page/` 與 `data/` 的目錄結構。
 
-## 技術組成
-
-| 類別 | 使用技術 |
-| --- | --- |
-| 後端 | Python 3.12、`http.server.ThreadingHTTPServer` |
-| 前端 | HTML5、CSS、原生 JavaScript ES modules |
-| 資料庫 | Microsoft SQL Server、Microsoft `mssql-python` |
-| 文件處理 | `python-docx`、`openpyxl`、`xlrd`、`pypdf` |
-| PDF 與 OCR | PyMuPDF、Pillow、Tesseract、`pytesseract` |
-| 測試 | Python `unittest` |
+本機執行時，`start.bat` 直接啟動 Python，使用 `0.0.0.0:80` 提供網站與 API。前端與後端使用同一來源，無須額外的前端建置流程。
 
 ## 專案結構
 
 ```text
 erp_site/
 ├─ backend/
-│  ├─ app.py               # HTTP 服務、路由、工作階段與權限控制
-│  ├─ data.py              # SQL Server 結構、查詢、交易與資料寫入
-│  ├─ input.py             # API 輸入驗證與資料清理
-│  ├─ doc.py               # Word、Excel、PDF 與 OCR 文件處理
-│  └─ time_sync.py         # SQL Server 權威時間與台灣工作日換算
-├─ data/
-│  ├─ exam/                # SOP 與題庫來源文件，本機資料不納入版本控制
-│  ├─ staff.csv            # 員工初始同步資料
-│  └─ Company_Schema.sql   # SQL Server 資料表結構參考
+│  ├─ app.py                 # HTTP 路由、登入、工作階段與檔案回應
+│  ├─ data.py                # SQL Server 查詢、交易、資料表初始化與資料維護
+│  ├─ input.py               # 輸入驗證與資料清理
+│  ├─ doc.py                 # 文件轉換、文字擷取、OCR 與來源同步
+│  ├─ time_sync.py           # SQL Server 權威時間與台灣工作日換算
+│  └─ test_training.py       # 題目解析、作答驗證、安全與資料庫連線回歸測試
 ├─ page/
-│  ├─ *.html               # 公開官網、員工入口與管理頁面
-│  └─ static/
-│     ├─ script.js         # 共用 API、登入導向、CSRF 與頁面工具
-│     ├─ <頁面名稱>.js      # 各頁事件與畫面邏輯
-│     ├─ style.css         # 全站共用樣式
-│     ├─ png/              # 官網圖片
-│     └─ staff/            # 以員工編號命名的員工照片
+│  ├─ *.html                 # 官網、員工頁面與後台
+│  └─ static/                # 各頁 JavaScript、共用 CSS、圖片與員工照片
+├─ data/
+│  ├─ staff.csv              # 員工同步來源
+│  ├─ Company_Schema.sql     # 資料表結構參考
+│  └─ exam/                  # 自行準備的 SOP 與題庫來源文件
 ├─ templates/
-│  └─ cookiecutter.json    # 專案範本設定
-├─ test/
-│  └─ test_training.py     # 題庫解析、輸入及回應安全測試
-├─ requirements.txt        # Python 相依套件
-├─ start.bat               # Windows 啟動與套件檢查
+│  └─ cookiecutter.json      # 專案範本參數
+├─ dockerfile                # Windows image 建置與容器啟動設定
+├─ docker-compose.yml        # 容器服務、image 名稱與連接埠設定
+├─ requirements.txt          # 固定版本的 Python 直接相依套件
+├─ start.bat                 # Windows 本機啟動與基本套件檢查
+├─ .dockerignore             # Docker 建置內容排除規則
+├─ .env                      # 自行準備的資料庫與管理員設定，不納入 Git
+├─ CHANGELOG.md              # 版本變更紀錄
 └─ Readme.md
 ```
 
-## 功能頁面
+`data/exam/` 與轉檔快取屬於執行環境資料，未隨 Git 提供。系統透過 `data.py` 初始化應用資料表；`Company_Schema.sql` 作為結構參考。
 
-| 頁面 | 存取層級 | 用途 |
-| --- | --- | --- |
-| `index.html` | 公開 | 企業資訊、營運據點、部門篩選與專業團隊 |
-| `employee-login.html` | 公開入口 | 驗證在職員工，可選擇打卡或不打卡進入 |
-| `home.html` | 員工 | 工作台、公告、校時、補打卡、下班打卡與登出 |
-| `sales.html` | 員工 | 營運日報填報、資料生命週期、審閱歷程與補件回覆 |
-| `exam.html` | 員工 | SOP 查閱、分類練習、模擬考、錯題本與術科申論 |
-| `game.html` | 員工 | 宣導影音、知識條目與營運 SOP 閱讀 |
-| `staff.html` | 員工＋MIS | 員工組織與名冊、員工與部門維護及出勤紀錄查詢 |
-| `mis.html` | 員工＋MIS | 待審佇列、網站設定、資料查閱、文件與題庫管理 |
+## 環境設定
 
-## 核心流程
+兩種執行方式都需要可連線的 SQL Server，以及專案根目錄的 `.env`。設定欄位如下，請自行填入實際值：
 
-### 員工登入與出勤
+| 欄位 | 用途 |
+| --- | --- |
+| `DatabaseIP` | SQL Server 位址；容器部署時須能從容器內連線 |
+| `DatabasePort` | SQL Server TCP 連接埠 |
+| `DatabaseName` | 使用的資料庫名稱 |
+| `DatabaseUser` | 資料庫帳號 |
+| `DatabasePassword` | 資料庫密碼 |
+| `BackendWebAdminUser` | MIS 管理員帳號 |
+| `BackendWebAdminPassword` | MIS 管理員密碼 |
 
-- 員工編號會向 SQL Server 即時驗證是否存在且仍在職。
-- 「上班打卡並進入」會建立出勤紀錄；「不打卡進入系統」只建立員工工作階段。
-- 上下班必須依序交替，並以資料庫交易鎖避免重複或同時打卡。
-- 打卡時間與工作日以 SQL Server 回傳的台灣時間為準，前端定期重新校時。
-- 員工工作階段與 MIS 管理工作階段各自獨立，閒置有效期限為 8 小時。
+資料庫與管理員設定由程式直接讀取 `.env` 檔案，僅設定同名的作業系統環境變數無法取代此檔案。程式未使用 `DatabaseDriver` 欄位，SQL Server 存取套件由 `requirements.txt` 安裝。
 
-### 員工與部門管理
+啟動時會執行應用資料表初始化與結構更新，因此資料庫帳號須具備相應的建表、結構更新及業務資料讀寫權限。完成初始化後，程式預設同步 `data/exam/` 內的 SOP 文件；文件同步失敗會記錄訊息，資料庫初始化失敗則會中止啟動。
 
-- 公開官網只顯示可公開的在職員工資料，並可依部門篩選。
-- `staff.html` 提供組織樹、關鍵字搜尋、部門篩選及停用員工檢視。
-- MIS 可新增、編輯或停用員工與部門，既有員工編號不可變更。
-- 員工照片支援 JPEG、PNG 與 WebP，檔案大小上限為 5 MB，儲存時會自動改為員工編號。
+## Windows 容器部署
 
-### 營運填報與審核
+### 執行需求
 
-- 員工可提交營運資料、查看自己的審核歷程，並回覆補件要求。
-- MIS 可依員工或事件類別篩選待審事項，執行核准、退回或要求補件。
-- 提交、審核與回覆皆保留活動歷程。
+- 使用 Windows 容器模式的 Docker 與 Docker Compose。
+- 可執行 Windows Server Core LTSC 2022 容器的主機環境。
+- 可下載官方 image、Microsoft 安裝程式與 Python 套件的網路連線。
+- 已完成上述 `.env` 設定，且容器可連線至 SQL Server。
+- 主機的 80 埠可供網站使用。
 
-### 題庫與申論
+### 建置與啟動
 
-- 學科支援單選、多選、閱讀、程式碼填空與配對題。
-- 支援分類練習、模擬考、倒數計時、續作、逐題檢討及錯題本。
-- 模擬考交卷前不會將正解與解析回傳前端。
-- 術科採申論作答，由 MIS 人工審核並提供回饋。
-- 題組會保存題目快照，避免後續修改題目影響既有作答紀錄。
+在專案根目錄執行：
 
-### 文件與影音
+```powershell
+docker compose build erp_service
+docker compose up -d
+```
 
-- 系統可讀取 DOCX、DOC、XLSX、XLS 與 PDF 格式的營運文件。
-- 舊版 DOC 需要 LibreOffice，或在 Windows 上使用 Microsoft Word 作為轉檔備援。
-- PDF 優先擷取原生文字；掃描頁面才以 300 DPI 執行繁體中文與英文 OCR。
-- 題目解析結果先存為待審草稿，由 MIS 確認後發布。
-- YouTube 網址由後端驗證並解析標題，前端不直接信任使用者輸入的嵌入網址。
+建置後的 image 名稱為 `erp-site:servercore-ltsc2022`，容器名稱為 `ERP_Site`。瀏覽 [網站首頁](http://localhost/) 或 [資料庫健康 API](http://localhost/api/health) 確認服務。
 
-## 安裝需求
+Dockerfile 從官方 `python:3.13-windowsservercore-ltsc2022` image 取得 Python，最終基底為 `mcr.microsoft.com/windows/servercore:ltsc2022`。建置流程包含 IIS、ARR、URL Rewrite、Visual C++ Runtime、venv 與 Python 套件安裝，並檢查 `start.bat --check`、文件套件匯入、產生的啟動腳本及 IIS XML。
 
-- Windows
-- Python 3.12
-- Microsoft `mssql-python` Python 套件（不需另外安裝 ODBC Driver）
-- 可連線且具備應用資料表權限的 SQL Server
-- 處理掃描型 PDF 時需額外安裝 Tesseract OCR，以及 `chi_tra`、`eng` 語言資料
-- 處理舊版 DOC 時需安裝 LibreOffice 或 Microsoft Word
+容器啟動時，Python 使用 `127.0.0.1:8000`，IIS 使用 80 埠。啟動程序會監控 Python 與 IIS，任一停止便結束容器；Compose 設定為 `restart: unless-stopped`。
 
-建立虛擬環境並安裝套件：
+### 狀態與維護
+
+```powershell
+# 查看服務與健康狀態
+docker compose ps
+
+# 查看最近的啟動訊息
+docker compose logs --tail 100 erp_service
+
+# 持續追蹤記錄；Ctrl+C 結束追蹤
+docker compose logs -f erp_service
+
+# 停止服務並移除 Compose 容器與網路
+docker compose down
+```
+
+目前 image 的健康檢查請求為首頁 `/`，用來確認 IIS 至 Python 的 HTTP 路徑；`/api/health` 另會讀取 SQL Server，供資料庫連線診斷。
+
+### 目前部署行為
+
+- `.env` 會被複製進 image，因此 image 含有部署環境的機密設定；分享或發布 image 前需先處理其中的帳密。
+- 網站程式與 `.env` 更新後，需要重新建置並更新容器，可執行 `docker compose up -d --build`。
+- 尚未設定 volume。員工照片與文件快取等寫入容器的檔案，會在容器移除或重建時遺失；SQL Server 中的資料仍由資料庫保存。
+- `.dockerignore` 排除 `data/` 內多數資料，Dockerfile 只複製 `staff.csv` 與 `Company_Schema.sql`，目前 image 不包含本機的 `data/exam/` 文件。
+- 目前提供 HTTP，未設定 HTTPS。
+- Image 未安裝 Tesseract、LibreOffice 或 Microsoft Word；需要 OCR 或舊版 DOC 轉檔時，須另外準備對應執行環境。
+
+## Windows 本機執行
+
+容器使用 Python 3.13。本機可使用 Python 3.13 建立專案虛擬環境，再安裝相同相依套件：
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-```
-
-## 環境設定
-
-在專案根目錄建立 `.env`：
-
-```dotenv
-DatabaseIP=SQL Server IP 位址
-DatabasePort=1433
-DatabaseName=資料庫名稱
-DatabaseUser=資料庫帳號
-DatabasePassword=資料庫密碼
-BackendWebAdminUser=MIS管理員帳號
-BackendWebAdminPassword=MIS管理員密碼
-```
-
-資料庫透過 Microsoft `mssql-python` 直接以 `DatabaseIP,DatabasePort` 連線 SQL Server，不需要 ODBC Driver。既有 `.env` 若仍包含 `DatabaseDriver`，該設定會被忽略，可以刪除。連線字串會安全引用各設定值，密碼包含分號或右大括號時也能正確傳遞。`.env` 含有敏感資訊，已由 `.gitignore` 排除，請勿提交或公開其內容。
-
-服務也接受以下選用環境變數：
-
-```dotenv
-SILVER_SHIELD_HOST=0.0.0.0
-SILVER_SHIELD_PORT=80
-```
-
-## 啟動方式
-
-先檢查專案虛擬環境與必要套件：
-
-```powershell
 .\start.bat --check
-```
-
-以 Port 80 啟動並開放同一內網存取：
-
-```powershell
 .\start.bat
 ```
 
-Port 80 可能需要系統管理員權限。若只供本機開發，可改用其他連接埠：
+`start.bat --check` 只檢查 venv 與基本套件匯入，不測試 SQL Server 連線。`start.bat` 固定使用 80 埠；若發生連接埠占用或權限錯誤，可改用以下開發命令：
 
 ```powershell
 .\.venv\Scripts\python.exe -m backend.app --host 127.0.0.1 --port 8080
 ```
 
-啟動時會建立或更新應用所需資料表，並同步 `data/exam/` 中可讀取的 SOP 文件。若暫時不需要文件同步，可使用：
+啟動後開啟 [本機網站](http://127.0.0.1:8080/) 或 [資料庫健康 API](http://127.0.0.1:8080/api/health)。略過啟動時的 SOP 文件同步：
 
 ```powershell
 .\.venv\Scripts\python.exe -m backend.app --host 127.0.0.1 --port 8080 --skip-doc-sync
 ```
 
-啟動後可透過以下網址確認服務與資料庫狀態：
+直接執行 `backend.app` 時，也可用作業系統環境變數 `SILVER_SHIELD_HOST`、`SILVER_SHIELD_PORT` 設定預設監聽位址與連接埠。命令列參數優先；`start.bat` 與容器啟動程序已有明確指定值。這兩個變數不會從專案 `.env` 自動載入。
 
-```text
-http://127.0.0.1:8080/api/health
-```
+## 頁面與使用流程
 
-## 文件同步
+| 頁面 | 使用方式 |
+| --- | --- |
+| `/`、`/index.html` | 公開企業官網 |
+| `/employee-login.html` | 員工登入，選擇上班打卡或僅進入系統 |
+| `/home.html` | 員工工作台、出勤狀態與常用入口 |
+| `/sales.html` | 提交營運日報、查看審閱結果與回覆補件 |
+| `/exam.html` | 練習、模擬考、錯題本與術科作答 |
+| `/game.html` | 企業宣導影音、知識與 SOP 查閱 |
+| `/staff.html` | 員工組織、明細、部門與打卡紀錄管理 |
+| `/mis.html` | 官網設定、資料查閱、營運與教育訓練管理 |
 
-只解析來源文件並顯示結果，不寫入資料庫：
+員工先以在職員工編號登入，再進入工作台；管理功能還需通過 MIS 帳密驗證。HTML 頁面可被載入，資料讀取與寫入權限由各 API 在後端驗證。
+
+上下班打卡依序交替，系統以 SQL Server 時間換算台灣工作日，並透過交易控制避免重複打卡。營運日報可由管理員要求補件、核准或退回，員工可查閱個人紀錄並回覆。
+
+員工管理採組織架構、員工清單與員工明細三區介面，提供搜尋與停用員工篩選。員工照片支援 JPEG、PNG 與 WebP，單張上限為 5 MB。
+
+## 文件與題庫同步
+
+來源文件放在 `data/exam/`。支援 DOCX、舊版 DOC、Excel（含 XLSX、XLS）與 PDF；舊版 DOC 轉換結果快取在 `data/exam/.converted/`，保留原始文件。
+
+| 文件類型 | 額外需求 |
+| --- | --- |
+| DOCX、Excel、可擷取文字的 PDF | 安裝 `requirements.txt` 中的套件 |
+| 舊版 DOC | 優先使用 LibreOffice；Windows 本機可使用已安裝的 Microsoft Word COM 作為備援 |
+| 掃描型 PDF | Tesseract OCR 與 `chi_tra`、`eng` 語言資料，搭配 PyMuPDF、Pillow、pytesseract |
+
+Tesseract 可透過 PATH 或 `C:\Program Files\Tesseract-OCR\tesseract.exe` 尋找；LibreOffice 可透過 PATH 或 `C:\Program Files\LibreOffice\program\soffice.exe` 尋找。
+
+解析文件並顯示摘要，不寫入資料庫；遇到舊版 DOC 時仍可能產生轉檔快取：
 
 ```powershell
 .\.venv\Scripts\python.exe -m backend.doc
 ```
 
-解析 SOP 並同步至 SQL Server：
+將 SOP 同步至 SQL Server：
 
 ```powershell
 .\.venv\Scripts\python.exe -m backend.doc --sync
 ```
 
-完整的 SOP、題庫草稿同步與審核功能也可在 MIS 管理頁執行。
+MIS 的來源同步功能會同步 SOP 與題庫草稿，並回報解析警告及失敗來源。管理員確認草稿後再發布題目，也可維護科目、章節、題目狀態與批次設定。
 
-## 測試
+## 測試與檢查
 
-執行現有單元測試：
+測試檔案位於 `backend/test_training.py`，在專案根目錄執行：
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s test -v
+.\.venv\Scripts\python.exe -m unittest backend.test_training -v
 ```
 
-目前測試涵蓋題目結構解析、缺少 OCR 時的錯誤回報、訓練輸入驗證，以及模擬考作答期間不洩漏答案。
+現有測試涵蓋題目解析、OCR 缺失回報、訓練輸入驗證、模擬考答案保護、CSRF 驗證、員工同步快取，以及請求內資料庫連線重用。
 
-## 安全設計
+檢查 Python 套件與 Compose 設定：
 
-- 員工與 MIS 使用不同的工作階段 Cookie；進入 MIS 前必須先通過員工驗證。
-- Cookie 設為 HttpOnly 與 SameSite；登入後的資料寫入皆需通過 CSRF 驗證。
-- 登入失敗會受到次數與時間限制，降低暴力嘗試風險。
-- 後端只允許既定資料表、欄位與 API 操作，前端無法提交任意 SQL。
-- 管理端查閱資料表時會由後端遮罩敏感欄位。
-- 靜態檔案路徑經過白名單與目錄邊界檢查，不會公開 `.env` 或專案內部檔案。
-- 正式環境仍應加上 HTTPS、反向代理、最小權限資料庫帳號及集中式工作階段儲存。
+```powershell
+.\.venv\Scripts\python.exe -m pip check
+docker compose config --quiet
+```
+
+## 權限與資料保護
+
+- 員工與 MIS 使用各自的工作階段 Cookie，包含 HttpOnly、SameSite=Strict 與 8 小時有效期限。
+- 受保護的資料異動 API 驗證登入身分與 CSRF Token，登入失敗也有次數限制。
+- 工作階段存放在 Python 程序記憶體中，重新啟動後需重新登入。
+- 後端驗證輸入、限制資料表與欄位存取，管理端資料表查閱會遮罩敏感欄位。
+- 網頁與靜態資源採允許路徑及目錄邊界檢查，`.env` 與後端原始碼不透過網站提供下載。
+- 目前 SQL Server 連線字串使用 `Encrypt=no;TrustServerCertificate=yes`；網站 TLS 與資料庫加密需依部署需求另行設定。
+
+## 常見問題
+
+| 狀況 | 檢查方式 |
+| --- | --- |
+| 找不到 `.venv` 或缺少套件 | 重新執行本機環境安裝命令；確認從專案根目錄啟動 |
+| 啟動失敗或容器反覆重新啟動 | 查看 `docker compose logs --tail 100 erp_service`，確認 `.env`、資料庫連線及初始化權限 |
+| 網站開啟但 API 回應 503 | 使用 `/api/health` 檢查 SQL Server；確認執行環境可連線到設定的資料庫位址與連接埠 |
+| 80 埠已被占用 | 本機改用 8080；容器部署則檢查主機既有服務與 Compose 的連接埠設定 |
+| SOP 清單沒有來源文件 | 確認 `data/exam/` 中存在支援的檔案；目前 image 未打包該目錄 |
+| 掃描 PDF 或舊版 DOC 無法解析 | 確認 Tesseract 語言資料或文件轉檔工具已安裝且可被程式找到 |
+| 修改程式或 `.env` 後容器仍使用舊設定 | 重新建置 image 並更新容器 |
 
 特別感謝 Codex、ChatGPT 與 Grok 在開發過程中提供協助。
