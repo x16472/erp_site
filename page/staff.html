@@ -83,12 +83,11 @@
                             </div>
                             <p class="organization-summary" id="organizationSummary">全公司</p>
                         </aside>
-
                         <div class="staff-master-detail">
                             <section class="staff-directory-pane">
                                 <div class="staff-directory-toolbar">
                                     <div>
-                                        <span class="eyebrow">STAFF DIRECTORY</span>
+                                        <span class="eyebrow">STAFF&nbsp;DIRECTORY</span>
                                         <h2 id="staffDirectoryTitle">員工清單</h2>
                                     </div>
                                     <div class="staff-directory-actions">
@@ -113,7 +112,9 @@
                                             </tr>
                                         </thead>
                                         <tbody id="staffList">
-                                            <tr><td colspan="7" class="empty">載入中…</td></tr>
+                                            <tr>
+                                                <td colspan="7" class="empty">載入中…</td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -129,7 +130,8 @@
                                 </div>
                                 <div class="staff-detail-body">
                                     <div class="staff-photo-column">
-                                        <img class="staff-photo-preview" id="photoPreview" src="static/appicon.png" alt="員工照片預覽">
+                                        <img class="staff-photo-preview" id="photoPreview" src="static/appicon.png"
+                                            alt="員工照片預覽">
                                         <label class="btn secondary photo-select-button" for="staffPhoto">更換照片</label>
                                         <input class="sr-only" name="photo" id="staffPhoto" type="file"
                                             accept="image/jpeg,image/png,image/webp">
@@ -167,7 +169,8 @@
                                     <p id="staffStatus" aria-live="polite"></p>
                                     <div class="actions">
                                         <button class="btn secondary" id="resetStaff" type="button">還原／新增</button>
-                                        <button class="btn red" id="disableCurrentStaff" type="button" disabled>停用員工</button>
+                                        <button class="btn red" id="disableCurrentStaff" type="button"
+                                            disabled>停用員工</button>
                                         <button class="btn" type="submit">儲存修改</button>
                                     </div>
                                 </div>
@@ -260,4 +263,5 @@
 </body>
 <footer></footer>
 <script type="module" src="./static/staff.js"></script>
+
 </html>

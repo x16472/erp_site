@@ -1,4 +1,7 @@
-import { apiData, bindImageFallbacks, escapeHtml, formatNumber } from './script.js';
+import {
+    apiData, bindImageFallbacks, escapeHtml, formatNumber
+}
+    from './script.js';
 
 const esc = escapeHtml;
 const menuButton = document.querySelector('#menuButton'),

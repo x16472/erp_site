@@ -36,7 +36,8 @@
                     <div class="portal-grid">
                         <section class="portal-card wide">
                             <div class="card-head">
-                                <div><span class="eyebrow">DAILY REPORT</span>
+                                <div>
+                                    <span class="eyebrow">DAILY REPORT</span>
                                     <h2>新增營運日報</h2>
                                     <p>填寫據點作業摘要；送出後進入管理審閱佇列。</p>
                                 </div>
@@ -58,13 +59,14 @@
                                         </select></label><label class="field"><span>數量</span><input type="number"
                                             name="count" min="0" max="9999" value="0" required></label><label
                                         class="field full"><span>備註</span>
-                                        <textarea name="note" maxlength="200"                                          placeholder="只填寫摘要，請勿輸入個人資料、敏感資訊。"></textarea></label></div>
+                                        <textarea name="note" maxlength="200"
+                                            placeholder="只填寫摘要，請勿輸入個人資料、敏感資訊。"></textarea></label></div>
                                 <div class="actions"><button class="btn" type="submit">送交 MIS 審核</button><button
                                         class="btn secondary" type="reset">清除</button></div>
                                 <p id="formStatus" aria-live="polite"></p>
                             </form>
                         </section>
-                        <aside class="portal-card narrow">
+                        <section class="portal-card narrow">
                             <div class="card-head">
                                 <div><span class="eyebrow">SAFE INPUT</span>
                                     <h2>填報提醒</h2>
@@ -76,9 +78,10 @@
                             <div class="process-list compact" id="process">
                                 <div class="empty">正在讀取填報摘要…</div>
                             </div>
-                        </aside>
-                    </div>
+                        </section>
+
                 </section>
+
                 <section class="portal-card full operation-history">
                     <div class="card-head">
                         <div><span class="eyebrow">MY SUBMISSIONS</span>
@@ -86,7 +89,9 @@
                             <p>查看管理員審閱意見；收到補件要求時，可直接補充回覆。</p>
                         </div>
                     </div>
-                    <div class="result-list" id="mySubmissions"><div class="empty">正在讀取填報紀錄…</div></div>
+                    <div class="result-list" id="mySubmissions">
+                        <div class="empty">正在讀取填報紀錄…</div>
+                    </div>
                 </section>
             </div>
         </main>
@@ -95,4 +100,5 @@
 </body>
 <footer></footer>
 <script type="module" src="./static/sales.js"></script>
+
 </html>
