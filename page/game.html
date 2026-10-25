@@ -27,14 +27,14 @@
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-             <span class="top-kicker">Media</span>
-             <h1>企業宣導影音</h1>
-             <span class="api-state ok" id="playerState">播放器就緒</span>
+                <span class="top-kicker">Media</span>
+                <h1>企業宣導影音</h1>
+                <span class="api-state ok" id="playerState">播放器就緒</span>
             </header>
             <div class="portal-content">
                 <section class="portal-card youtube-control">
                     <div class="card-head">
-                        <div><span class="eyebrow">INTERNAL BROADCAST</span>
+                        <div><span class="eyebrow">INTERNAL&nbsp;BROADCAST</span>
                             <h2>載入宣導影音</h2>
                             <p>支援 YouTube 一般影片、直播、Shorts、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。</p>
                         </div>
@@ -44,7 +44,7 @@
                             <input id="youtubeUrl" name="url" type="url" inputmode="url" autocomplete="url"
                                 value="https://www.youtube.com/watch?v=BsvIwqyiaJw"
                                 placeholder="https://www.youtube.com/watch?v=..." required>
-                            </label>
+                        </label>
                         <button class="btn" type="submit">轉換並播放</button>
                     </form>
                     <p class="hint" id="youtubeStatus" aria-live="polite">正在確認測試影片並取得標題…</p>
@@ -62,44 +62,36 @@
                         </div>
                         <a class="btn secondary" id="openYoutube" href="https://www.youtube.com/watch?v=BsvIwqyiaJw"
                             target="_blank" rel="noopener noreferrer">YouTube 開啟</a>
+                    </div>
+                </section>
+                <section class="portal-card youtube-control">
+                    <div class="card-head">
+                        <div><span class="eyebrow">YOUTUBE&nbsp;THUMBNAILS</span>
+                            <h2>YouTube 縮圖下載</h2>
+                            <p>貼上 YouTube 影片網址或 11 碼影片 ID，選擇可用尺寸下載縮圖。</p>
                         </div>
-                        </section>
-                        <section class="portal-card">
+                    </div>
+                    <form id="thumbnail-form" class="youtube-form">
+                        <label class="field" for="thumbnail-url"><span>YouTube 網址或影片 ID</span>
+                            <input id="thumbnail-url" name="thumbnail" type="text" autocomplete="off"
+                                placeholder="https://www.youtube.com/watch?v=..." required>
+                        </label>
+                        <button class="btn" type="submit">取得縮圖</button>
+                    </form>
+                    <p id="thumbnail-msg" class="hint" role="status" aria-live="polite"></p>
+                    <div id="thumbnail-result" hidden>
+                        <p class="hint">影片&nbsp;ID:<span id="thumbnail-video-id"></span></p>
+                        <div id="thumbnail-grid" class="thumbnail-grid"></div>
+                        <p id="thumbnail-empty" class="hint" hidden>找不到可用的縮圖，請確認影片是否存在或稍後重試。</p>
+                    </div>
+                    <div id="thumbnail-recent" hidden>
                         <div class="card-head">
-                            <div><span class="eyebrow">KNOWLEDGE &amp; MANUALS</span>
-                                <h2>知識與營運SOP檢索</h2>
-                                <p>搜尋知識條目，或查閱同步後的營運文件與段落。</p>
-                            </div>
+                            <h3>最近查詢</h3>
+                            <button id="thumbnail-clear" class="btn secondary" type="button">清除紀錄</button>
                         </div>
-                        <nav class="admin-tabs" id="knowledgeTabs">
-                            <button class="active" data-knowledge-mode="entries">知識條目</button>
-                            <button data-knowledge-mode="manuals">營運SOP</button>
-                        </nav>
-                        <div class="metric-grid" id="metrics">
-                            <article class="metric-card">
-                                <p>正在載入統計數據…</p>
-                            </article>
-                        </div>
-                        <section class="training-reader" id="manualReader" hidden>
-                            <button class="btn secondary" id="closeManual" type="button">
-                                返回文件列表</button>
-                                    <div class="card-head"><div><span class="eyebrow" id="manualReaderCategory"></span>
-                                        <h2 id="manualReaderTitle"></h2><p id="manualReaderFile"></p></div></div>
-                            <div class="training-sections" id="manualReaderSections"></div>
-                        </section>
-                        <div class="training-toolbar">
-                            <div class="search-box">
-                            <label class="sr-only" for="search">搜尋知識</label>
-                            <input id="search" type="search" placeholder="請輸入欲查詢內容…">
-                            <span>⌕</span>
-                            </div>
-                            <label class="field" id="manualCategoryField" hidden><span class="sr-only">SOP分類</span>
-                                <select id="manualCategory"><option value="">全部分類</option></select></label>
-                        </div>
-                        <div class="knowledge-grid empty" id="knowledge">
-                            <div>正在載入條目…</div>
-                        </div>
-                    </section>
+                        <div id="thumbnail-recent-list" class="thumbnail-recent-list"></div>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
@@ -116,4 +108,6 @@
 </body>
 <footer></footer>
 <script type="module" src="./static/game.js"></script>
+<script type="module" src="./static/youtube_thumbnail.js"></script>
+
 </html>

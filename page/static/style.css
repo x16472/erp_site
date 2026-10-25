@@ -1360,6 +1360,7 @@ footer a {
     transition: .3s
 }
 
+/*Youtube區塊*/
 .youtube-control {
     margin-bottom: 22px
 }
@@ -1407,6 +1408,62 @@ footer a {
     margin: 4px 0 0;
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: 18px
+}
+
+/*Youtube縮圖下載*/
+/*縮圖卡片網格*/
+/* 自動換行的網格：每欄最小 240px（容器較窄時縮到 100%），並平均分配剩餘空間 */
+.thumbnail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 16px;
+}
+
+/* 卡片外框：淺色邊框加圓角，overflow 隱藏可讓圖片的四角跟著圓角裁切 */
+.thumbnail-card {
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* 卡片文字區的內距 */
+.thumbnail-card-body {
+    padding: 16px;
+}
+
+
+/*最近瀏覽清單*/
+/* 橫向排列，空間不足時自動換行 */
+.thumbnail-recent-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* 整個按鈕可點擊，顯示手指游標提示 */
+.thumbnail-recent-list button {
+    cursor: pointer;
+}
+
+
+/*圖片共用與個別設定*/
+/* 圖片改為區塊元素，避免行內元素底部多出一小段空白 */
+.thumbnail-card img,
+.thumbnail-recent-list img {
+    display: block;
+}
+
+/* 卡片內的圖片：寬度填滿卡片，高度依原始比例自動調整 */
+.thumbnail-card img {
+    width: 100%;
+    height: auto;
+}
+
+/* 最近瀏覽的圖片：固定寬度、16:9 比例，超出的部分裁切以避免變形 */
+.thumbnail-recent-list img {
+    width: 144px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
 }
 
 /*專業團隊、打卡與內部營運手冊*/
