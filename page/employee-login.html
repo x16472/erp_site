@@ -23,16 +23,16 @@
                 <strong id="accessClock">--:--:--</strong>
             </div>
             <form id="accessForm">
-                <label class="field"><span>員工編號</span>
-                    <input name="employee_id" autocomplete="username" maxlength="20" pattern="[A-Za-z0-9_-]+"
-                        placeholder="例如 K001" required autofocus></label>
+                <label class="field">
+                    <span>員工編號</span>
+                    <input name="employee_id" autocomplete="username" maxlength="20"
+                    pattern="[A-Za-z0-9_-]+" placeholder="例如 K001" required autofocus></label>
                 <div class="clock-actions">
                     <button class="btn" name="mode" value="CLOCK_IN" type="submit">上班打卡並進入</button>
                     <button class="btn secondary" name="mode" value="ACCESS_ONLY" type="submit">不打卡進入系統</button>
                 </div>
-                <p class="employee-access-brand">
-                若本日已打卡，可直接進入；<br>
-                系統會提示最近一次打卡時間。
+                <p>
+                若本日已打卡，可直接進入；系統會提示最近一次打卡時間。
                 </p>
                 <p id="accessStatus" aria-live="polite"></p>
             </form>

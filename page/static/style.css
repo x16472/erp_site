@@ -76,8 +76,8 @@ img {
 }
 
 .btn.secondary {
-    background: #edf4f8;
-    color: #176786
+    background: #86868646;
+    color: #000000
 }
 
 .btn.red {
@@ -96,9 +96,9 @@ img {
 
 /*3. 強制規範按鈕的標準後台尺寸*/
 .btn.secondary {
-    padding: 6px 12px !important;
+    padding: 8px 12px !important;
     /*修正過大的內距*/
-    font-size: 14px !important;
+    font-size: 16px !important;
     /*標準字體大小*/
     height: 32px !important;
     /*鎖定標準後台按鈕高度*/
@@ -948,7 +948,7 @@ img {
 
 .field {
     display: grid;
-    gap: 6px
+    gap: 8px
 }
 
 .field.full {
@@ -1457,7 +1457,7 @@ img {
     gap: 10px
 }
 
-.clock-form .field {
+.clock-form {
     min-width: 145px
 }
 
@@ -1692,7 +1692,7 @@ img {
     margin-bottom: 38px
 }
 
-.staff-maintenance .field {
+.staff-maintenance {
     margin-bottom: 12px
 }
 
@@ -2046,7 +2046,7 @@ img {
     gap: 10px 16px
 }
 
-.staff-fields .field {
+.staff-fields {
     display: grid;
     grid-template-columns: 88px minmax(0, 1fr);
     align-items: center;
@@ -2058,7 +2058,7 @@ img {
     grid-column: 1/-1
 }
 
-.staff-fields .field span {
+.staff-fields span {
     font-size: 12px
 }
 
@@ -2163,18 +2163,17 @@ img {
 
 .employee-access-brand p {
     max-width: 620px;
-    color: #c7dce8;
-    font-size: 18px
+    color: #ffffff;
 }
 
 .employee-access-brand a {
-    color: #9eddf6
+    color: #ffffff
 }
 
 .employee-access-card {
-    padding: 36px;
+    padding: 20px;
     border: 1px solid #ffffff26;
-    border-radius: 26px;
+    border-radius: 35px;
     background: #ffffffed;
     color: var(--ink);
     box-shadow: 0 28px 80px #071b2d66;
@@ -2182,7 +2181,7 @@ img {
 }
 
 .employee-access-card .live-clock {
-    margin-bottom: 24px
+    margin-bottom: 20px
 }
 
 .employee-access-card .clock-actions {
@@ -2192,7 +2191,7 @@ img {
 }
 
 .employee-access-card .btn {
-    min-height: 52px
+    min-height: 50px
 }
 
 /*第 94 行需求：公開網站、入口打卡與待審工作區*/
@@ -2343,7 +2342,7 @@ img {
     background: #fff
 }
 
-.team-toolbar .field {
+.team-toolbar {
     width: min(320px, 100%)
 }
 
@@ -2948,7 +2947,7 @@ img {
         flex-direction: column
     }
 
-    .team-toolbar .field {
+    .team-toolbar {
         width: 100%
     }
 
@@ -3746,7 +3745,7 @@ img {
         width: 100%
     }
 
-    .staff-fields .field {
+    .staff-fields {
         grid-template-columns: 1fr;
         gap: 4px
     }
