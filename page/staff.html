@@ -12,8 +12,9 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <span><b>銀盾共同體</b>
-                    <small>MIS 員工管理</small></span></a>
+                <b>銀盾共同體</b>
+                <small>MIS 員工管理</small>
+            </a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
                 <a href="sales.html">營運日報</a>
@@ -22,36 +23,38 @@
                 <a class="active" href="staff.html">員工管理</a>
                 <a href="mis.html">後台管理</a>
             </nav>
-            <p class="portal-foot">ADMIN ONLY · 需管理員登入</p>
+            <p class="portal-foot">ADMIN&nbsp;ONLY&nbsp;·&nbsp;需管理員登入</p>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <div>
-                    <span class="top-kicker">STAFF MANAGEMENT</span>
-                    <h1>員工管理</h1>
-                </div>
+                <span class="top-kicker">STAFF&nbsp;MANAGEMENT</span>
+                <h1>員工管理</h1>
                 <span class="api-state" id="apiState">檢查登入狀態</span>
             </header>
             <section class="login-shell" id="loginShell">
                 <form class="login-card" id="loginForm">
                     <h2>管理員登入</h2>
                     <p>員工主檔及出缺勤僅供授權管理人員維護。</p>
-                    <label class="field"><span>管理員帳號</span>
-                        <input name="username" autocomplete="username" required></label>
-                    <label class="field" style="margin-top:12px"><span>密碼</span>
-                        <input name="password" type="password" autocomplete="current-password" required></label>
+                    <label class="field">
+                        <span>管理員帳號</span>
+                        <input name="username" autocomplete="username" required>
+                    </label>
+                    <label class="field">
+                        <span>密碼</span>
+                        <input name="password" type="password" autocomplete="current-password" required>
+                    </label>
                     <button class="btn" type="submit" style="width:100%;margin-top:20px">登入</button>
                     <p id="loginStatus" aria-live="polite"></p>
                 </form>
             </section>
             <section class="portal-content" id="staffConsole" hidden>
                 <div class="card-head">
-                    <div><span class="eyebrow">AUTHORIZED AREA</span>
+                    <div>
+                        <span class="eyebrow">AUTHORIZED&nbsp;AREA</span>
                         <h2>員工主檔與出勤管理</h2>
-                        <p>文字資料寫入 SQL Server；照片存放於 static/staff，檔名由員工編號自動產生。</p>
+                        <p>登入者：<span id="adminName"></span></p>
                     </div>
-                    <div><span class="hint" id="adminName"></span> <button class="btn secondary" id="logoutButton"
-                            type="button">登出</button></div>
+                    <button class="btn secondary" id="logoutButton">登出</button>
                 </div>
                 <nav class="admin-tabs" id="staffTabs">
                     <button class="active" data-panel="staffPanel">員工資料</button>
@@ -93,7 +96,7 @@
                                             <span class="sr-only">搜尋員工</span>
                                             <input id="staffSearch" type="search" placeholder="搜尋姓名、編號、職稱…">
                                         </label>
-                                        <button class="btn" id="addStaff" type="button">＋ 新增員工</button>
+                                        <button class="btn" id="addStaff" type="button">新增員工</button>
                                     </div>
                                 </div>
                                 <div class="staff-table-scroll">
@@ -220,13 +223,13 @@
                     </form>
                     <div class="metric-grid attendance-metrics">
                         <article class="metric-card">
-                            <p>目前結果</p><strong id="recordCount">0</strong> 筆
+                            <p>目前結果</p><strong id="recordCount">0</strong>筆
                         </article>
                         <article class="metric-card">
-                            <p>上班打卡</p><strong id="clockInCount">0</strong> 筆
+                            <p>上班打卡</p><strong id="clockInCount">0</strong>筆
                         </article>
                         <article class="metric-card">
-                            <p>下班打卡</p><strong id="clockOutCount">0</strong> 筆
+                            <p>下班打卡</p><strong id="clockOutCount">0</strong>筆
                         </article>
                     </div>
                     <section class="portal-card full">

@@ -3018,6 +3018,15 @@ img {
     --public-theme-detail: #8e9aa6;
     --public-theme-surface: #f1f3f5
 }
+.public-body[data-theme="white"],
+.settings-preview.white {
+    --public-theme-dark: #000;
+    --public-theme-mid: #ffffff;
+    --public-theme-light: #ffffff;
+    --public-theme-accent: #ffff;
+    --public-theme-detail: #7a7a7a;
+    --public-theme-surface: #f1f3f5
+}
 
 /* 公開首頁使用深色企業主視覺，避免舊版童趣漸層。 */
 .public-body {

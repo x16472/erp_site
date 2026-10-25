@@ -12,7 +12,9 @@
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
-                <span><b>銀盾共同體</b><small>後台管理區</small></span></a>
+                <b>銀盾共同體</b>
+                <small>後台管理區</small>
+            </a>
             <nav class="portal-nav" aria-label="內部系統導覽">
                 <a href="home.html">工作台</a>
                 <a href="sales.html">營運日報</a>
@@ -21,23 +23,26 @@
                 <a href="staff.html">員工管理</a>
                 <a class="active" href="mis.html">後台管理</a>
             </nav>
-            <p class="portal-foot">ADMIN ONLY · 需管理員登入</p>
+            <p class="portal-foot">ADMIN&nbsp;ONLY&nbsp;·&nbsp;需管理員登入</p>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <div><span class="top-kicker">MANAGEMENT INFORMATION SYSTEM</span>
-                    <h1>後台管理區</h1>
-                </div><span class="api-state" id="apiState">檢查登入狀態</span>
+                <span class="top-kicker">MANAGEMENT&nbsp;INFORMATION&nbsp;SYSTEM</span>
+                <h1>後台管理區</h1>
+                <span class="api-state" id="apiState">檢查登入狀態</span>
             </header>
             <section class="login-shell" id="loginShell">
                 <form class="login-card" id="loginForm">
                     <h2>管理員登入</h2>
-                    <p>網站設定、資料表查閱與待審資料，<br>僅供授權管理員使用。</p>
-                    <label class="field"><span>管理員帳號</span>
-                        <input name="username" autocomplete="username" required></label>
-                    <label class="field" style="margin-top:12px">
+                    <p>員工主檔及出缺勤僅供授權管理人員維護。</p>
+                    <label class="field">
+                        <span>管理員帳號</span>
+                        <input name="username" autocomplete="username" required>
+                    </label>
+                    <label class="field">
                         <span>密碼</span>
-                        <input name="password" type="password" autocomplete="current-password" required></label>
+                        <input name="password" type="password" autocomplete="current-password" required>
+                    </label>
                     <button class="btn" type="submit" style="width:100%;margin-top:20px">登入</button>
                     <p id="loginStatus" aria-live="polite"></p>
                 </form>
@@ -45,10 +50,12 @@
             <section class="admin-console" id="adminConsole" hidden>
                 <div class="portal-content">
                     <div class="card-head">
-                        <div><span class="eyebrow">ADMIN CONSOLE</span>
+                        <div>
+                            <span class="eyebrow">ADMIN&nbsp;CONSOLE</span>
                             <h2>營運系統管理</h2>
                             <p>登入者：<span id="adminName"></span></p>
-                        </div><button class="btn secondary" id="logoutButton">登出</button>
+                        </div>
+                        <button class="btn secondary" id="logoutButton">登出</button>
                     </div>
                     <nav class="admin-tabs" id="adminTabs">
                         <button class="active" data-panel="settingsPanel">官方網站設定</button>
@@ -62,15 +69,16 @@
                         <div class="portal-grid">
                             <form class="portal-card wide" id="settingsForm">
                                 <div class="card-head">
-                                    <div><span class="eyebrow">PUBLIC WEBSITE</span>
+                                    <div><span class="eyebrow">PUBLIC&nbsp;WEBSITE</span>
                                         <h2>官方網站版面設定</h2>
-                                        <p>儲存後會寫入 Company_WebSettings，不會修改其他營運資料表。</p>
+                                        <p>儲存後會寫入Company_WebSettings，不會修改其他營運資料表。</p>
                                     </div>
                                 </div>
                                 <div class="form-grid"><label class="field"><span>視覺主題</span><select name="theme">
                                             <option value="shield">銀盾藍</option>
                                             <option value="medal">勳章紅</option>
                                             <option value="steel">鋼鐵灰</option>
+                                            <option value="white">專業白</option>
                                         </select></label><label class="field full">
                                         <span>首頁主標題</span><input name="hero_title" maxlength="60" required></label>
                                     <label class="field full"><span>首頁說明</span>

@@ -473,9 +473,10 @@ def _migrate_business_seed_data(cursor) -> None:
            SET theme=CASE theme
                WHEN N'ocean' THEN N'shield'
                WHEN N'sunrise' THEN N'medal'
-               WHEN N'forest' THEN N'steel'
+               WHEN N'steel' THEN N'steel'
+               WHEN N'white' THEN N'white'
                ELSE theme END
-           WHERE theme IN (N'ocean',N'sunrise',N'forest')"""
+           WHERE theme IN (N'ocean',N'sunrise',N'steel',N'white')"""
     )
 
 

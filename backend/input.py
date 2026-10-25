@@ -16,7 +16,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 ALLOWED_CATEGORIES = {"出勤", "業務進度", "物流調度", "帳務", "設備", "餐飲服務", "其他"}
-ALLOWED_THEMES = {"shield", "medal", "steel"}
+ALLOWED_THEMES = {"shield", "medal", "steel","white"}
 ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
 ALLOWED_ACCESS_MODES = {"CLOCK_IN", "ACCESS_ONLY"}
 ALLOWED_GENDERS = {"男", "女", "其他"}
