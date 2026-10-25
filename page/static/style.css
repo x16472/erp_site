@@ -44,7 +44,8 @@ a {
     color: inherit
 }
 
-img {
+img,
+iframe {
     max-width: 100%
 }
 
@@ -57,7 +58,7 @@ img {
 }
 
 .btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
@@ -223,7 +224,6 @@ img {
     grid-template-columns: 1.05fr .95fr;
     align-items: center;
     min-height: 680px;
-    max-width:max-content;
     padding: 70px max(24px, 7vw);
     overflow: hidden;
     background: linear-gradient(135deg, #f8fbfc 0%, #fef8ef 100%)
@@ -382,10 +382,28 @@ img {
     font-size: 13px
 }
 
+/* 區段共用基礎格式；卡片與工作區依現有元件設定內距。 */
 section {
-    max-width: 1420px;
+    min-width: 0;
+    margin: 0;
+    padding: 0
+}
+
+/* 官網的大區段留白僅套用到 main 的直接子層。 */
+:where(.public-body main)>section {
     margin: auto;
     padding: 95px 30px
+}
+
+.section-number {
+    margin-bottom: 22px;
+    color: #a5adb8;
+    font: 800 11px/1 ui-monospace, monospace;
+    letter-spacing: .16em
+}
+
+.section-gap {
+    margin-top: 12px
 }
 
 .section-intro {
@@ -486,17 +504,31 @@ section {
 }
 
 .day-section {
-    background: var(--paper)
+    color: #e2e8f0;
+    background: #0f172a
+}
+
+.day-section h2 {
+    color: #fff
+}
+
+.day-section .section-intro p {
+    color: #bcd0df
+}
+
+.day-section .eyebrow {
+    color: #8fdcff
 }
 
 .day-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 12px
 }
 
 .day-item {
     position: relative;
+    overflow-wrap: anywhere;
     padding: 25px 20px 22px;
     border-radius: 18px;
     background: #fff
@@ -540,12 +572,12 @@ section {
     color: #c6deea
 }
 
-footer {
+.public-body>footer {
     display: grid;
     grid-template-columns: 1.4fr 1fr 1fr;
     gap: 40px;
     padding: 50px max(28px, 7vw);
-    background: #102a4c;
+    background: var(--public-theme-dark);
     color: #fff
 }
 
@@ -576,7 +608,8 @@ footer a {
     padding: 25px 17px;
     background: linear-gradient(180deg, #17365f, #102b4c);
     color: #fff;
-    z-index: 20
+    z-index: 20;
+    overflow-y: auto
 }
 
 .portal-brand {
@@ -647,7 +680,9 @@ footer a {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px clamp(22px, 5vw, 65px);
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px clamp(18px, 3vw, 42px);
     border-bottom: 1px solid var(--line);
     background: #ffffffed;
     backdrop-filter: blur(12px)
@@ -687,9 +722,19 @@ footer a {
 }
 
 .portal-content {
-    max-width: 1320px;
-    margin: auto;
-    padding: 40px clamp(20px, 5vw, 65px)
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    padding: 24px clamp(18px, 3vw, 42px)
+}
+
+.portal-content>*,
+.portal-grid>* {
+    min-width: 0
+}
+
+.portal-content>.portal-card+.portal-card {
+    margin-top: 24px
 }
 
 .portal-welcome {
@@ -773,20 +818,21 @@ footer a {
 
 .portal-grid {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 16px
 }
 
 .portal-card {
     grid-column: span 6;
-    padding: 24px;
+    min-width: 0;
+    padding: 16px;
     border: 1px solid var(--line);
     border-radius: 18px;
     background: #fff;
-    box-shadow: 0 5px 18px rgba(28, 48, 75, .04)
+    box-shadow: 0 5px 18px rgba(64, 64, 65, 0.04)
 }
 
-/* .portal-card.wide {
+.portal-card.wide {
     grid-column: span 8
 }
 
@@ -796,13 +842,14 @@ footer a {
 
 .portal-card.full {
     grid-column: 1/-1
-} */
+}
 
 .card-head {
     display: flex;
     align-items: end;
     justify-content: space-between;
     gap: 20px;
+    flex-wrap: wrap;
     margin-bottom: 18px
 }
 
@@ -943,12 +990,13 @@ footer a {
 /*表單、流程與管理*/
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px
 }
 
 .field {
     display: grid;
+    min-width: 0;
     gap: 8px
 }
 
@@ -1116,8 +1164,8 @@ footer a {
     padding: 25px;
     border-radius: 18px;
     background: linear-gradient(125deg,
-        var(--public-theme-dark, #101b2d),
-        var(--public-theme-mid, #244a73));
+            var(--public-theme-dark, #101b2d),
+            var(--public-theme-mid, #244a73));
     color: #fff
 }
 
@@ -1412,8 +1460,8 @@ footer a {
 
 .clock-panel {
     display: grid;
-    grid-template-columns: 1.3fr auto 1.2fr 1fr;
-    align-items: end;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: center;
     gap: 18px;
     margin: 15px;
     /*外距*/
@@ -1734,11 +1782,6 @@ footer a {
 }
 
 /* 員工管理：依組織樹、名冊、明細的主從式工作區排列。 */
-#staffConsole {
-    max-width: 1680px;
-    padding: 24px clamp(18px, 3vw, 42px)
-}
-
 .staff-manager-workspace {
     display: grid;
     grid-template-columns: 245px minmax(0, 1fr);
@@ -2107,10 +2150,6 @@ footer a {
     font-size: 12px
 }
 
-.section-gap {
-    margin-top: 12px
-}
-
 .compact-field {
     min-width: 150px
 }
@@ -2257,13 +2296,6 @@ footer a {
     background: var(--blue)
 }
 
-.section-number {
-    margin-bottom: 22px;
-    color: #a5adb8;
-    font: 800 11px/1 ui-monospace, monospace;
-    letter-spacing: .16em
-}
-
 .philosophy-card {
     position: relative;
     overflow: hidden;
@@ -2284,21 +2316,6 @@ footer a {
 .philosophy-card:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow)
-}
-
-.day-section {
-    color: #fff;
-    background:
-        radial-gradient(circle at 85% 0, rgba(7, 152, 211, .32), transparent 34%),
-        linear-gradient(135deg, #102a4c, #173f68)
-}
-
-.day-section .section-intro p {
-    color: #bcd0df
-}
-
-.day-section .eyebrow {
-    color: #2e30319c
 }
 
 .day-item {
@@ -2329,34 +2346,13 @@ footer a {
     padding: 16px 18px;
     border: 1px solid var(--line);
     border-radius: 16px;
-    background: #fff
-}
-
-.team-toolbar {
+    background: #fff;
     width: min(320px, 100%)
 }
 
 .team-toolbar>span {
     color: var(--muted);
     font-size: 13px
-}
-
-#industries {
-    /* 強制蓋掉 .day-section 的白底，換成與網頁頂部一致的深藍色 */
-    background: #0f172a !important;
-
-    /* 讓區域內的文字（如描述段落）預設變成淺色 */
-    color: #e2e8f0;
-}
-
-/* 確保大標題在深色背景下是純白色 */
-#industries h2 {
-    color: #ffffff !important;
-}
-
-/* 確保小標題的 eyebrow 亮藍色有正確顯示 */
-#industries .eyebrow {
-    color: #8fdcff !important;
 }
 
 .cta-banner {
@@ -2401,32 +2397,38 @@ footer a {
     font-weight: 900
 }
 
-.clock-panel {
-    grid-template-columns: minmax(280px, 1.2fr) auto minmax(250px, 1fr) auto;
-    align-items: center
-}
-
 .attendance-session-state {
-    display: grid;
-    gap: 7px
+    display: flex;
+    flex-direction: column;
+    /*讓子元素由上往下垂直排列*/
+    justify-content: center;
+    /*垂直居中對齊*/
+    gap: 6px
 }
 
 .attendance-policy {
     color: #a24c37 !important;
     font-size: 12px;
-    font-weight: 800
+    font-weight: 800;
+    /*清除 p 標籤的預設外邊距*/
+    margin: 0;
 }
 
 .attendance-session-actions {
+    /*將此容器宣告為網格佈局*/
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    min-width: 220px
+    /*網格元件之間的間距（上下左右）皆為 8px。*/
+    gap: 6px;
+    /*限制此容器的最小寬度*/
+    min-width: 300px
 }
 
-.attendance-session-actions .btn:first-child:not([hidden]) {
-    grid-column: 1/-1
+/* 兩個按鈕同時顯示時並列 */
+.attendance-session-actions:has(.btn:not([hidden])+.btn:not([hidden])) {
+    /* 定義網格為 兩欄（Columns），且兩欄的寬度比例為 1:1（平分剩餘空間） */
+    grid-template-columns: 1fr 1fr;
 }
+
 .queue-head,
 .review-event-head,
 .review-pane-title {
@@ -2450,6 +2452,7 @@ footer a {
 .review-pane-title small {
     color: var(--muted)
 }
+
 /*桌面版 RWD 樣式 */
 .review-workspace {
     display: grid;
@@ -2458,11 +2461,13 @@ footer a {
     height: calc(100vh - 160px);
     min-height: 560px;
 
-    overflow: hidden; /* 防止整體溢出外框 */
+    overflow: hidden;
+    /* 防止整體溢出外框 */
     border: 1px solid var(--line);
     border-radius: 18px;
     background: #fff;
 }
+
 /* 左側：員工列表 */
 .review-people {
     padding: 18px;
@@ -2477,14 +2482,16 @@ footer a {
     /*外殼關閉滾動，避免與內層產生雙重滾動條 */
     overflow: hidden;
 }
+
 .review-person-list {
     display: grid;
     gap: 7px;
     /*這行會成功生效，自動將灰色背景延伸到紅框底部 */
     flex: 1;
-     /* 當員工名單超出高度時，在這裡產生滾動條 */
+    /* 當員工名單超出高度時，在這裡產生滾動條 */
     overflow-y: auto;
 }
+
 .review-person {
     display: grid;
     grid-template-columns: 44px 1fr auto;
@@ -2498,6 +2505,7 @@ footer a {
     text-align: left;
     cursor: pointer
 }
+
 .review-person:hover,
 .review-person.active {
     border-color: #b8ddea;
@@ -2527,15 +2535,18 @@ footer a {
     font-weight: 900;
     color: var(--blue)
 }
+
 /* 右側：申請事件外殼 */
 .review-events {
-    height: 100%; /* 填滿紅框高度 */
+    height: 100%;
+    /* 填滿紅框高度 */
     /* 啟用 Flex 佈局，才能讓內部的 result-list 滾動 */
     display: flex;
     flex-direction: column;
     padding: 0;
     box-sizing: border-box;
-    overflow: hidden; /* 確保外殼不出現雙滾動條 */
+    overflow: hidden;
+    /* 確保外殼不出現雙滾動條 */
 }
 
 /* 右側頂部固定區（標題與篩選按鈕保持不動） */
@@ -2543,15 +2554,25 @@ footer a {
 .queue-filters {
     padding-left: 24px;
     padding-right: 24px;
-    flex-shrink: 0; /* 防止被壓縮 */
+    flex-shrink: 0;
+    /* 防止被壓縮 */
 }
-.review-event-head { padding-top: 24px; }
-.queue-filters { padding-top: 12px; padding-bottom: 12px; }
+
+.review-event-head {
+    padding-top: 24px;
+}
+
+.queue-filters {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
 
 /* 右側事件列表*/
-.result-list {
-    flex: 1;            /* 自動佔滿剩餘的所有高度 */
-    overflow-y: auto;   /* 垂直滾動條 */
+.review-events .result-list {
+    flex: 1;
+    /* 自動佔滿剩餘的所有高度 */
+    overflow-y: auto;
+    /* 垂直滾動條 */
     padding: 12px 24px 24px 24px;
 }
 
@@ -2669,11 +2690,11 @@ footer a {
         grid-template-columns: repeat(2, 1fr)
     }
 
-    /* .portal-card,
+    .portal-card,
     .portal-card.wide,
     .portal-card.narrow {
         grid-column: 1/-1
-    } */
+    }
 
     .clock-panel {
         grid-template-columns: 1fr 1fr
@@ -2747,7 +2768,7 @@ footer a {
         margin-top: 20px
     }
 
-    footer {
+    .public-body>footer {
         grid-template-columns: 1fr
     }
 
@@ -2757,6 +2778,14 @@ footer a {
 
     .portal-content {
         padding: 25px 17px
+    }
+
+    .portal-topbar .top-kicker {
+        flex-basis: 100%
+    }
+
+    .login-card {
+        padding: 24px
     }
 
     .portal-welcome {
@@ -2795,6 +2824,7 @@ footer a {
     .admin-tool-row .btn {
         margin-top: 12px
     }
+
     /* 窄螢幕下，兩種卡片改為直式排列：
        文字/照片區在上、按鈕群組在下靠右，避免橫向空間不足時
        文字被壓縮到只剩省略號、或按鈕被撐爆變形 */
@@ -2865,12 +2895,14 @@ footer a {
 
 /* 平板/手機版 RWD 樣式（小於 980px） */
 @media(max-width: 980px) {
+
     /* 父層：取消桌面版高度，使其隨網頁自然延伸 */
     .review-workspace {
         grid-template-columns: 1fr;
         height: auto;
         overflow: visible;
     }
+
     /* 上方員工區：移除右邊框，改為下邊框 */
     .review-people {
         border-right: 0;
@@ -2886,13 +2918,15 @@ footer a {
         max-height: 300px;
         overflow-y: auto;
     }
-        /* 下方事件外殼：取消它的滾動，讓它變成靜態容器，標題和按鈕就不會跟著滾 */
+
+    /* 下方事件外殼：取消它的滾動，讓它變成靜態容器，標題和按鈕就不會跟著滾 */
     .review-events {
         height: auto;
         overflow: visible;
         padding: 0;
     }
-  /* 調整手機版標題與篩選器的內距 */
+
+    /* 調整手機版標題與篩選器的內距 */
     .review-event-head,
     .queue-filters {
         padding-left: 16px;
@@ -2900,7 +2934,7 @@ footer a {
     }
 
     /* 下方卡片列表：把固定高度與滾動條鎖在這裡！ */
-    .result-list {
+    .review-events .result-list {
         /* 設定一個適合手機版卡片滾動的高度（例如 400px，可依需求調整） */
         height: 400px;
 
@@ -2992,6 +3026,7 @@ footer a {
     --public-theme-detail: #8e9aa6;
     --public-theme-surface: #f1f3f5
 }
+
 .public-body[data-theme="white"],
 .settings-preview.white {
     --public-theme-dark: #000;
@@ -3118,10 +3153,6 @@ footer a {
     border-top: 3px solid var(--public-theme-mid)
 }
 
-.business-sector-section {
-    background: #e8ebef
-}
-
 .sector-card {
     min-height: 260px;
     border: 1px solid #910202b2;
@@ -3148,10 +3179,6 @@ footer a {
     border: 1px solid #ffffff1c;
     border-radius: 12px;
     background: linear-gradient(120deg, var(--public-theme-dark), var(--public-theme-mid))
-}
-
-footer {
-    background: var(--public-theme-dark)
 }
 
 /* 內部系統沿用相同企業色，確保官方網站與工作入口一致。 */
@@ -3431,6 +3458,7 @@ footer {
     gap: 10px;
     align-items: start
 }
+
 /* 當沒有側邊欄時，強制轉為單欄 */
 .session-layout.no-sidebar {
     grid-template-columns: 1fr;
@@ -3617,6 +3645,7 @@ footer {
 }
 
 @media (max-width: 640px) {
+
     .training-hero,
     .session-head,
     .wrong-card {
