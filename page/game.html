@@ -40,7 +40,8 @@
                         </div>
                     </div>
                     <form id="youtubeForm" class="youtube-form">
-                        <label class="field" for="youtubeUrl"><span>YouTube 網址</span>
+                        <label class="field" for="youtubeUrl">
+                            <span>YouTube 網址</span>
                             <input id="youtubeUrl" name="url" type="url" inputmode="url" autocomplete="url"
                                 value="https://www.youtube.com/watch?v=BsvIwqyiaJw"
                                 placeholder="https://www.youtube.com/watch?v=..." required>
@@ -66,7 +67,8 @@
                 </section>
                 <section class="portal-card youtube-control">
                     <div class="card-head">
-                        <div><span class="eyebrow">YOUTUBE&nbsp;THUMBNAILS</span>
+                        <div>
+                            <span class="eyebrow">YOUTUBE&nbsp;THUMBNAILS</span>
                             <h2>YouTube 縮圖下載</h2>
                             <p>貼上 YouTube 影片網址或 11 碼影片 ID，選擇可用尺寸下載縮圖。</p>
                         </div>
@@ -80,9 +82,13 @@
                     </form>
                     <p id="thumbnail-msg" class="hint" role="status" aria-live="polite"></p>
                     <div id="thumbnail-result" hidden>
-                        <p class="hint">影片&nbsp;ID:<span id="thumbnail-video-id"></span></p>
+                        <p class="hint">影片&nbsp;ID:
+                            <span id="thumbnail-video-id"></span>
+                        </p>
                         <div id="thumbnail-grid" class="thumbnail-grid"></div>
-                        <p id="thumbnail-empty" class="hint" hidden>找不到可用的縮圖，請確認影片是否存在或稍後重試。</p>
+                        <p id="thumbnail-empty" class="hint" hidden>
+                            找不到可用的縮圖，請確認影片是否存在或稍後重試。
+                        </p>
                     </div>
                     <div id="thumbnail-recent" hidden>
                         <div class="card-head">

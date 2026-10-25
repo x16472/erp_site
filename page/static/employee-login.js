@@ -1,5 +1,4 @@
 import { apiData, serverTimeOffset } from './script.js';
-
 const
     form = document.querySelector('#accessForm'),
     statusBox = document.querySelector('#accessStatus'),
@@ -42,7 +41,8 @@ form.addEventListener('submit', async event => {
             })
         }, '驗證失敗');
         const attendance = data.attendance;
-        await syncTime(); if (attendance) {
+        await syncTime();
+        if (attendance) {
             const occurred = new Date(attendance.clocked_at);
             statusBox.className = 'success-note';
             statusBox.textContent = data.access_mode === 'CLOCK_IN' ? `${data.employee.display_name}，上班打卡成功，正在進入…` : `前次打卡時間：${occurred.toLocaleString('zh-TW')}，正在進入…`
