@@ -41,30 +41,59 @@
             <div class="portal-content">
                 <!-- 第一個分頁內容 -->
                 <section class="panel" id="pl1">
-                    <div class="container">
-                        <h1>Stable Diffusion&nbsp;參數讀取器</h1>
+                    <h1>Stable&nbsp;Diffusion&nbsp;參數讀取器</h1>
+                    <div class="card-head">
                         <!-- 拖放與點擊上傳區 -->
                         <div id="drop-zone">
                             <p>拖曳WebUI生成的PNG圖片到這裡</p>
-                            <a>或&nbsp;點擊此處選擇檔案</a>
-                            <input type="file" id="file-input" accept="image/png">
+                            <input type="file" id="file" accept="image/png" hidden>
+                            <img id="img-prev" class="preview-img">
+                            <p>或&nbsp;點擊此處選擇檔案</p>
                         </div>
-                        <div id="error-msg" class="error"></div>
+                        <p id="err" class="error"></p>
+                    </div>
+                    <div class="card-head">
                         <!-- 結果顯示區 -->
-                        <div id="result" class="result-section">
-                            <img id="img-preview" class="preview-img" src="" alt="預覽圖">
-                            <label>正向提示詞&nbsp;(Prompt)</label>
-                            <textarea id="prompt" readonly></textarea>
+                        <div id="result">
+                            <label>正向提示詞&nbsp;:Prompt</label>
+                            <textarea id="cp" rows="5" cols="50" readonly></textarea>
 
-                            <label>反向提示詞&nbsp;(Negative Prompt)</label>
-                            <textarea id="neg-prompt" readonly></textarea>
+                            <label>反向提示詞&nbsp;:Negative&nbsp;Prompt</label>
+                            <textarea id="cn" rows="5" cols="50" readonly></textarea>
 
-                            <label>其他生成參數&nbsp;(Steps, Seed, Sampler...)</label>
-                            <textarea id="raw-params" readonly></textarea>
+                            <label>其他生成參數&nbsp;:Steps,&nbsp;Seed,&nbsp;Sampler...</label>
+                            <br>
+                            <b>偵測到的 LoRA:</b><span id="loras"></span>
+                            <table border="1" cellpadding="6">
+                                <tr>
+                                    <th>🌱 Seed</th>
+                                    <td id="m-seed">-</td>
+                                </tr>
+                                <tr>
+                                    <th>🔢 Steps</th>
+                                    <td id="m-steps">-</td>
+                                </tr>
+                                <tr>
+                                    <th>🎚️ CFG Scale</th>
+                                    <td id="m-cfg">-</td>
+                                </tr>
+                                <tr>
+                                    <th>📐 Size</th>
+                                    <td id="m-size">-</td>
+                                </tr>
+                                <tr>
+                                    <th>🧪 Sampler</th>
+                                    <td id="m-samp">-</td>
+                                </tr>
+                                <tr>
+                                    <th>📈 Scheduler</th>
+                                    <td id="m-sch">-</td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                 </section>
-                <!-- 第二個分頁內容：將 id 改為 yt2 -->
+                <!-- 第二個分頁內容：將 id 改為 pl2 -->
                 <section class="panel" id="pl2">
                     <p>第二個分頁內容</p>
                 </section>
@@ -80,8 +109,9 @@
 </body>
 <footer></footer>
 <script type="module" src="./static/panel.js"></script>
+<script type="module" src="./static/sd_prompt.js"></script>
 <script type="module" src="./static/game.js"></script>
 <script type="module" src="./static/youtube_thumbnail.js"></script>
-<script type="module" src="./static/SD_ProMpt.js"></script>
+
 
 </html>
