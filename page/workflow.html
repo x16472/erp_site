@@ -31,87 +31,27 @@
             <header class="portal-topbar">
                 <span class="top-kicker">Workflow</span>
                 <nav class="admin-tabs" id="staffTabs">
-                    <button class="active" data-panel="yt1">Youtube撥放</button>
-                    <button data-panel="yt2">Youtube縮圖</button>
+                    <button class="active" data-panel="pl1">環境一</button>
+                    <button data-panel="pl2">環境二</button>
+                    <button data-panel="pl3">環境三</button>
+                    <button data-panel="pl4">環境四</button>
                 </nav>
                 <span class="api-state ok" id="playerState">播放器就緒</span>
             </header>
             <div class="portal-content">
                 <!-- 第一個分頁內容 -->
-                <section class="panel" id="yt1">
-                    <section class="portal-card youtube-control">
-                        <div class="card-head">
-                            <div>
-                                <h2>載入宣導影音</h2>
-                                <p></p>
-                                <span class="eyebrow">
-                                    支援&nbsp;YouTube&nbsp;一般影片、直播、Shorts、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。
-                                </span>
-                            </div>
-                        </div>
-                        <form id="youtubeForm" class="youtube-form">
-                            <label class="field" for="youtubeUrl">
-                                <input id="youtubeUrl" name="url" type="url" inputmode="url" autocomplete="url"
-                                    value="https://www.youtube.com/watch?v=BsvIwqyiaJw"
-                                    placeholder="https://www.youtube.com/watch?v=..." required>
-                            </label>
-                            <button class="btn" type="submit">轉換並播放</button>
-                        </form>
-                        <p class="hint" id="youtubeStatus" aria-live="polite">正在確認測試影片並取得標題…</p>
-                        <div class="youtube-player">
-                            <iframe id="youtubePlayer" frameborder="0" allow="accelerometer;
-                                              autoplay; clipboard-write; encrypted-media; gyroscope;
-                                                  picture-in-picture;
-                                                  web-share" referrerpolicy="strict-origin-when-cross-origin"
-                                allowfullscreen>
-                            </iframe>
-                        </div>
-                        <div class="youtube-meta">
-                            <div>
-                                <span class="eyebrow">Now Playing</span>
-                                <h2 id="videoTitle">正在取得影片資訊…</h2>
-                            </div>
-                            <a class="btn secondary" id="openYoutube" href="https://www.youtube.com/watch?v=BsvIwqyiaJw"
-                                target="_blank" rel="noopener noreferrer">YouTube&nbsp;開啟</a>
-                        </div>
-                    </section>
+                <section class="panel" id="pl1">
+                    <p>第一個分頁內容</p>
                 </section>
                 <!-- 第二個分頁內容：將 id 改為 yt2 -->
-                <section class="panel" id="yt2">
-                    <section class="portal-card youtube-control">
-                        <div class="card-head">
-                            <div>
-                                <h2>YouTube&nbsp;縮圖下載</h2>
-                                <span class="eyebrow">貼上&nbsp;YouTube影片網址或11碼&nbsp;影片ID，選擇可用尺寸下載縮圖。
-                                </span>
-                                <p></p>
-                            </div>
-                        </div>
-                        <form id="thumbnail-form" class="youtube-form">
-                            <label class="field" for="thumbnail-url"><span>YouTube網址或影片ID</span>
-                                <input id="thumbnail-url" name="thumbnail" type="text" autocomplete="off"
-                                    placeholder="https://www.youtube.com/watch?v=..." required>
-                            </label>
-                            <button class="btn" type="submit">取得縮圖</button>
-                        </form>
-                        <p id="thumbnail-msg" class="hint" role="status" aria-live="polite"></p>
-                        <div id="thumbnail-result" hidden>
-                            <p class="hint">影片&nbsp;ID:
-                                <span id="thumbnail-video-id"></span>
-                            </p>
-                            <div id="thumbnail-grid" class="thumbnail-grid"></div>
-                            <p id="thumbnail-empty" class="hint" hidden>
-                                找不到可用的縮圖，請確認影片是否存在或稍後重試。
-                            </p>
-                        </div>
-                        <div id="thumbnail-recent" hidden>
-                            <div class="card-head">
-                                <h3>最近查詢</h3>
-                                <button id="thumbnail-clear" class="btn secondary" type="button">清除紀錄</button>
-                            </div>
-                            <div id="thumbnail-recent-list" class="thumbnail-recent-list"></div>
-                        </div>
-                    </section>
+                <section class="panel" id="pl2">
+                    <p>第二個分頁內容</p>
+                </section>
+                <section class="panel" id="pl3">
+                    <p>第三個分頁內容</p>
+                </section>
+                <section class="panel" id="pl4">
+                    <p>第四個分頁內容</p>
                 </section>
             </div>
         </main>
