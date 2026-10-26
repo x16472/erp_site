@@ -46,19 +46,23 @@
                         <!-- 拖放與點擊上傳區 -->
                         <div id="drop-zone">
                             <p>拖曳WebUI生成的PNG圖片到這裡</p>
-                            <input type="file" id="file" accept="image/png" hidden>
                             <img id="img-prev" class="preview-img">
                             <p>或&nbsp;點擊此處選擇檔案</p>
                         </div>
-                        <p id="err" class="error"></p>
+                        <!-- input 移出 drop-zone，避免點擊事件冒泡 -->
+                        <input type="file" id="fi" accept="image/png" hidden>
+                        <!-- 加上 hidden，開啟頁面時不顯示 -->
+                        <p id="err" class="error" hidden></p>
                     </div>
                     <div class="card-head">
                         <!-- 結果顯示區 -->
-                        <div id="result">
+                        <div id="result" hidden>
                             <label>正向提示詞&nbsp;:Prompt</label>
+                            <button onclick="copy('cp')">複製正向提示詞</button>
                             <textarea id="cp" rows="5" cols="50" readonly></textarea>
 
                             <label>反向提示詞&nbsp;:Negative&nbsp;Prompt</label>
+                            <button onclick="copy('cn')">複製反向提示詞</button>
                             <textarea id="cn" rows="5" cols="50" readonly></textarea>
 
                             <label>其他生成參數&nbsp;:Steps,&nbsp;Seed,&nbsp;Sampler...</label>
@@ -183,9 +187,7 @@
 </body>
 <footer></footer>
 <script type="module" src="./static/panel.js"></script>
-<script type="module" src="./static/sd_prompt.js"></script>
-<script type="module" src="./static/game.js"></script>
-<script type="module" src="./static/youtube_thumbnail.js"></script>
+<script src="./static/sd_prompt.js" defer></script>
 
 
 </html>

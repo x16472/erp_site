@@ -1,11 +1,14 @@
 const $ = id => document.getElementById(id);
-const dz = $('drop-zone'), fi = $('file');
+const dz = $('drop-zone'), fi = $('fi');
 const showErr = msg => { $('err').textContent = msg; $('err').hidden = !msg; }
 
 dz.onclick = () => fi.click();
 dz.ondragover = e => e.preventDefault();
 dz.ondrop = e => { e.preventDefault(); load(e.dataTransfer.files[0]); };
-fi.onchange = e => load(e.target.files[0]);
+fi.onchange = e => {
+    load(e.target.files[0]);
+    fi.value = '';
+};
 async function load(f) {
     showErr('');
     $('result').hidden = true;
@@ -56,4 +59,45 @@ function convert(t) {
     const samp = ws.replace(/karras|exponential/i, '').trim();
     const info = { seed: m.seed, steps: m.steps, cfg: m['cfg scale'], size: m.size, samp, sch };
     for (const k in info) $('m-' + k).textContent = info[k] || '-';
-};
+}
+async function copy(id) {
+    const el = $(id);
+    const textToCopy = el.value || el.innerText || el.textContent;
+    // 1. 優先嘗試現代瀏覽器的 Clipboard API (僅在 HTTPS 或 localhost 支援)
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            alert('已複製！');
+            return;
+        } catch (err) {
+            console.error('Clipboard API 複製失敗:', err);
+        }
+    }
+    // 2. 降級方案：在 HTTP 環境下使用傳統的 execCommand
+    try {
+        // 確保元素已被選取
+        if (typeof el.select === 'function') {
+            el.select();
+        } else {
+            // 支援非 input/textarea 元素的選取
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        // 執行瀏覽器內建複製指令
+        const successful = document.execCommand('copy');
+
+        if (successful) {
+            alert('已複製！');
+        } else {
+            throw new Error('execCommand 返回 false');
+        }
+    } catch (err) {
+        // 3. 終極防禦：若以上皆失敗，才提示使用者手動複製
+        console.error('所有複製方法皆失效:', err);
+        if (typeof el.select === 'function') el.select();
+        alert('複製失敗，已選取文字，請按 Ctrl+C 手動複製');
+    }
+}
