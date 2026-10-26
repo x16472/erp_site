@@ -696,7 +696,6 @@ footer a {
 .top-kicker {
     display: block;
     color: var(--muted);
-    font-size: 10px;
     letter-spacing: .12em
 }
 
@@ -1274,30 +1273,6 @@ footer a {
     font-size: 12px
 }
 
-.modal {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    display: none;
-    place-items: center;
-    padding: 20px;
-    background: #10243dcc
-}
-
-.modal.open {
-    display: grid
-}
-
-.modal-box {
-    position: relative;
-    width: min(650px, 100%);
-    max-height: 85vh;
-    overflow: auto;
-    padding: 30px;
-    border-radius: 20px;
-    background: #fff
-}
-
 .close {
     position: absolute;
     right: 15px;
@@ -1431,20 +1406,26 @@ footer a {
     padding: 16px;
 }
 
-
 /*最近瀏覽清單*/
-/* 橫向排列，空間不足時自動換行 */
+/* 橫向排列，絕對不換行 */
 .thumbnail-recent-list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+    flex-wrap: nowrap;
+    /* 強制不換行 */
+    gap: 10px;
+    width: 60%;
+    /* 限制整個清單佔畫面的 50% 寬度 */
 }
 
 /* 整個按鈕可點擊，顯示手指游標提示 */
 .thumbnail-recent-list button {
+    /* 移除按鈕所有預設外觀，讓它變成透明無感的點擊層 */
     cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
 }
-
 
 /*圖片共用與個別設定*/
 /* 圖片改為區塊元素，避免行內元素底部多出一小段空白 */
@@ -1459,11 +1440,12 @@ footer a {
     height: auto;
 }
 
-/* 最近瀏覽的圖片：固定寬度、16:9 比例，超出的部分裁切以避免變形 */
+/* 最近瀏覽的圖片：固定 16:9 比例，不換行、不左右滾、依數量自動均分 */
 .thumbnail-recent-list img {
-    width: 144px;
+    width: 100%;
+    /* 維持 16:9 且不裁切完整顯示 */
     aspect-ratio: 16 / 9;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 /*專業團隊、打卡與內部營運手冊*/

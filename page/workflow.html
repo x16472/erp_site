@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>SOP文件｜銀盾共同體營運中心</title>
+    <link rel="stylesheet" href="./static/style.css">
+    <link rel="icon" href="./static/ico/Github-Octicons-Cache-16.ico" type="image/x-icon">
+</head>
+
+<body>
+    <div class="portal-shell">
+        <aside class="portal-sidebar">
+            <a class="portal-brand" href="home.html">
+                <b>銀盾共同體</b>
+                <small>企業宣導影音</small>
+            </a>
+            <nav class="portal-nav" aria-label="內部系統導覽">
+                <a href="home.html">工作台</a>
+                <a href="sales.html">營運日報</a>
+                <a href="exam.html">題庫練習</a>
+                <a class="active" href="workflow.html">工作面板</a>
+                <a href="game.html">宣導影音</a>
+                <a href="staff.html">員工管理</a>
+                <a href="mis.html">後台管理</a>
+            </nav>
+            <p class="portal-foot">內部使用</p>
+        </aside>
+        <main class="portal-main">
+            <header class="portal-topbar">
+                <span class="top-kicker">Media</span>
+                <h1>企業宣導影音</h1>
+                <span class="api-state ok" id="playerState">播放器就緒</span>
+            </header>
+            <div class="portal-content">
+                <section class="portal-card youtube-control">
+                    <form id="youtubeForm" class="youtube-form">
+                        <label class="field" for="youtubeUrl">
+                            YouTube 網址
+                            <input id="youtubeUrl" name="url" type="url" inputmode="url" autocomplete="url"
+                                value="https://www.youtube.com/watch?v=BsvIwqyiaJw"
+                                placeholder="https://www.youtube.com/watch?v=..." required>
+                        </label>
+                        <button class="btn" type="submit">轉換並播放</button>
+                    </form>
+                    <p class="hint" id="youtubeStatus" aria-live="polite">正在確認測試影片並取得標題…</p>
+                    <div class="youtube-player">
+                        <iframe id="youtubePlayer" frameborder="0" allow="accelerometer;
+                          autoplay; clipboard-write; encrypted-media; gyroscope;
+                              picture-in-picture;
+                              web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+                        </iframe>
+                    </div>
+                    <div class="youtube-meta">
+                        <div>
+                            <span class="eyebrow">Now Playing</span>
+                            <h2 id="videoTitle">正在取得影片資訊…</h2>
+                        </div>
+                        <a class="btn secondary" id="openYoutube" href="https://www.youtube.com/watch?v=BsvIwqyiaJw"
+                            target="_blank" rel="noopener noreferrer">YouTube 開啟</a>
+                    </div>
+                </section>
+                <section class="portal-card youtube-control">
+                    <form id="thumbnail-form" class="youtube-form">
+                        <label class="field" for="thumbnail-url">
+                            YouTube 網址或影片 ID
+                            <input id="thumbnail-url" name="thumbnail" type="text" autocomplete="off"
+                                placeholder="https://www.youtube.com/watch?v=..." required>
+                        </label>
+                        <button class="btn" type="submit">取得縮圖</button>
+                    </form>
+                    <p id="thumbnail-msg" class="hint" role="status" aria-live="polite"></p>
+                    <div id="thumbnail-result" hidden>
+                        <p class="hint">影片&nbsp;ID:
+                            <span id="thumbnail-video-id"></span>
+                        </p>
+                        <div id="thumbnail-grid" class="thumbnail-grid"></div>
+                        <p id="thumbnail-empty" class="hint" hidden>
+                            找不到可用的縮圖，請確認影片是否存在或稍後重試。
+                        </p>
+                    </div>
+                    <div id="thumbnail-recent" hidden>
+                        <div class="card-head">
+                            <h3>最近查詢</h3>
+                            <button id="thumbnail-clear" class="btn secondary" type="button">清除紀錄</button>
+                        </div>
+                        <div id="thumbnail-recent-list" class="thumbnail-recent-list"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+<footer></footer>
+<script type="module" src="./static/game.js"></script>
+<script type="module" src="./static/youtube_thumbnail.js"></script>
+
+</html>

@@ -196,3 +196,4 @@ def _fetch(query: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
  Driver Error: Cannot create cursor on closed connection; DDBC Error: Cannot create cursor on closed connection
 ```
 針對全域專案修復資料庫的繫結
+## 建立新頁面

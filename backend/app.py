@@ -43,6 +43,7 @@ PAGES = {
     "/sales.html": "sales.html",
     "/mis.html": "mis.html",
     "/exam.html": "exam.html",
+    "/workflow.html":"workflow.html",
     "/game.html": "game.html",
     "/staff.html": "staff.html",
     "/style.css": "style.css",

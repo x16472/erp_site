@@ -20,6 +20,7 @@
                 <a href="home.html">工作台</a>
                 <a href="sales.html">營運日報</a>
                 <a href="exam.html">題庫練習</a>
+                <a href="workflow.html">工作面板</a>
                 <a href="game.html">宣導影音</a>
                 <a class="active" href="staff.html">員工管理</a>
                 <a href="mis.html">後台管理</a>
@@ -29,7 +30,11 @@
         <main class="portal-main">
             <header class="portal-topbar">
                 <span class="top-kicker">STAFF&nbsp;MANAGEMENT</span>
-                <h1>員工管理</h1>
+                <nav class="admin-tabs" id="staffTabs">
+                    <button class="active" data-panel="staffPanel">員工資料</button>
+                    <button data-panel="departmentPanel">部門維護</button>
+                    <button data-panel="attendancePanel">打卡紀錄</button>
+                </nav>
                 <span class="api-state" id="apiState">檢查登入狀態</span>
             </header>
             <section class="login-shell" id="loginShell">
@@ -51,17 +56,11 @@
             <section class="portal-content" id="staffConsole" hidden>
                 <div class="card-head">
                     <div>
-                        <span class="eyebrow">AUTHORIZED&nbsp;AREA</span>
                         <h2>員工主檔與出勤管理</h2>
-                        <p>登入者：<span id="adminName"></span></p>
+                        <span class="eyebrow"> 登入者：<p id="adminName"></p></span>
                     </div>
                     <button class="btn secondary" id="logoutButton">登出</button>
                 </div>
-                <nav class="admin-tabs" id="staffTabs">
-                    <button class="active" data-panel="staffPanel">員工資料</button>
-                    <button data-panel="departmentPanel">部門維護</button>
-                    <button data-panel="attendancePanel">打卡紀錄</button>
-                </nav>
                 <section class="admin-panel active" id="staffPanel">
                     <div class="staff-manager-workspace">
                         <aside class="organization-pane" aria-label="公司組織架構">

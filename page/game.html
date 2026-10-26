@@ -20,6 +20,7 @@
                 <a href="home.html">工作台</a>
                 <a href="sales.html">營運日報</a>
                 <a href="exam.html">題庫練習</a>
+                <a href="workflow.html">工作面板</a>
                 <a class="active" href="game.html">宣導影音</a>
                 <a href="staff.html">員工管理</a>
                 <a href="mis.html">後台管理</a>
@@ -35,14 +36,17 @@
             <div class="portal-content">
                 <section class="portal-card youtube-control">
                     <div class="card-head">
-                        <div><span class="eyebrow">INTERNAL&nbsp;BROADCAST</span>
+                        <div>
                             <h2>載入宣導影音</h2>
-                            <p>支援 YouTube 一般影片、直播、Shorts、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。</p>
+                            <p></p>
+                            <span class="eyebrow">
+                                支援&nbsp;YouTube&nbsp;一般影片、直播、Shorts、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。
+                            </span>
                         </div>
                     </div>
                     <form id="youtubeForm" class="youtube-form">
                         <label class="field" for="youtubeUrl">
-                            <span>YouTube 網址</span>
+
                             <input id="youtubeUrl" name="url" type="url" inputmode="url" autocomplete="url"
                                 value="https://www.youtube.com/watch?v=BsvIwqyiaJw"
                                 placeholder="https://www.youtube.com/watch?v=..." required>
@@ -51,7 +55,7 @@
                     </form>
                     <p class="hint" id="youtubeStatus" aria-live="polite">正在確認測試影片並取得標題…</p>
                     <div class="youtube-player">
-                        <iframe id="youtubePlayer" title="YouTube播放器" frameborder="0" allow="accelerometer;
+                        <iframe id="youtubePlayer" frameborder="0" allow="accelerometer;
                           autoplay; clipboard-write; encrypted-media; gyroscope;
                               picture-in-picture;
                               web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -69,9 +73,10 @@
                 <section class="portal-card youtube-control">
                     <div class="card-head">
                         <div>
-                            <span class="eyebrow">YOUTUBE&nbsp;THUMBNAILS</span>
-                            <h2>YouTube 縮圖下載</h2>
-                            <p>貼上 YouTube 影片網址或 11 碼影片 ID，選擇可用尺寸下載縮圖。</p>
+                            <h2>YouTube&nbsp;縮圖下載</h2>
+                            <span class="eyebrow">貼上&nbsp;YouTube影片網址或11碼&nbsp;影片ID，選擇可用尺寸下載縮圖。
+                            </span>
+                            <p></p>
                         </div>
                     </div>
                     <form id="thumbnail-form" class="youtube-form">
@@ -101,16 +106,6 @@
                 </section>
             </div>
         </main>
-    </div>
-    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal-box">
-            <button class="close" type="button" aria-label="關閉">×</button>
-            <span class="tag" id="modalCategory"></span>
-            <h2 id="modalTitle"></h2>
-            <p class="hint" id="modalSummary"></p>
-            <p id="modalDetail"></p>
-            <div class="success-note" id="modalRelated"></div>
-        </div>
     </div>
 </body>
 <footer></footer>
