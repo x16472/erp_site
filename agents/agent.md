@@ -170,10 +170,8 @@ erp_site/
 - 依需求移除自然語言題目匯入，已同步刪除 MIS 匯入介面、前端事件、管理端解析 API、後端解析函式及 README 對應說明；四種題型的人工新增、編輯與審核流程維持不變。
 - 修正官方網站視覺主題色：移除鋼鐵灰沿用舊 `forest` 綠色色票的設定，也移除後段 CSS 將三種主題全部覆蓋為深藍色的規則；銀盾藍、勳章紅、鋼鐵灰現在各自使用明確且一致的色票。
 - MIS 首頁預覽與官方網站改為共用六項 CSS 主題參數：`dark`、`mid`、`light`、`accent`、`detail`、`surface`；`Readme.md` 已加入新增主題所需的下拉選項、後端允許值與 CSS 變數範本。
-
 ## 所有編輯記錄、實作歷程，需精簡摘要後記錄於此
-[history.md](./.agents/history.md)
-
+[history.md](/agents/history.md)
 ## 資料庫無法連線
 錯誤處理需樣像是這樣接住錯誤的做法
 參照`data.py`中**第134行**的函式寫法
@@ -195,5 +193,5 @@ def _fetch(query: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
 ```text
  Driver Error: Cannot create cursor on closed connection; DDBC Error: Cannot create cursor on closed connection
 ```
-針對全域專案修復資料庫的繫結
+針對全域專案修復資料庫的繫結。
 ## 建立新頁面

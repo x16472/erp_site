@@ -1,77 +1,95 @@
-# SQL Server 串接與資料治理
-## 連線設定
-`data.py` 只讀取專案既有 `.env`，不由程式建立、覆寫或輸出其中內容。目前 `DatabaseName` 已配合 PRD 更新為 `Company_New`。一般營運查詢使用唯讀連線意圖；只有 Company 應用資料表的維護功能會建立可寫入連線。
+# SQL Server 資料存取與治理
 
-## 資料範圍
-公開官網只取得專業成員、六個營運部門、營運SOP數量等彙總，以及經白名單篩選的員工基本介紹。員工入口提供營運摘要、營運SOP、合規題庫及打卡。完整資料表目錄、員工維護、出缺勤與待審紀錄只開放給已登入的 MIS 管理員。
+更新日期：2026-10-26。本文件依目前原始碼說明資料結構與行為，未實查部署中的資料庫。安裝與部署另見 [Readme.md](../Readme.md)。
 
-管理端資料查閱只允許 10 張 `dbo.Company_*` 白名單資料表，會先比對 SQL Server 中繼資料、限制分頁筆數，並遮罩聯絡、證件、銀行、薪資、保險及稅務欄位。前端無法提交任意 SQL。
+## 連線與初始化
 
-## 網站專用正規化資料表
+- 使用 `mssql-python` 存取 SQL Server，版本由 `requirements.txt` 固定。
+- `backend/data.py` 僅讀取根目錄 `.env` 的 `DatabaseIP`、`DatabasePort`、`DatabaseName`、`DatabaseUser`、`DatabasePassword`；同名作業系統環境變數不能取代此檔案。
+- 實際資料庫名稱依 `.env` 設定。`data/Company_Schema.sql` 是以 `Company_New` 為目標的結構參考，不代表目前部署狀態或最新完整結構。
+- 啟動執行 `ensure_application_schema()`，建立缺少的資料表、補齊欄位與索引，並處理預設分類、部門及員工 CSV；帳號須有相應的結構更新與資料讀寫權限。
+- 查詢採唯讀連線意圖，維護流程使用可寫入連線，兩者仍使用同一組帳密；唯讀意圖不等同權限隔離。
+- 連線逾時為 5 秒，目前使用 `Encrypt=no;TrustServerCertificate=yes`。
 
-| 資料表 | 用途與關聯 |
-| --- | --- |
-| `dbo.Company_WebSettings` | 官網主題、標題、副標題與公告 |
-| `dbo.Company_Department` | 部門主檔；提供員工表單下拉選單、啟用狀態與部門維護 |
-| `dbo.Company_Staff` | 員工主檔；員工編號為主鍵 |
-| `dbo.Company_Attendance` | 上下班打卡；保存 UTC 時間、台灣工作日，並以員工編號外鍵連接員工主檔 |
-| `dbo.Company_OperationCategory` | 營運資料分類主檔 |
-| `dbo.Company_OperationSubmission` | 營運待審紀錄；以分類代碼連接分類主檔，並以 `submitted_by` 連接建立事項的員工 |
-| `dbo.Company_OperationActivity` | 營運日報的送出、補件、回覆、核准及退回歷程 |
-| `dbo.Company_TrainingDocument` | 營運SOP文件主檔、來源檔名與匯入狀態 |
-| `dbo.Company_TrainingSection` | 營運SOP文件段落；以文件編號外鍵連接文件主檔 |
-| `dbo.Company_TrainingQuestion` | 單選、多選、閱讀測驗與申論題庫，可選擇連接來源文件 |
-| `dbo.Company_TrainingAnswer` | 申論題文字答案、人工審核狀態及管理員回饋 |
-| `dbo.Company_ImportState` | 記錄 `staff.csv` 的修改時間、大小與匯入筆數，避免未變更時重複覆寫員工主檔 |
+單一 HTTP 請求以 `connection_scope()` 依讀寫與交易模式複用連線，請求結束後統一關閉；查詢失敗時淘汰失效連線。請求外仍由各自的 context manager 管理。
 
-## 資料排序
+## 應用資料表
 
-所有資料表由 `data.ensure_application_schema()` 以個別 SQL 敘述建立，並設有主鍵、外鍵、唯一限制及必要的數值檢查。應用資料表初始化後才接受前端輸入。
+初始化程式目前包含 17 張 `dbo.Company_*` 資料表。`APPLICATION_TABLES` 的 10 張開放 MIS 通用查閱；`WORKFLOW_TABLES` 的 7 張供專用業務 API 使用，不會自動出現在通用目錄。
 
-員工管理主檔固定由 `data.py` 依員工編號排序，避免中文部門名稱受到定序規則影響。公開官網的專業團隊另由 `data.py` 提供部門清單與參數化篩選，部門選單只影響公開名單，不改變後台員工主檔順序。
+| 資料表 | 用途與主要關聯 | MIS 通用查閱 |
+| --- | --- | --- |
+| `Company_WebSettings` | 官網主題、主標題、副標題、公告與更新者 | 是 |
+| `Company_Department` | 部門名稱、啟用狀態與更新資訊 | 是 |
+| `Company_Staff` | 員工編號主鍵、個人資料、部門名稱、照片檔名與在職狀態 | 是 |
+| `Company_Attendance` | 打卡動作、時間、台灣工作日、來源 IP；關聯員工 | 是 |
+| `Company_OperationCategory` | 營運分類與顯示順序 | 是 |
+| `Company_OperationSubmission` | 建立員工、分類、日期、據點、數量與審核狀態 | 是 |
+| `Company_TrainingDocument` | 來源文件、變更資訊、啟用及解析狀態 | 是 |
+| `Company_TrainingSection` | 文件段落與排序；關聯文件 | 是 |
+| `Company_TrainingQuestion` | 題型、科目、章節、答案、解析、來源、發布狀態與匯入鎖定 | 是 |
+| `Company_ImportState` | 員工 CSV 修改時間、大小、匯入筆數與時間 | 是 |
+| `Company_OperationActivity` | 日報送出、補件要求、回覆、核准與退回歷程 | 否 |
+| `Company_TrainingAnswer` | 術科申論答案、審核狀態、審核者與回饋 | 否 |
+| `Company_TrainingSubject` | 學科／術科科目及模考題數、時間、及格分數 | 否 |
+| `Company_TrainingChapter` | 科目下的章節代碼、名稱與排序 | 否 |
+| `Company_TrainingSession` | 員工題組、模式、設定、時間、狀態與成績 | 否 |
+| `Company_TrainingSessionQuestion` | 題組順序、題目快照、作答、標記與評分 | 否 |
+| `Company_TrainingWrongQuestion` | 員工與題目組合主鍵、錯題加入及移出時間 | 否 |
 
-## 輸入流程
+資料表設有主鍵、外鍵、部分唯一限制與數值檢查。員工的 `department` 目前儲存部門名稱，沒有以部門 ID 外鍵連接；由業務程式驗證啟用部門，更名時同步員工資料。題目結構、答案、題組設定與作答快照使用 JSON 欄位。
+
+## 資料範圍與權限
+
+公開 API 提供網站設定、彙總統計、公開員工介紹、部門篩選與時間；員工及部門筆數依資料庫計算，不固定為特定數量。員工業務 API 要求有效工作階段，重新查核在職身分及當日打卡狀態，個人日報、題組與錯題依員工身分限制存取。管理功能另需綁定同一員工的 MIS 工作階段，資料異動依路由驗證 CSRF Token。
+
+MIS 通用查閱驗證白名單與 SQL Server 中繼資料，每頁限制 5 至 50 筆，依欄位名稱分類與遮罩。此規則不等同所有專用 API 的輸出：員工維護等 API 依用途提供欄位。現有遮罩主要比對中文關鍵字，不能視為可自動辨識所有英文敏感欄位。
+
+前端不能提交任意 SQL。資料值使用參數化查詢，動態資料表與欄位識別字經白名單或中繼資料驗證。
+
+## 出勤與員工維護
 
 ```text
-HTML 表單
-  → app.py 接收 JSON
-  → input.py 清理與驗證
-  → data.py 使用參數化 SQL
-  → dbo.Company_* 應用資料表
-  → app.py 回傳必要結果
+前端表單 → app.py 驗證身分與 CSRF → input.py 驗證輸入
+         → data.py 執行資料存取 → app.py 回傳業務結果
 ```
 
-- 打卡只接受有效且啟用中的員工編號，以及 `CLOCK_IN`、`CLOCK_OUT` 兩種動作。
-- 每個台灣工作日的第一筆必須是上班打卡，之後上、下班必須交替；後端以交易鎖定同一員工的請求，拒絕連續兩次相同類型的打卡，換日後則重新開始判定。
-- 員工端只收到本次打卡動作與伺服器時間，不會取得個人出勤歷史。
-- 員工入口提供「上班打卡並進入」與「不打卡進入系統」；兩者都必須通過 SQL Server 在職驗證。「不打卡進入」不新增出勤紀錄，只查詢當日最後一筆打卡並建立 HttpOnly 工作階段。
-- 工作台會顯示當日打卡時間；未打卡時提供補打卡，打卡下班仍遵循上下班交替與防重複交易規則，離開系統則不異動出勤資料。
-- `time_sync.py` 的 `time.now()` 以 SQL Server UTC 時間轉換為 `Taipei Standard Time`，同時產生 UTC、台灣工作日及 ISO 時間；打卡寫入與回傳使用同一時間快照。
-- 登入頁與工作台透過 `/api/time` 計算網路往返時間，每 60 秒重新校正本機顯示時鐘；員工與管理頁面切換時也會重新查詢資料庫當日最後打卡。
-- 員工資料新增、更新與停用必須通過 MIS 工作階段及 CSRF 驗證。
-- 員工姓名、性別、年齡、部門及職位均為後端必填；性別採固定選項、年齡限制 16 至 100，部門必須存在於啟用中的部門主檔。
-- 部門名稱由前後端共同限制為最多 5 個字；目前使用營運部、製造部、財務部、資訊部、福利部與後勤部。
-- 員工文字資料經 `input.py` 驗證後寫入 `dbo.Company_Staff`；照片只接受 JPEG、PNG、WebP 且上限 5 MB，存於 `static/staff` 並以不可變更的員工編號命名。
-- 員工停用採狀態更新，既有打卡紀錄仍保留。
-- 營運輸入只接受既定分類、有效日期、營運據點代碼及限制範圍內的彙總數量。
+- 員工編號轉為大寫，最多 20 字，允許英數字、底線與連字號；既有編號不提供更名操作。
+- 姓名、性別、年齡、部門及職位為維護必填欄位。性別限男、女、其他；年齡為 16 至 100；部門最多 5 字且須為啟用部門。
+- 公開名冊依員工編號排序並提供部門篩選；管理名冊依在職狀態及員工編號排序。
+- 員工停用保留業務紀錄；仍有在職員工的部門不可停用。
+- 打卡接受 `CLOCK_IN`、`CLOCK_OUT`。每個台灣工作日先上班、之後交替；交易以 `UPDLOCK`、`HOLDLOCK` 鎖定員工，避免同時請求重複打卡。
+- `backend/time_sync.py` 以 SQL Server 時間產生 UTC、台灣工作日及顯示時間。登入頁與工作台透過 `/api/time` 每 60 秒更新時間偏移。
+- 不打卡進入仍驗證員工並讀取當日最後打卡；離開系統不異動出勤，打卡下班會執行下班卡。完整日期／員工出勤紀錄由管理 API 提供。
 
-### 檢閱*.csv
-既然目前已做到正規化，那麼在每次更新時務必掃描[staff.csv](/data/staff.csv)是否有更新，除了手動輸入的手段之外，`*.csv`也是一個重要的輸入手段。
+## 日報與審核
 
-`data.py` 會在員工查閱、驗證與維護前檢查 CSV 的修改時間與檔案大小；有異動才以參數化 `MERGE` 合併資料。CSV 未列出的資料不會自動停用，管理員上傳的既有照片也不會被 CSV 覆寫。
+日報包含日期、據點代碼、既定分類、0 至 9999 的數量與最多 200 字備註。據點代碼驗證英數、底線與連字號格式；備註以關鍵字及格式攔截部分個資，不是任意文字的完整個資辨識。
 
-## 營運SOP文件匯入
-`doc.py` 掃描 `data/exam`：
-1. 舊 `.doc` 優先由 LibreOffice 無介面轉成 `.docx` 快取；沒有 LibreOffice 時才使用 Microsoft Word COM 備援。
-2. `python-docx` 讀取段落及表格，依標題與內容長度整理成查閱區塊。
-3. 文件主檔、段落及題庫分開寫入正規化資料表。
-4. 原始 `.doc` 不會被覆寫；轉換快取位於 `data/exam/.converted` 並由 Git 排除。
-5. MIS 可重新同步、啟用或停用營運SOP文件，並可新增、更新及停用 `Company_TrainingQuestion` 題目。
+日報寫入 `Company_OperationSubmission`，以 `submitted_by` 記錄建立員工，操作歷程另存 `Company_OperationActivity`。管理員可要求補件、審核通過或退回；員工可對允許回覆的個人日報補充內容，更新為「員工已回覆」。審核及回覆使用交易；未記錄建立員工的舊資料仍可由管理端查閱。
 
-## 正式環境建議
+## CSV 與照片
 
-1. 將既有營運唯讀查詢與 `dbo.Company_*` 寫入拆分為不同的最小權限帳號。
-2. 限制資料庫可連線的主機與來源 IP。
-3. 以 HTTPS 反向代理服務網站，並設定 Secure Cookie。
-4. 將工作階段與操作稽核移至可持久化的集中服務。
-5. 定期依共同體員工、客戶與合作夥伴資料政策覆核公開欄位、遮罩與權限白名單。
+`data/staff.csv` 為批次同步來源。成功檢查快取 30 秒，管理流程可強制檢查；修改時間與大小未變時不重複匯入。變更以參數化 `MERGE` 合併，狀態記錄於 `Company_ImportState`。
+
+CSV 異動可能覆寫對應員工的文字資料；未列出的員工不會自動停用。既有照片優先保留，未設定時才依員工編號尋找照片。
+
+照片由管理表單上傳，接受 JPEG、PNG、WebP，單張上限 5 MiB；由 `app.py` 保存至 `page/static/staff/`，檔名由員工編號產生。資料庫只保存照片檔名。
+
+## 文件、題庫與作答
+
+`backend/doc.py` 處理 `data/exam/` 的 DOCX、DOC、XLSX、XLS、PDF。舊 DOC 優先使用 LibreOffice，Windows Word COM 為備援；轉檔快取在 `.converted/`。掃描 PDF 另需 Tesseract 與語言資料。
+
+啟動預設同步 SOP，可用 `--skip-doc-sync` 略過。MIS 來源同步另處理題庫草稿，回報解析警告與失敗來源。來源檔案與快取留在檔案系統，文件資訊、段落與題目存於資料庫。
+
+題型包含單選、多選、閱讀、填空、配對與申論，依學科／術科、科目與章節分類。來源指紋協助辨識重複匯入；管理員維護草稿、發布、停用與匯入鎖定。員工題組保存題目快照；練習可即時取得答案與解析，模考交卷前不回傳正解與解析。申論由管理員審核，錯題本可移出題目。
+
+文件查詢 API 仍保留，但 `game.html` 沒有 SOP 閱讀入口，`workflow.html` 也僅有環境分頁佔位內容。
+
+## 儲存與部署邊界
+
+- 員工與管理員工作階段存於 Python 程序記憶體，重新啟動後失效。
+- 各平台最近播放網址與 YouTube 最近 8 筆縮圖查詢存於瀏覽器 `localStorage`，不寫入 SQL Server。
+- 影音標題由 `backend/media.py` 或 YouTube oEmbed 流程取得，沒有影音業務資料表。
+- Compose 尚無 volume；重建容器可能遺失容器內照片與文件快取，SQL Server 資料另由資料庫保存。
+- 網站目前使用 HTTP，Cookie 設有 HttpOnly、SameSite=Strict，尚無 Secure。HTTPS、資料庫加密、集中工作階段與檔案持久化均不能視為已完成。

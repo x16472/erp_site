@@ -31,7 +31,7 @@
             <header class="portal-topbar">
                 <span class="top-kicker">Workflow</span>
                 <nav class="admin-tabs" id="staffTabs">
-                    <button class="active" data-panel="pl1">環境一</button>
+                    <button class="active" data-panel="pl1">SD參數讀取</button>
                     <button data-panel="pl2">環境二</button>
                     <button data-panel="pl3">環境三</button>
                     <button data-panel="pl4">環境四</button>
@@ -41,7 +41,28 @@
             <div class="portal-content">
                 <!-- 第一個分頁內容 -->
                 <section class="panel" id="pl1">
-                    <p>第一個分頁內容</p>
+                    <div class="container">
+                        <h1>Stable Diffusion&nbsp;參數讀取器</h1>
+                        <!-- 拖放與點擊上傳區 -->
+                        <div id="drop-zone">
+                            <p>拖曳WebUI生成的PNG圖片到這裡</p>
+                            <a>或&nbsp;點擊此處選擇檔案</a>
+                            <input type="file" id="file-input" accept="image/png">
+                        </div>
+                        <div id="error-msg" class="error"></div>
+                        <!-- 結果顯示區 -->
+                        <div id="result" class="result-section">
+                            <img id="img-preview" class="preview-img" src="" alt="預覽圖">
+                            <label>正向提示詞&nbsp;(Prompt)</label>
+                            <textarea id="prompt" readonly></textarea>
+
+                            <label>反向提示詞&nbsp;(Negative Prompt)</label>
+                            <textarea id="neg-prompt" readonly></textarea>
+
+                            <label>其他生成參數&nbsp;(Steps, Seed, Sampler...)</label>
+                            <textarea id="raw-params" readonly></textarea>
+                        </div>
+                    </div>
                 </section>
                 <!-- 第二個分頁內容：將 id 改為 yt2 -->
                 <section class="panel" id="pl2">
@@ -61,5 +82,6 @@
 <script type="module" src="./static/panel.js"></script>
 <script type="module" src="./static/game.js"></script>
 <script type="module" src="./static/youtube_thumbnail.js"></script>
+<script type="module" src="./static/SD_ProMpt.js"></script>
 
 </html>

@@ -30,9 +30,22 @@ body {
 
 button,
 input,
-select,
+select {
+    font: inherit;
+}
+
 textarea {
-    font: inherit
+    font: inherit;
+    width: 100%;
+    height: 80px;
+    margin-top: 5px;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    font-family: monospace;
+    box-sizing: border-box;
+    resize: vertical;
 }
 
 button,
@@ -3675,6 +3688,55 @@ footer a {
 .question-card>[data-question-select] {
     width: 18px;
     height: 18px
+}
+
+/*SD*/
+#drop-zone {
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #f8fafc;
+    transition: all 0.3s;
+}
+
+#drop-zone:hover,
+#drop-zone.dragover {
+    border-color: #4299e1;
+    background: #ebf8ff;
+}
+
+#file-input {
+    display: none;
+}
+
+.result-section {
+    margin-top: 30px;
+    display: none;
+}
+
+.preview-img {
+    max-width: 100%;
+    max-height: 300px;
+    display: block;
+    margin: 0 auto 20px auto;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#raw-params {
+    height: 120px;
+}
+
+.error {
+    color: #e53e3e;
+    background: #fff5f5;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 20px;
+    display: none;
+    border: 1px solid #fed7d7;
 }
 
 @media (max-width: 900px) {

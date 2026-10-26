@@ -1,170 +1,113 @@
-# 銀盾共同體 ERP 系統 ── 前端頁面架構與開發指引 (Frontend Pages Guide)
+# 前端頁面架構與維護指引
 
-本文件全面盤點專案 [`page/`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page) 目錄下所有前端 HTML 頁面，說明其核心功能、前後端資料交互、授權機制、UI 元件佈局與語意結構改善建議。
+更新日期：2026-10-26。依 `page/`、`page/static/` 與 `backend/app.py` 的目前內容整理。本文描述實作，不沿用過往改版指令或未重新驗證的測試結論。
 
----
+## 架構與權限
 
-## 一、 前端頁面架構總覽
+前端採原生 HTML、JavaScript ES Modules 與共用 CSS，不需要 Node.js 或打包工具。頁面、靜態資源與 API 由同一 Python HTTP 服務提供；容器部署時由 IIS 反向代理。請透過 HTTP 使用，不以直接開啟本機 HTML 作為完整功能驗證。
 
-系統前端採用 **原生 HTML5 + ES Module + CSS Custom Properties** 架構，分為**「對外公開入口」**、**「員工內部工作台」**與**「MIS 後台管理」**三大層次：
+HTML 路由本身可載入，保護主要由 API 執行。員工頁面透過 `requireEmployee()` 檢查工作階段；員工管理與 MIS 還需管理員工作階段，且管理員身分綁定目前員工。工作面板目前是介面骨架，沒有獨立的完整身分驗證與業務資料流程。
 
-```mermaid
-graph TD
-    subgraph Public["1. 對外公開區"]
-        Index["index.html<br>（企業官網首頁）"]
-    end
+| 頁面 | 腳本 | 目前用途 |
+| --- | --- | --- |
+| `index.html` | `index.js` | 公開官網、企業理念、四大據點、團隊與合作資訊 |
+| `employee-login.html` | `employee-login.js` | 員工編號驗證、上班打卡或不打卡進入 |
+| `home.html` | `home.js` | 員工資訊、公告、校時、出勤與快捷入口 |
+| `sales.html` | `sales.js` | 營運日報、個人填報歷程與補充回覆 |
+| `exam.html` | `exam.js` | 學科刷題、模考、續作、錯題本與術科申論 |
+| `workflow.html` | `panel.js`；另引用影音腳本 | 四個環境分頁，內容尚為佔位文字 |
+| `game.html` | `panel.js`、`game.js`、`youtube_thumbnail.js` | 五平台影音與 YouTube 縮圖工具 |
+| `staff.html` | `staff.js` | 組織、員工維護、部門與出勤管理 |
+| `mis.html` | `mis.js` | 官網設定、日報／申論審核、來源同步、題庫與資料查閱 |
 
-    subgraph Auth["2. 員工認證入口"]
-        EmpLogin["employee-login.html<br>（員工登入 / 上班打卡）"]
-    end
+上述各頁腳本位於 `page/static/`。入口流程為官網或登入頁 → 員工工作台 → 各業務頁面；管理 API 需再通過 MIS 登入。
 
-    subgraph Portal["3. 員工工作台與應用"]
-        Home["home.html<br>（員工工作台 / 補打卡 / 公告）"]
-        Sales["sales.html<br>（營運日報填報 / 歷史追蹤）"]
-        Exam["exam.html<br>（學科刷題 / 模考 / 錯題本 / 術科申論）"]
-        Game["game.html<br>（宣導影音 / 營運SOP檢索）"]
-    end
+## 頁面功能與主要 API
 
-    subgraph Admin["4. 後台管理與 MIS"]
-        MIS["mis.html<br>（後台控制台 / 審核 / 題庫維護 / 表查閱）"]
-        Staff["staff.html<br>（組織架構 / 員工主檔 / 部門 / 出勤紀錄）"]
-    end
+### 官網與員工入口
 
-    Index --> EmpLogin
-    EmpLogin --> Home
-    Home --> Sales
-    Home --> Exam
-    Home --> Game
-    Home --> Staff
-    Home --> MIS
-```
+`index.html` 呈現羅瓦德莊園、可可藝術沙龍、聯合工匠街、地下堅石礦場，並提供企業理念、專業團隊部門篩選與合作資訊。動態內容使用 `GET /api/public`、`GET /api/staff/public`、`GET /api/staff/departments`。圖片使用 `static/png/company/`，團隊照片使用 `static/staff/`；地圖與影音仍依賴外部服務。
 
----
+`employee-login.html` 使用 `GET /api/time` 校時，透過 `POST /api/employee/login` 傳入員工編號與 `CLOCK_IN` 或 `ACCESS_ONLY`。編號允許英數、底線與連字號，由後端轉為大寫並查驗在職狀態；不打卡進入不新增出勤。
 
-## 二、 各 HTML 頁面詳細規格說明
+### 員工工作台
 
-### 1. `index.html` ── 官方企業入口網站 (Public Portal)
-* **檔案路徑**：[`page/index.html`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/index.html)
-* **對應腳本**：[`page/static/index.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/index.js)
-* **訪問權限**：公開（無需登入）
-* **核心功能**：
-  * 企業形象展示、核心理念（OUR PHILOSOPHY）與四大產業據點（羅瓦德莊園、可可藝術沙龍、聯合工匠街、地下堅石礦場）。
-  * 動態載入後端統計數據與公告（`/api/public`）。
-  * 專業團隊介紹與依部門篩選公開成員（`/api/staff/public`、`/api/staff/departments`）。
-  * 商務合作諮詢與實體營運據點地圖導航。
-* **主要 API**：`GET /api/public`、`GET /api/staff/public`、`GET /api/staff/departments`。
+`home.html` 顯示員工資訊、官網公告與當日最後打卡狀態，提供補打卡、打卡下班、離開系統，以及營運日報、題庫、官網、影音與工作面板入口。
 
----
+主要 API 為 `GET /api/employee/session`、`GET /api/public`、`GET /api/time`、`POST /api/attendance/clock`、`POST /api/employee/logout`。離開系統不變更出勤；完整出勤歷史在員工管理頁查詢。
 
-### 2. `employee-login.html` ── 員工相關入口與快速打卡 (Employee Login)
-* **檔案路徑**：[`page/employee-login.html`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/employee-login.html)
-* **對應腳本**：[`page/static/employee-login.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/employee-login.js)
-* **訪問權限**：公開 / 員工身分核對
-* **核心功能**：
-  * 即時時鐘與伺服器時間同步（`GET /api/time`）。
-  * 員工編號輸入驗證（大寫英數）。
-  * 支援雙模式進入：「**上班打卡並進入**（`CLOCK_IN`）」與「**不打卡進入系統**（`ACCESS_ONLY`）」。
-* **主要 API**：`GET /api/time`、`POST /api/employee/login`。
+### 營運日報
 
----
+`sales.html` 提供日期、據點、分類、數量與摘要表單，並顯示填報提醒、營運流程及個人審閱歷程。個人紀錄可查看要求補件、回覆、審核通過與退回結果；允許回覆的紀錄提供補充表單。
 
-### 3. `home.html` ── 員工工作台首頁 (Employee Dashboard)
-* **檔案路徑**：[`page/home.html`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/home.html)
-* **對應腳本**：[`page/static/home.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/home.js)
-* **訪問權限**：需員工 Session（`silver_shield_employee`）
-* **核心功能**：
-  * 個人身分資訊（姓名、部門、職位、員工編號）歡迎橫幅。
-  * 今日即時打卡狀態展示（已上班/已下班/尚未打卡）與補打卡（`makeupClock`）/ 下班打卡（`clockOutButton`）功能。
-  * 常用功能快捷導航入口（營運日報、題庫練習、官方網站、宣導影音）。
-* **主要 API**：`GET /api/employee/session`、`POST /api/attendance/clock`、`POST /api/employee/logout`。
+主要 API 為 `GET /api/branches`、`GET /api/operations`、`GET /api/time`、`GET /api/operations/mine`、`POST /api/operations/submit`、`POST /api/operations/reply`。本頁沒有合約或帳務生命週期管理功能。
 
----
+### 題庫練習
 
-### 4. `sales.html` ── 營運日報填報與審核追蹤 (Operations Reporting)
-* **檔案路徑**：[`page/sales.html`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/sales.html)
-* **對應腳本**：[`page/static/sales.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/sales.js)
-* **訪問權限**：需員工 Session
-* **核心功能**：
-  * 新增營運日報表單（日期、據點區域、分類類別、數量、作業摘要備註）。
-  * 日報個資防護提示與營運生命週期（`operations_process`）摘要。
-  * 「我的填報與審閱回覆」列表：即時查看管理員審閱狀態（待審核、已核准、需補件），並支援在收到補件要求時直接回覆補充說明。
-* **主要 API**：`GET /api/employee/session`、`GET /api/public`、`POST /api/operations/submit`、`POST /api/operations/reply`。
+`exam.html` 頂部分為學科刷題與術科申論。學科提供科目、章節、來源與題型篩選，建立練習或模考題組，支援續作、題目標記、交卷檢討與錯題移出。練習可即時看答案與解析；模考交卷前不回傳正解與解析。術科採文字作答與管理員人工審核。
 
----
+| 方法 | 路徑 | 用途 |
+| --- | --- | --- |
+| GET | `/api/training/catalog` | 科目、章節、來源及個人練習概況 |
+| GET | `/api/training/session` | 讀取指定個人題組 |
+| POST | `/api/training/session/start` | 建立題組 |
+| POST | `/api/training/session/answer` | 保存作答與標記 |
+| POST | `/api/training/session/submit` | 交卷與評分 |
+| GET | `/api/training/wrong` | 個人錯題 |
+| POST | `/api/training/wrong/remove` | 移出錯題 |
+| GET | `/api/training/practical` | 術科題目與個人作答狀態 |
+| POST | `/api/training/practical/answer` | 送出術科答案 |
 
-### 5. `exam.html` ── 題庫練習中心 (Training & Assessment)
-* **檔案路徑**：[`page/exam.html`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/exam.html)
-* **對應腳本**：[`page/static/exam.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/exam.js)
-* **訪問權限**：需員工 Session
-* **核心功能**：
-  * **雙領域分頁**：
-    1. **學科刷題 (`academic`)**：科目選單、題組自訂設定（題數/章節/題型篩選）、模擬考計時倒數、即時答案解析回饋、交卷評分。
-    2. **術科申論 (`practical`)**：申論問答文字作答、送交 MIS 人工審核與審查意見回饋。
-  * **錯題本管理**：自動收集答錯題目，提供手動移出错題本機制。
-* **主要 API**：
-  * `GET /api/training/catalog`、`POST /api/training/session/start`、`POST /api/training/session/answer`
-  * `POST /api/training/session/submit`、`GET /api/training/wrong`、`POST /api/training/wrong/remove`
-  * `GET /api/training/practical/questions`、`POST /api/training/practical/answer`。
+本頁不是 SOP 閱讀器；不要將保留的舊合規 API 或文件 API 當成目前分頁功能。
 
----
+### 工作面板
 
-### 6. `game.html` ── 企業宣導影音與 SOP 知識庫 (Media & SOP Library)
-* **檔案路徑**：[`page/game.html`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/game.html)
-* **對應腳本**：[`page/static/game.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/game.js)
-* **訪問權限**：需員工 Session
-* **核心功能**：
-  * **宣導影音播放器**：支援解析 YouTube 各式網址（一般影片、Shorts、直播、分享連結），透過後端 API 安全解析 Video ID 並嵌入播放。
-  * **SOP 文件檢索器**：即時搜尋企業營運 SOP 文件段落，具備分類篩選與閱讀器模態窗（Modal）。
-* **主要 API**：`POST /api/youtube/resolve`、`GET /api/knowledge`、`GET /api/manuals`。
+`workflow.html` 提供「環境一」至「環境四」，由 `panel.js` 切換 `pl1` 至 `pl4`。目前沒有業務表單、資料保存或 SOP 閱讀器。頁面標題仍為「SOP文件」，狀態仍為「播放器就緒」，均不能作為功能完成的依據。
 
----
+頁面仍引用 `game.js`、`youtube_thumbnail.js`，但缺少這些腳本預期的影音／縮圖 DOM；這不是已完成的影音整合。本次文件更新未修改此介面或腳本。
 
-### 7. `staff.html` ── 員工主檔與出勤管理 (Staff Management & Attendance)
-* **檔案路徑**：[`page/staff.html`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/staff.html)
-* **對應腳本**：[`page/static/staff.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/staff.js)
-* **訪問權限**：需管理員登入（`silver_shield_admin` Session）
-* **核心功能**：
-  * **三大多分頁**：
-    1. **員工資料 (`staffPanel`)**：左側互動式組織架構樹（展開/摺疊/停用篩選）、中間員工清單與搜尋、右側員工詳細資料編輯表單與照片上傳（Base64 上傳、後端保存於 `static/staff/`）。
-    2. **部門維護 (`departmentPanel`)**：新增與編輯部門主檔，防止誤停用仍有員工的部門。
-    3. **打卡紀錄 (`attendancePanel`)**：依日期與員工編號查詢出缺勤打卡流水帳。
-* **主要 API**：`POST /api/admin/login`、`GET /api/admin/staff`、`POST /api/admin/staff`、`POST /api/admin/departments`、`GET /api/admin/attendance`。
+### 宣導影音與縮圖
 
----
+`game.html` 頂部提供 YouTube、BiliBili、ニコニコ、Douyin、TikTok 五個分頁。`panel.js` 控制顯示，`game.js` 管理播放器、標題、狀態與各平台本機播放紀錄。
 
-### 8. `mis.html` ── 後台管理資訊系統 (Admin Console & MIS)
-* **檔案路徑**：[`page/mis.html`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/mis.html)
-* **對應腳本**：[`page/static/mis.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/mis.js)
-* **訪問權限**：需管理員登入
-* **核心功能**：
-  * **官方網站設定 (`settingsPanel`)**：修改前台主題色（銀盾藍/勳章紅/鋼鐵灰）、首頁主標題、副標題、即時公告，並提供即時效果預覽。
-  * **待審佇列 (`queuePanel`)**：營運日報審核（核准/要求補件/退回）、回覆紀錄歷程。
-  * **申論題審核 (`freeQuetionPanel`)**：批改員工術科申論答案並填寫回饋評語。
-  * **SOP 文件與題庫同步 (`trainingPanel`)**：觸發 Word/Excel/PDF 轉檔同步、科目設定、章節維護。
-  * **題庫維護 (`questionPanel`)**：題目草稿審核、題目啟用/停用/發布、批次修改。
-  * **資料表查閱 (`dataPanel`)**：唯讀查閱系統 Company 資料表資料與分頁瀏覽。
-* **主要 API**：`/api/admin/settings`、`/api/admin/submissions`、`/api/admin/compliance/*`、`/api/admin/manuals/*`、`/api/admin/table/*`。
+- YouTube 透過 `POST /api/youtube/resolve` 解析一般影片、Shorts、直播、分享及嵌入網址，前端逾時 10 秒。
+- 其他四平台透過 `POST /api/media/resolve`，送出 `platform` 與 `url`，前端逾時 12 秒；平台值為 `bilibili`、`niconico`、`douyin`、`tiktok`。
+- BiliBili 保留分集；ニコニコ接受影片短網址；Douyin 與 TikTok 接受對應影片及嵌入格式。部分分享短網址與直播僅提供原站連結，完整格式與限制見 README。
+- 兩個 API 都要求員工工作階段與 CSRF。取得標題不保證可嵌入播放，來源限制時使用原站連結。
+- YouTube 預設載入上次或預設影片；其他平台切換至分頁時才嘗試載入既有紀錄。
+- `youtube_thumbnail.js` 直接向 `i.ytimg.com` 載入可用尺寸，提供預覽、下載與另存連結；最多保存 8 筆最近查詢，可清除。
+- 播放網址與縮圖紀錄只存目前瀏覽器的 `localStorage`；縮圖工具也可由 `?url=` 預填啟動，不會改動播放器。
 
----
+`game.js` 仍保留有條件初始化的知識／SOP 程式，後端也保留查詢 API，但目前 HTML 沒有對應搜尋與閱讀介面。
 
-## 三、 全域共通 UI 元件與設計規範
+### 員工管理
 
-1. **左側導航側邊欄 (`.portal-sidebar`)**：
-   * 在內部系統頁面（`home`、`sales`、`exam`、`game`、`staff`、`mis`）維持完全一致的選單結構與高亮樣式（`.active`）。
-2. **頂部狀態欄 (`.portal-topbar`)**：
-   * 包含系統麵包屑 / Kicker、頁面主標題與即時 API 連線指示燈（`#apiState`）。
-3. **卡片式佈局 (`.portal-card` & `.portal-grid`)**：
-   * 透過 CSS Grid 實現寬版 (`.wide`) 與側邊窄版 (`.narrow`) 的自適應分割。
-4. **狀態回饋與無障礙 (`aria-live="polite"`)**：
-   * 所有表單提交按鈕下方均配置 `aria-live="polite"` 的狀態提示段落，確保螢幕閱讀器與非同步請求的即時提示。
+`staff.html` 頂部分為員工資料、部門維護與打卡紀錄。員工資料採組織架構、清單、明細三區，提供搜尋、在職篩選、列選取、照片預覽與上傳。員工編號在編輯時鎖定，照片限制 JPEG、PNG、WebP 與 5 MiB。部門維護提供新增、更名與停用；打卡紀錄依日期及員工查詢。
 
----
+主要 API：`GET/POST/DELETE /api/admin/staff`、`GET/POST/DELETE /api/admin/departments`、`GET /api/admin/attendance`。刪除方法在此代表停用，不是移除既有業務紀錄。
 
-## 四、 跨頁面結構與品質優化發現 (Action Items)
+### MIS 後台
 
-| 頁面檔案 | 發現事項 | 建議修正方式 |
-| :--- | :--- | :--- |
-| **全數內部頁面**<br>(`employee-login.html`、`exam.html`、`game.html`、`home.html`、`sales.html`) | `</body>` 標籤提早閉合於 `<footer>` 與 `<script>` 之前；且底部留有空的 `<footer></footer>`。 | 將 `</body>` 移至整份文件的最底部，並移除無內容的空 `<footer>`。 |
-| **`index.html`** | `<h1>` 與 `<span>` 標籤巢狀閉合語法錯誤；地圖 `iframe` 寬度固定 `1250px`。 | 修正標籤閉合；移除寫死寬度改為響應式 CSS 容器。 |
-| **`home.html`** | 快捷入口卡片（第 85～91 行）內部包含空的 `<span class="eyebrow"></span>` 且無內容。 | 補齊快捷項目或精簡移除多餘容器。 |
-| **`staff.html` & `mis.html`** | 內嵌管理員登入表單直接置於頁面頂層，未登入時以整頁切換方式呈現。 | 保持目前設計，但可補上共用的 CSRF Token 初始化錯誤捕捉。 |
+| 分頁 ID | 功能 |
+| --- | --- |
+| `settingsPanel` | 銀盾藍、勳章紅、鋼鐵灰、專業白主題，首頁文字、公告及預覽 |
+| `queuePanel` | 依員工與事件篩選日報，要求補件、核准、退回及查看歷程 |
+| `freeQuetionPanel` | 術科申論人工審核與評語；ID 沿用目前拼字 |
+| `trainingPanel` | 來源同步、文件啟停、科目／模考設定與章節維護 |
+| `questionPanel` | 題目編輯、草稿發布、停用、批次設定及重新匯入控制 |
+| `dataPanel` | 白名單資料表目錄與分頁查閱 |
+
+主要 API 包含 `/api/admin/settings`、`/api/admin/submissions`、`/api/admin/submission/review`、`/api/admin/manuals/documents`、`/api/admin/manuals/sync`、`/api/admin/manuals/document`、`/api/admin/training/taxonomy`、`/api/admin/compliance/questions`、`/api/admin/catalog`、`/api/admin/table`。通用資料查閱不提供任意資料表編輯；員工新增、照片與停用集中在員工管理頁。
+
+## 共用程式與版面契約
+
+- `script.js`：API 請求、錯誤處理、員工與管理員驗證、CSRF 請求工具、時間偏移、文字跳脫、圖片備援與既有管理分頁。
+- `panel.js`：使用 `#staffTabs button[data-panel]` 對應 `.portal-content .panel` 的 ID，並以 `display` 切換；目前供影音與工作面板使用。
+- `style.css`：官網四主題、登入頁、共用側欄、卡片、表單、表格及響應式規則。
+- 七個內部頁面維持相同側欄順序；管理頁底部另標示需管理員登入。頂部可能是主標題或分頁，狀態元素依頁面使用 `apiState` 或 `playerState`。
+- 修改 HTML 時需一併核對腳本選擇器、分頁 ID、表單欄位及狀態容器。API 值插入 HTML 時使用跳脫工具或 DOM 文字屬性。
+- `aria-live` 用於多處非同步狀態；不得據此宣稱所有元件均已完成無障礙或全裝置驗證。
+
+## 驗證範圍
+
+本次僅核對原始碼、路由、檔案及文件一致性，未啟動服務、連線資料庫或執行瀏覽器測試。實際驗收需檢查登入、資料異動、權限、窄螢幕、鍵盤操作與外部影音限制；Python 單元測試不能取代前端互動驗收。
