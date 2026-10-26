@@ -114,52 +114,153 @@
                 </section>
                 <!-- 第二個分頁內容 -->
                 <section class="panel" id="bilibili">
-                    <section class="portal-card">
+                    <section class="portal-card youtube-control" data-video-platform="bilibili">
                         <div class="card-head">
                             <div>
                                 <h2>BiliBili</h2>
                                 <span class="eyebrow">
-                                    支援&nbsp;BiliBili&nbsp;一般影片、直播、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。
+                                    支援 BV／av 影片網址與嵌入網址，保留分集；分享短網址及直播請由原站開啟。若影片無法嵌入，請改由原站觀看。
                                 </span>
+                            </div>
+                        </div>
+                        <form id="bilibiliForm" class="youtube-form">
+                            <label class="field" for="bilibiliUrl">
+                                <span>BiliBili 影片網址</span>
+                                <input id="bilibiliUrl" name="url" type="url" inputmode="url" autocomplete="url"
+                                    value="https://www.bilibili.com/video/BV1VRpw69E6V"
+                                    placeholder="https://www.bilibili.com/video/BV..." required>
+                            </label>
+                            <button class="btn" type="submit">轉換並播放</button>
+                        </form>
+                        <p class="hint" id="bilibiliStatus" aria-live="polite">請輸入影片網址。</p>
+                        <div class="youtube-player" hidden>
+                            <iframe id="bilibiliPlayer" title="BiliBili 影片播放器" loading="lazy"
+                                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+                            </iframe>
+                        </div>
+                        <div hidden>
+                            <div class="youtube-meta">
+                                <div>
+                                    <span class="eyebrow">影片標題</span>
+                                    <h2 id="bilibiliTitle">尚未選擇影片</h2>
+                                </div>
+                                <a class="btn secondary" id="openbilibili" target="_blank"
+                                    rel="noopener noreferrer">BiliBili 開啟</a>
                             </div>
                         </div>
                     </section>
                 </section>
                 <!-- 第三個分頁內容 -->
                 <section class="panel" id="niconico">
-                    <section class="portal-card">
+                    <section class="portal-card youtube-control" data-video-platform="niconico">
                         <div class="card-head">
                             <div>
                                 <h2>ニコニコ</h2>
                                 <span class="eyebrow">
-                                    支援&nbsp;ニコニコ&nbsp;一般影片、直播、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。
+                                    支援一般影片、nico.ms 影片短網址與嵌入網址；直播請由原站開啟。若影片無法嵌入，請改由原站觀看。
                                 </span>
+                            </div>
+                        </div>
+                        <form id="niconicoForm" class="youtube-form">
+                            <label class="field" for="niconicoUrl">
+                                <span>ニコニコ 影片網址</span>
+                                <input id="niconicoUrl" name="url" type="url" inputmode="url" autocomplete="url"
+                                    placeholder="https://www.nicovideo.jp/watch/sm..." required>
+                            </label>
+                            <button class="btn" type="submit">轉換並播放</button>
+                        </form>
+                        <p class="hint" id="niconicoStatus" aria-live="polite">請輸入影片網址。</p>
+                        <div class="youtube-player" hidden>
+                            <iframe id="niconicoPlayer" title="ニコニコ 影片播放器" loading="lazy"
+                                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+                            </iframe>
+                        </div>
+                        <div hidden>
+                            <div class="youtube-meta">
+                                <div>
+                                    <span class="eyebrow">影片標題</span>
+                                    <h2 id="niconicoTitle">尚未選擇影片</h2>
+                                </div>
+                                <a class="btn secondary" id="openniconico" target="_blank"
+                                    rel="noopener noreferrer">ニコニコ 開啟</a>
                             </div>
                         </div>
                     </section>
                 </section>
                 <!-- 第四個分頁內容 -->
                 <section class="panel" id="douyin">
-                    <section class="portal-card">
+                    <section class="portal-card youtube-control" data-video-platform="douyin">
                         <div class="card-head">
                             <div>
                                 <h2>Douyin</h2>
                                 <span class="eyebrow">
-                                    支援&nbsp;Douyin&nbsp;一般影片、直播、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。
+                                    支援一般影片、分享影片與嵌入網址；分享短網址及直播請由原站開啟。若影片無法嵌入，請改由原站觀看。
                                 </span>
+                            </div>
+                        </div>
+                        <form id="douyinForm" class="youtube-form">
+                            <label class="field" for="douyinUrl">
+                                <span>Douyin 影片網址</span>
+                                <input id="douyinUrl" name="url" type="url" inputmode="url" autocomplete="url"
+                                    placeholder="https://www.douyin.com/video/..." required>
+                            </label>
+                            <button class="btn" type="submit">轉換並播放</button>
+                        </form>
+                        <p class="hint" id="douyinStatus" aria-live="polite">請輸入影片網址。</p>
+                        <div class="youtube-player" hidden>
+                            <iframe id="douyinPlayer" title="Douyin 影片播放器" loading="lazy"
+                                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+                            </iframe>
+                        </div>
+                        <div hidden>
+                            <div class="youtube-meta">
+                                <div>
+                                    <span class="eyebrow">影片標題</span>
+                                    <h2 id="douyinTitle">尚未選擇影片</h2>
+                                </div>
+                                <a class="btn secondary" id="opendouyin" target="_blank"
+                                    rel="noopener noreferrer">Douyin 開啟</a>
                             </div>
                         </div>
                     </section>
                 </section>
                 <!-- 第五個分頁內容 -->
                 <section class="panel" id="tiktok">
-                    <section class="portal-card">
+                    <section class="portal-card youtube-control" data-video-platform="tiktok">
                         <div class="card-head">
                             <div>
                                 <h2>Tiktok</h2>
                                 <span class="eyebrow">
-                                    支援&nbsp;Tiktok&nbsp;一般影片、直播、分享短網址及嵌入網址；若來源禁止外部嵌入，請改由原站觀看。
+                                    支援一般影片與嵌入網址；分享短網址及直播請由原站開啟。若影片無法嵌入，請改由原站觀看。
                                 </span>
+                            </div>
+                        </div>
+                        <form id="tiktokForm" class="youtube-form">
+                            <label class="field" for="tiktokUrl">
+                                <span>TikTok 影片網址</span>
+                                <input id="tiktokUrl" name="url" type="url" inputmode="url" autocomplete="url"
+                                    placeholder="https://www.tiktok.com/@user/video/..." required>
+                            </label>
+                            <button class="btn" type="submit">轉換並播放</button>
+                        </form>
+                        <p class="hint" id="tiktokStatus" aria-live="polite">請輸入影片網址。</p>
+                        <div class="youtube-player" hidden>
+                            <iframe id="tiktokPlayer" title="TikTok 影片播放器" loading="lazy"
+                                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+                            </iframe>
+                        </div>
+                        <div hidden>
+                            <div class="youtube-meta">
+                                <div>
+                                    <span class="eyebrow">影片標題</span>
+                                    <h2 id="tiktokTitle">尚未選擇影片</h2>
+                                </div>
+                                <a class="btn secondary" id="opentiktok" target="_blank"
+                                    rel="noopener noreferrer">TikTok 開啟</a>
                             </div>
                         </div>
                     </section>

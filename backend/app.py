@@ -24,6 +24,7 @@ from urllib.request import Request, urlopen
 
 try:
     from . import data
+    from . import media
     from . import doc as operations_manuals
     from . import input as user_input
 except ImportError:  # 支援直接執行 backend/app.py
@@ -31,6 +32,7 @@ except ImportError:  # 支援直接執行 backend/app.py
     import input as user_input
 
     import data
+    import media
 
 BACKEND_ROOT = Path(__file__).parent.resolve()
 PROJECT_ROOT = BACKEND_ROOT.parent
@@ -346,6 +348,12 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 item = user_input.validate_youtube(self.read_json())
                 return self.send_json({"data": youtube_metadata(item)})
+            if parsed.path == "/api/media/resolve":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                item = user_input.validate_media(self.read_json())
+                return self.send_json({"data": media.video_metadata(item)})
             if parsed.path == "/api/operations/submit":
                 session = self.require_employee()
                 if not session or not self.require_csrf(session):
@@ -470,7 +478,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
         except (data.DatabaseUnavailable, operations_manuals.DocumentImportError) as exc:
             return self.send_json({"error": str(exc), "code": "SERVICE_UNAVAILABLE"}, 503)
-        except ExternalServiceUnavailable as exc:
+        except (ExternalServiceUnavailable, media.MetadataUnavailable) as exc:
             return self.send_json({"error": str(exc), "code": "EXTERNAL_SERVICE_UNAVAILABLE"}, 503)
         self.send_json({"error": "此路徑不接受寫入。"}, 405)
 

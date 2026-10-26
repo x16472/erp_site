@@ -13,7 +13,7 @@ import re
 import uuid
 from datetime import date
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 ALLOWED_CATEGORIES = {"出勤", "業務進度", "物流調度", "帳務", "設備", "餐飲服務", "其他"}
 ALLOWED_THEMES = {"shield", "medal", "steel","white"}
@@ -578,6 +578,95 @@ def validate_youtube(payload: dict[str, Any]) -> dict[str, str]:
         "watch_url": watch_url,
         "embed_url": f"https://www.youtube.com/embed/{video_id}",
     }
+
+
+def validate_media(payload: dict[str, Any]) -> dict[str, str]:
+    platform = _text(payload.get("platform"), "影音平台", 20)
+    if platform not in {"bilibili", "niconico", "douyin", "tiktok"}:
+        raise InputError("不支援的影音平台")
+    raw_url = _text(payload.get("url"), "影片網址", 2048)
+    try:
+        parsed = urlparse(raw_url)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or parsed.username or parsed.password or parsed.port is not None
+        ):
+            raise ValueError
+    except ValueError as exc:
+        raise InputError("請使用不含帳號、密碼或連接埠的 HTTP／HTTPS 影片網址") from exc
+    host, path = (parsed.hostname or "").lower(), parsed.path
+    query = parse_qs(parsed.query)
+    video_id = ""
+    watch_url = ""
+    embed_url = ""
+    original_only = False
+
+    if platform == "bilibili":
+        original_only = (
+            host == "b23.tv" and re.fullmatch(r"/[A-Za-z0-9]+/?", path)
+            or host == "live.bilibili.com" and re.fullmatch(r"/[1-9]\d*/?", path)
+        )
+        if host in {"www.bilibili.com", "bilibili.com", "m.bilibili.com"}:
+            match = re.fullmatch(r"/video/(BV[A-Za-z0-9]{10}|av[1-9]\d*)/?", path)
+            video_id = match[1] if match else ""
+        elif host == "player.bilibili.com" and path == "/player.html":
+            bvid, aid = query.get("bvid", [""])[0], query.get("aid", [""])[0]
+            if re.fullmatch(r"BV[A-Za-z0-9]{10}", bvid):
+                video_id = bvid
+            elif re.fullmatch(r"[1-9]\d*", aid):
+                video_id = f"av{aid}"
+        if video_id:
+            page = query.get("p", ["1"])[0]
+            if not re.fullmatch(r"[1-9]\d{0,4}", page):
+                raise InputError("BiliBili 分集必須是正整數，且最多五位數")
+            params = {"bvid": video_id} if video_id.startswith("BV") else {"aid": video_id[2:]}
+            embed_url = "https://player.bilibili.com/player.html?" + urlencode({**params, "p": page, "autoplay": "0"})
+            watch_url = f"https://www.bilibili.com/video/{video_id}?p={page}"
+    elif platform == "niconico":
+        original_only = (
+            host == "live.nicovideo.jp" and re.fullmatch(r"/watch/lv[1-9]\d*/?", path)
+            or host == "nico.ms" and re.fullmatch(r"/lv[1-9]\d*/?", path)
+        )
+        pattern = r"/((?:sm|nm|so)\d+|\d+)/?" if host == "nico.ms" else r"/watch/((?:sm|nm|so)\d+|\d+)/?"
+        if host in {"www.nicovideo.jp", "nicovideo.jp", "embed.nicovideo.jp", "nico.ms"}:
+            match = re.fullmatch(pattern, path)
+            video_id = match[1] if match else ""
+        if video_id:
+            embed_url = f"https://embed.nicovideo.jp/watch/{video_id}"
+            watch_url = f"https://www.nicovideo.jp/watch/{video_id}"
+    elif platform == "douyin":
+        original_only = (
+            host in {"v.douyin.com", "live.douyin.com"}
+            and re.fullmatch(r"/[A-Za-z0-9_-]+/?", path)
+        )
+        if host in {"www.douyin.com", "douyin.com"}:
+            match = re.fullmatch(r"/video/([1-9]\d*)/?", path)
+            video_id = match[1] if match else query.get("modal_id", [""])[0] if path == "/" else ""
+        elif host in {"www.iesdouyin.com", "iesdouyin.com"}:
+            match = re.fullmatch(r"/share/video/([1-9]\d*)/?", path)
+            video_id = match[1] if match else ""
+        elif host == "open.douyin.com" and path == "/player/video":
+            video_id = query.get("vid", [""])[0]
+        if re.fullmatch(r"[1-9]\d*", video_id):
+            embed_url = f"https://open.douyin.com/player/video?vid={video_id}&autoplay=0"
+            watch_url = f"https://www.douyin.com/video/{video_id}"
+    elif platform == "tiktok":
+        original_only = (
+            host in {"vm.tiktok.com", "vt.tiktok.com"} and re.fullmatch(r"/[A-Za-z0-9]+/?", path)
+        )
+        if host in {"www.tiktok.com", "tiktok.com", "m.tiktok.com"}:
+            original_only = re.fullmatch(r"/(?:t/[A-Za-z0-9]+|@[\w.-]+/live)/?", path)
+            match = re.fullmatch(r"/(?:@[\w.-]+/video|player/v1|embed/v2|share/video)/([1-9]\d*)/?", path)
+            video_id = match[1] if match else ""
+        if video_id:
+            embed_url = f"https://www.tiktok.com/player/v1/{video_id}?autoplay=0"
+            watch_url = f"https://www.tiktok.com{path.rstrip('/')}" if path.startswith("/@") else f"https://www.tiktok.com/share/video/{video_id}"
+
+    if original_only:
+        return {"platform": platform, "video_id": "", "embed_url": "", "watch_url": parsed._replace(scheme="https").geturl()}
+    if not embed_url:
+        raise InputError("無法辨識此平台的影片網址，請確認平台與網址格式")
+    return {"platform": platform, "video_id": video_id, "embed_url": embed_url, "watch_url": watch_url}
 
 
 def validate_site_settings(payload: dict[str, Any]) -> dict[str, str]:

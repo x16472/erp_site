@@ -229,6 +229,47 @@ class SecurityAndPerformanceTests(unittest.TestCase):
         handler.require_csrf.assert_called_once_with({"csrf": "token"})
         handler.read_json.assert_not_called()
 
+    def test_media_resolver_requires_employee_and_csrf(self) -> None:
+        for session, csrf in [(None, True), ({"csrf": "token"}, False)]:
+            with self.subTest(session=session):
+                handler = object.__new__(app.Handler)
+                handler.path = "/api/media/resolve"
+                handler.require_employee = mock.Mock(return_value=session)
+                handler.require_csrf = mock.Mock(return_value=csrf)
+                handler.read_json = mock.Mock()
+                handler.do_POST()
+                handler.read_json.assert_not_called()
+
+    def test_media_resolver_returns_actual_metadata(self) -> None:
+        handler = object.__new__(app.Handler)
+        handler.path = "/api/media/resolve"
+        handler.require_employee = mock.Mock(return_value={"csrf": "token"})
+        handler.require_csrf = mock.Mock(return_value=True)
+        handler.read_json = mock.Mock(return_value={
+            "platform": "bilibili", "url": "https://www.bilibili.com/video/BV1VRpw69E6V",
+        })
+        handler.send_json = mock.Mock()
+        metadata = {"title": "實際影片標題", "title_status": "available"}
+        with mock.patch.object(app.media, "video_metadata", return_value=metadata) as resolve:
+            handler.do_POST()
+        self.assertEqual(resolve.call_args.args[0]["video_id"], "BV1VRpw69E6V")
+        handler.send_json.assert_called_once_with({"data": metadata})
+
+    def test_media_metadata_failures_return_service_error(self) -> None:
+        handler = object.__new__(app.Handler)
+        handler.path = "/api/media/resolve"
+        handler.require_employee = mock.Mock(return_value={"csrf": "token"})
+        handler.require_csrf = mock.Mock(return_value=True)
+        handler.read_json = mock.Mock(return_value={
+            "platform": "bilibili", "url": "https://www.bilibili.com/video/BV1VRpw69E6V",
+        })
+        handler.send_json = mock.Mock()
+        with mock.patch.object(app.media, "video_metadata", side_effect=app.media.MetadataUnavailable("來源無法回應")):
+            handler.do_POST()
+        handler.send_json.assert_called_once_with({
+            "error": "來源無法回應", "code": "EXTERNAL_SERVICE_UNAVAILABLE",
+        }, 503)
+
 
 if __name__ == "__main__":
     unittest.main()
