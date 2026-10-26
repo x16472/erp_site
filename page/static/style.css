@@ -1159,6 +1159,15 @@ footer a {
     display: block
 }
 
+/*分業選單*/
+.panel {
+    display: none
+}
+
+.panel.active {
+    display: block
+}
+
 .settings-preview {
     padding: 25px;
     border-radius: 18px;
