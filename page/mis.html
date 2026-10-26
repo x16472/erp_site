@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>後台管理區｜銀盾共同體營運中心</title>
     <link rel="stylesheet" href="./static/style.css">
+    <link rel="icon" href="./static/ico/calc_calculator_10824.ico" type="image/x-icon">
 </head>
 
 <body>
@@ -174,11 +175,15 @@
                     </section>
                     <section class="admin-panel" id="freeQuetionPanel">
                         <section class="portal-card full essay-review-panel">
-                            <div class="card-head"><div><span class="eyebrow">ESSAY REVIEW</span>
-                                <h2>申論題人工審核</h2>
-                                <p>檢視員工文字答案，給予審核結果與回饋。</p>
-                            </div></div>
-                            <div class="result-list" id="essayAnswerList"><div class="empty">載入中…</div></div>
+                            <div class="card-head">
+                                <div><span class="eyebrow">ESSAY REVIEW</span>
+                                    <h2>申論題人工審核</h2>
+                                    <p>檢視員工文字答案，給予審核結果與回饋。</p>
+                                </div>
+                            </div>
+                            <div class="result-list" id="essayAnswerList">
+                                <div class="empty">載入中…</div>
+                            </div>
                         </section>
                     </section>
                     <section class="admin-panel" id="trainingPanel">
@@ -192,23 +197,41 @@
                         <div class="portal-grid training-taxonomy-admin">
                             <form class="portal-card narrow" id="subjectForm"><input name="id" type="hidden">
                                 <h3>科目與模考設定</h3>
-                                <label class="field"><span>領域</span><select name="domain"><option value="academic">學科</option><option value="practical">術科</option></select></label>
-                                <label class="field"><span>科目名稱</span><input name="name" maxlength="100" required></label>
-                                <div class="form-grid"><label class="field"><span>模考題數</span><input name="mock_question_count" type="number" min="1" max="200" value="40"></label>
-                                    <label class="field"><span>分鐘</span><input name="mock_duration_minutes" type="number" min="1" max="300" value="45"></label>
-                                    <label class="field"><span>及格分數</span><input name="mock_pass_score" type="number" min="1" max="100" value="70"></label></div>
+                                <label class="field"><span>領域</span><select name="domain">
+                                        <option value="academic">學科</option>
+                                        <option value="practical">術科</option>
+                                    </select></label>
+                                <label class="field"><span>科目名稱</span><input name="name" maxlength="100"
+                                        required></label>
+                                <div class="form-grid"><label class="field"><span>模考題數</span><input
+                                            name="mock_question_count" type="number" min="1" max="200"
+                                            value="40"></label>
+                                    <label class="field"><span>分鐘</span><input name="mock_duration_minutes"
+                                            type="number" min="1" max="300" value="45"></label>
+                                    <label class="field"><span>及格分數</span><input name="mock_pass_score" type="number"
+                                            min="1" max="100" value="70"></label>
+                                </div>
                                 <label><input name="is_active" type="checkbox" checked> 啟用科目</label>
-                                <div class="actions"><button class="btn" type="submit">儲存科目</button><button class="btn secondary" id="resetSubject" type="button">新增</button></div>
+                                <div class="actions"><button class="btn" type="submit">儲存科目</button><button
+                                        class="btn secondary" id="resetSubject" type="button">新增</button></div>
                             </form>
                             <form class="portal-card narrow" id="chapterForm"><input name="id" type="hidden">
-                                <h3>章節設定</h3><label class="field"><span>所屬科目</span><select name="subject_id" id="chapterSubject" required></select></label>
-                                <label class="field"><span>章節代碼</span><input name="code" maxlength="30" placeholder="CH01" required></label>
-                                <label class="field"><span>章節名稱</span><input name="name" maxlength="120" required></label>
-                                <label class="field"><span>排序</span><input name="display_order" type="number" min="0" max="9999" value="0"></label>
+                                <h3>章節設定</h3><label class="field"><span>所屬科目</span><select name="subject_id"
+                                        id="chapterSubject" required></select></label>
+                                <label class="field"><span>章節代碼</span><input name="code" maxlength="30"
+                                        placeholder="CH01" required></label>
+                                <label class="field"><span>章節名稱</span><input name="name" maxlength="120"
+                                        required></label>
+                                <label class="field"><span>排序</span><input name="display_order" type="number" min="0"
+                                        max="9999" value="0"></label>
                                 <label><input name="is_active" type="checkbox" checked> 啟用章節</label>
-                                <div class="actions"><button class="btn" type="submit">儲存章節</button><button class="btn secondary" id="resetChapter" type="button">新增</button></div>
+                                <div class="actions"><button class="btn" type="submit">儲存章節</button><button
+                                        class="btn secondary" id="resetChapter" type="button">新增</button></div>
                             </form>
-                            <section class="portal-card wide"><h3>目前分類</h3><div class="staff-admin-list" id="taxonomyList"></div></section>
+                            <section class="portal-card wide">
+                                <h3>目前分類</h3>
+                                <div class="staff-admin-list" id="taxonomyList"></div>
+                            </section>
                         </div>
                         <div class="staff-admin-list" id="trainingDocumentList">
                             <div class="empty">載入中…</div>
@@ -232,10 +255,19 @@
                                     <button data-question-type="matching" type="button">配對題</button>
                                     <button data-question-type="essay" type="button">申論題</button>
                                 </nav>
-                                <label class="field"><span>領域</span><select name="domain" id="questionDomain"><option value="academic">學科</option><option value="practical">術科</option></select></label>
-                                <label class="field"><span>科目</span><select name="subject_id" id="questionSubject" required></select></label>
-                                <label class="field"><span>章節</span><select name="chapter_id" id="questionChapter" required></select></label>
-                                <label class="field"><span>儲存狀態</span><select name="status"><option value="draft">草稿</option><option value="published">發布</option><option value="disabled">停用</option></select></label>
+                                <label class="field"><span>領域</span><select name="domain" id="questionDomain">
+                                        <option value="academic">學科</option>
+                                        <option value="practical">術科</option>
+                                    </select></label>
+                                <label class="field"><span>科目</span><select name="subject_id" id="questionSubject"
+                                        required></select></label>
+                                <label class="field"><span>章節</span><select name="chapter_id" id="questionChapter"
+                                        required></select></label>
+                                <label class="field"><span>儲存狀態</span><select name="status">
+                                        <option value="draft">草稿</option>
+                                        <option value="published">發布</option>
+                                        <option value="disabled">停用</option>
+                                    </select></label>
                                 <label class="field"><span>關聯文件</span>
                                     <select name="document_id" id="questionDocument">
                                         <option value="">不指定文件</option>
@@ -254,7 +286,8 @@
                                     <input name="answers" placeholder="例如：1；多選題可輸入 1,3" required>
                                 </label>
                                 <label class="field" id="structureField" hidden><span>題型結構 JSON</span>
-                                    <textarea name="structure" rows="8" placeholder='填空：{"blanks":[{"label":"空格 1","options":["int","str"]}]}&#10;配對：{"left":["int"],"right":["整數"]}'></textarea>
+                                    <textarea name="structure" rows="8"
+                                        placeholder='填空：{"blanks":[{"label":"空格 1","options":["int","str"]}]}&#10;配對：{"left":["int"],"right":["整數"]}'></textarea>
                                 </label>
                                 <label class="field" id="explanationField"><span>答案解說</span>
                                     <textarea name="explanation" maxlength="1000" required></textarea>
@@ -272,11 +305,26 @@
                                         <h2>題庫</h2>
                                     </div>
                                 </div>
-                                <div class="training-bulk-toolbar"><input id="questionSearch" type="search" placeholder="搜尋題目、科目或章節">
-                                    <select id="questionStatusFilter"><option value="">全部狀態</option><option value="draft">草稿</option><option value="published">已發布</option><option value="disabled">已停用</option></select>
-                                    <select id="bulkSubject"><option value="">不變更科目</option></select>
-                                    <select id="bulkChapter"><option value="">不變更章節</option></select>
-                                    <select id="bulkStatus"><option value="">不變更狀態</option><option value="draft">草稿</option><option value="published">發布</option><option value="disabled">停用</option></select>
+                                <div class="training-bulk-toolbar"><input id="questionSearch" type="search"
+                                        placeholder="搜尋題目、科目或章節">
+                                    <select id="questionStatusFilter">
+                                        <option value="">全部狀態</option>
+                                        <option value="draft">草稿</option>
+                                        <option value="published">已發布</option>
+                                        <option value="disabled">已停用</option>
+                                    </select>
+                                    <select id="bulkSubject">
+                                        <option value="">不變更科目</option>
+                                    </select>
+                                    <select id="bulkChapter">
+                                        <option value="">不變更章節</option>
+                                    </select>
+                                    <select id="bulkStatus">
+                                        <option value="">不變更狀態</option>
+                                        <option value="draft">草稿</option>
+                                        <option value="published">發布</option>
+                                        <option value="disabled">停用</option>
+                                    </select>
                                     <button class="btn secondary" id="applyQuestionBulk" type="button">套用至勾選題目</button>
                                 </div>
                                 <div class="staff-admin-list" id="questionList">
@@ -293,4 +341,5 @@
 </body>
 <footer></footer>
 <script type="module" src="./static/mis.js"></script>
+
 </html>
