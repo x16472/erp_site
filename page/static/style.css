@@ -76,32 +76,27 @@ iframe {
     justify-content: center;
     gap: 8px;
     padding: 10px 16px;
-    border: 2;
+    border: 2px solid transparent;
     border-radius: 10px;
     background: var(--blue);
     color: var(--ink);
     text-decoration: none;
     font-weight: 800;
-    cursor: pointer
+    cursor: pointer;
 }
 
 .btn:hover {
-    background: #05445f9d
+    background: #05445f9d;
 }
 
 .btn.second {
     background: #9191913d;
     color: #000000;
-    padding: 8px 12px !important;
-    /*修正過大的內距*/
+    /* 移除強制的 height，靠 flex 垂直置中 */
+    padding: 6px 12px !important;
     font-size: 16px !important;
-    /*標準字體大小*/
-    height: 32px !important;
-    /*鎖定標準後台按鈕高度*/
     min-width: 64px;
-    /*確保字數少時按鈕不會縮得太小*/
     white-space: nowrap;
-    /*防止文字變成兩行*/
 }
 
 .btn.red {
@@ -2672,6 +2667,7 @@ footer a {
     font-size: 12px
 }
 
+/* 平板/手機版 RWD 樣式（小於 980px） */
 @media(max-width:980px) {
     .public-nav {
         display: none
@@ -2775,8 +2771,57 @@ footer a {
     .catalog-item {
         min-width: 170px
     }
+
+    /* 父層：取消桌面版高度，使其隨網頁自然延伸 */
+    .review-workspace {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+    }
+
+    /* 上方員工區：移除右邊框，改為下邊框 */
+    .review-people {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        height: auto;
+        overflow: visible;
+    }
+
+    /* 員工列表：維持原本的 2 欄設定 */
+    .review-person-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(230px, 1fr));
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    /* 下方事件外殼：取消它的滾動，讓它變成靜態容器，標題和按鈕就不會跟著滾 */
+    .review-events {
+        height: auto;
+        overflow: visible;
+        padding: 0;
+    }
+
+    /* 調整手機版標題與篩選器的內距 */
+    .review-event-head,
+    .queue-filters {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    /* 下方卡片列表：把固定高度與滾動條鎖在這裡！ */
+    .review-events .result-list {
+        /* 設定一個適合手機版卡片滾動的高度（例如 400px，可依需求調整） */
+        height: 400px;
+        /* 啟用垂直滾動，只有卡片會滾動，上方的標題與篩選按鈕會固定住 */
+        overflow-y: auto;
+        box-sizing: border-box;
+        /* 保持漂亮的卡片與外框間距 */
+        padding: 12px 16px 20px 16px;
+    }
 }
 
+/* 平板/手機版 RWD 樣式（小於 680px） */
 @media(max-width:680px) {
     .public-hero {
         min-height: auto
@@ -2945,63 +2990,6 @@ footer a {
     .employee-access-card .clock-actions {
         grid-template-columns: 1fr
     }
-}
-
-/* 平板/手機版 RWD 樣式（小於 980px） */
-@media(max-width: 980px) {
-
-    /* 父層：取消桌面版高度，使其隨網頁自然延伸 */
-    .review-workspace {
-        grid-template-columns: 1fr;
-        height: auto;
-        overflow: visible;
-    }
-
-    /* 上方員工區：移除右邊框，改為下邊框 */
-    .review-people {
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-        height: auto;
-        overflow: visible;
-    }
-
-    /* 員工列表：維持原本的 2 欄設定 */
-    .review-person-list {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(230px, 1fr));
-        max-height: 300px;
-        overflow-y: auto;
-    }
-
-    /* 下方事件外殼：取消它的滾動，讓它變成靜態容器，標題和按鈕就不會跟著滾 */
-    .review-events {
-        height: auto;
-        overflow: visible;
-        padding: 0;
-    }
-
-    /* 調整手機版標題與篩選器的內距 */
-    .review-event-head,
-    .queue-filters {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
-
-    /* 下方卡片列表：把固定高度與滾動條鎖在這裡！ */
-    .review-events .result-list {
-        /* 設定一個適合手機版卡片滾動的高度（例如 400px，可依需求調整） */
-        height: 400px;
-
-        /* 啟用垂直滾動，只有卡片會滾動，上方的標題與篩選按鈕會固定住 */
-        overflow-y: auto;
-        box-sizing: border-box;
-
-        /* 保持漂亮的卡片與外框間距 */
-        padding: 12px 16px 24px 16px;
-    }
-}
-
-@media(max-width:680px) {
 
     .hero-trust,
     .team-toolbar,
