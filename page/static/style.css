@@ -75,9 +75,9 @@ iframe {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 11px 18px;
-    border: 0;
-    border-radius: 12px;
+    padding: 10px 16px;
+    border: 2;
+    border-radius: 10px;
     background: var(--blue);
     color: var(--ink);
     text-decoration: none;
@@ -86,12 +86,22 @@ iframe {
 }
 
 .btn:hover {
-    background: #087cad
+    background: #05445f9d
 }
 
-.btn.secondary {
-    background: #86868646;
-    color: #000000
+.btn.second {
+    background: #9191913d;
+    color: #000000;
+    padding: 8px 12px !important;
+    /*修正過大的內距*/
+    font-size: 16px !important;
+    /*標準字體大小*/
+    height: 32px !important;
+    /*鎖定標準後台按鈕高度*/
+    min-width: 64px;
+    /*確保字數少時按鈕不會縮得太小*/
+    white-space: nowrap;
+    /*防止文字變成兩行*/
 }
 
 .btn.red {
@@ -107,21 +117,6 @@ iframe {
     opacity: .45;
     cursor: not-allowed
 }
-
-/*3. 強制規範按鈕的標準後台尺寸*/
-.btn.secondary {
-    padding: 8px 12px !important;
-    /*修正過大的內距*/
-    font-size: 16px !important;
-    /*標準字體大小*/
-    height: 32px !important;
-    /*鎖定標準後台按鈕高度*/
-    min-width: 64px;
-    /*確保字數少時按鈕不會縮得太小*/
-    white-space: nowrap;
-    /*防止文字變成兩行*/
-}
-
 
 .eyebrow {
     color: var(--blue);

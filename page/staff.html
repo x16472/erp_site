@@ -59,7 +59,7 @@
                         <h2>員工主檔與出勤管理</h2>
                         <span class="eyebrow"> 登入者：<p id="adminName"></p></span>
                     </div>
-                    <button class="btn secondary" id="logoutButton">登出</button>
+                    <button class="btn second" id="logoutButton">登出</button>
                 </div>
                 <section class="admin-panel active" id="staffPanel">
                     <div class="staff-manager-workspace">
@@ -132,7 +132,7 @@
                                     <div class="staff-photo-column">
                                         <img class="staff-photo-preview" id="photoPreview" src="static/appicon.png"
                                             alt="員工照片預覽">
-                                        <label class="btn secondary photo-select-button" for="staffPhoto">更換照片</label>
+                                        <label class="btn second photo-select-button" for="staffPhoto">更換照片</label>
                                         <input class="sr-only" name="photo" id="staffPhoto" type="file"
                                             accept="image/jpeg,image/png,image/webp">
                                         <small>JPEG、PNG、WebP，最大 5 MB</small>
@@ -168,7 +168,7 @@
                                 <div class="staff-detail-footer">
                                     <p id="staffStatus" aria-live="polite"></p>
                                     <div class="actions">
-                                        <button class="btn secondary" id="resetStaff" type="button">還原／新增</button>
+                                        <button class="btn second" id="resetStaff" type="button">還原／新增</button>
                                         <button class="btn red" id="disableCurrentStaff" type="button"
                                             disabled>停用員工</button>
                                         <button class="btn" type="submit">儲存修改</button>
@@ -190,7 +190,7 @@
                             <input name="id" type="hidden"><label class="field"><span>部門名稱（最多 5 個字）</span>
                                 <input name="name" maxlength="5" required></label>
                             <div class="actions"><button class="btn" type="submit">儲存部門</button>
-                                <button class="btn secondary" id="resetDepartment" type="button">新增另一個部門</button>
+                                <button class="btn second" id="resetDepartment" type="button">新增另一個部門</button>
                             </div>
                             <p id="departmentStatus" aria-live="polite"></p>
                         </form>

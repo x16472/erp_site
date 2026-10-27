@@ -32,7 +32,7 @@ function renderMySubmissions(items) {
         </div>`).join('')}</div>
         ${['待審核', '要求補件', '員工已回覆'].includes(item.status) ? `<form class="operation-reply" data-reply-id="${esc(item.id)}">
             <label class="field"><span>補充回覆</span><textarea name="message" maxlength="1000" required placeholder="回覆管理員或補充日報內容"></textarea></label>
-            <button class="btn secondary" type="submit">送出回覆</button>
+            <button class="btn second" type="submit">送出回覆</button>
         </form>` : ''}
     </article>`).join('') : '<div class="empty">目前尚無填報紀錄。</div>'
 }
@@ -99,8 +99,8 @@ mySubmissions.onsubmit = async event => {
     button.disabled = true;
     try {
         await request('/api/operations/reply', {
-            method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': employeeCsrf},
-            body: JSON.stringify({id: form.dataset.replyId, message: form.elements.message.value})
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': employeeCsrf },
+            body: JSON.stringify({ id: form.dataset.replyId, message: form.elements.message.value })
         });
         await refreshMySubmissions();
         toast.textContent = '回覆已送交 MIS';

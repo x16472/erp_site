@@ -178,7 +178,7 @@ function renderQueue() {
         <div class="activity-list">${item.activities.map(activity => `<div class="activity-item"><b>${esc(activity.actor_role === 'admin' ? '管理員' : '員工')}</b>${activity.message ? `<p>${esc(activity.message)}</p>` : ''}<small>${esc(activity.created_at)}</small></div>`).join('')}</div>
         <form class="review-form" data-review-id="${esc(item.id)}">
             <label class="field"><span>審閱意見</span><textarea name="message" maxlength="1000" placeholder="要求補件時必填"></textarea></label>
-            <div class="actions"><button class="btn secondary" name="status" value="要求補件">要求補件</button><button class="btn" name="status" value="審核通過">審核通過</button><button class="btn secondary" name="status" value="已退回">退回</button></div>
+            <div class="actions"><button class="btn second" name="status" value="要求補件">要求補件</button><button class="btn" name="status" value="審核通過">審核通過</button><button class="btn second" name="status" value="已退回">退回</button></div>
         </form>
     </article>`).join('') : '<div class="empty">目前沒有符合條件的待審事項。</div>'
 }
@@ -225,7 +225,7 @@ function renderTrainingTaxonomy() {
         return `<article class="staff-admin-card"><div><b>${subject.domain === 'academic' ? '學科' : '術科'}｜${esc(subject.name)}</b>
             <small>${subject.domain === 'academic' ? `${subject.mock_question_count} 題／${subject.mock_duration_minutes} 分鐘／${subject.mock_pass_score} 分及格` : '人工審核'} · ${subject.is_active ? '啟用' : '停用'}</small>
             <small>${chapters.map(item => `<button class="text-action" data-chapter-edit="${item.id}" type="button">${esc(item.code)} ${esc(item.name)}</button>`).join(' ') || '尚無章節'}</small></div>
-            <button class="btn secondary" data-subject-edit="${subject.id}">編輯</button></article>`
+            <button class="btn second" data-subject-edit="${subject.id}">編輯</button></article>`
     }).join('') || '<div class="empty">尚未建立科目。</div>'
 }
 function renderQuestionChapters() {
@@ -285,7 +285,7 @@ function renderTrainingDocuments() {
         <small>${esc(item.category)} · ${item.section_count} 段 · ${esc(item.file_name)} · ${esc(item.source_kind || 'manual')}${item.parse_status ? ` · ${esc(item.parse_status)}` : ''}${item.is_active ? '' : ' · 已停用'}</small>
         ${item.parse_message ? `<small class="error-note">${esc(item.parse_message)}</small>` : ''}
     </div>
-    <button class="btn secondary compact-action" data-document-state="${item.id}" data-active="${item.is_active ? 'false' : 'true'}">
+    <button class="btn second compact-action" data-document-state="${item.id}" data-active="${item.is_active ? 'false' : 'true'}">
         ${item.is_active ? '停用' : '啟用'}
     </button>
 </article>`).join('') || '<div class="empty">目前沒有SOP文件。</div>';
@@ -331,10 +331,10 @@ function renderQuestions() {
         <small>${item.domain === 'practical' ? '術科' : '學科'} · ${esc(questionTypeNames[item.question_type] || item.question_type)} · ${esc(item.status)}${item.admin_locked ? ' · 管理員保護' : ''}${item.parse_warnings?.length ? ` · ${item.parse_warnings.length} 項解析警告` : ''}</small>
     </div>
     <div class="btn-group">
-        <button class="btn secondary" data-question-edit="${item.id}">編輯</button>
-        ${item.source ? `<button class="btn secondary" data-question-reimport="${item.id}">以來源重新匯入</button>` : ''}
-        ${item.status !== 'published' ? `<button class="btn" data-question-status="${item.id}" data-status="published">發布</button>` : `<button class="btn secondary" data-question-status="${item.id}" data-status="draft">退回草稿</button>`}
-        ${item.status !== 'disabled' ? `<button class="btn secondary" data-question-disable="${item.id}">停用</button>` : ''}
+        <button class="btn second" data-question-edit="${item.id}">編輯</button>
+        ${item.source ? `<button class="btn second" data-question-reimport="${item.id}">以來源重新匯入</button>` : ''}
+        ${item.status !== 'published' ? `<button class="btn" data-question-status="${item.id}" data-status="published">發布</button>` : `<button class="btn second" data-question-status="${item.id}" data-status="draft">退回草稿</button>`}
+        ${item.status !== 'disabled' ? `<button class="btn second" data-question-disable="${item.id}">停用</button>` : ''}
     </div>
     </article>`).join('') || '<div class="empty">目前沒有題目。</div>'
 }
@@ -464,7 +464,7 @@ function renderEssayAnswers() {
         <div class="essay-answer-text">${esc(item.answer_text).replace(/\n/g, '<br>')}</div>
         ${item.feedback ? `<p class="hint">審核回饋：${esc(item.feedback)}</p>` : ''}
         <form data-essay-review="${item.id}"><label class="field"><span>審核回饋</span><textarea name="feedback" maxlength="1000" placeholder="要求修正時必填">${esc(item.feedback || '')}</textarea></label>
-            <div class="actions"><button class="btn" name="status" value="審核通過">審核通過</button><button class="btn secondary" name="status" value="需修正">需修正</button></div>
+            <div class="actions"><button class="btn" name="status" value="審核通過">審核通過</button><button class="btn second" name="status" value="需修正">需修正</button></div>
         </form>
     </article>`).join('') : '<div class="empty">目前沒有申論答案。</div>'
 }

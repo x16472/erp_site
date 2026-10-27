@@ -85,7 +85,7 @@ const YoutubeThumbnailApp = {
           <div class="thumbnail-card-body">
             <div><span class="tag">${tag}</span> <span class="size">${width} × ${height}</span></div>
             <div class="file">${name}.jpg</div>
-            <a class="btn secondary download" href="${App.thumbUrl(id, name)}" download="${id}_${name}.jpg" target="_blank" rel="noopener noreferrer">下載</a>
+            <a class="btn second download" href="${App.thumbUrl(id, name)}" download="${id}_${name}.jpg" target="_blank" rel="noopener noreferrer">下載</a>
           </div>`;
                 const image = card.querySelector("img");
                 let settled = false;

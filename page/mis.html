@@ -63,7 +63,7 @@
                             <h2>營運系統管理</h2>
                             <span class="eyebrow"> 登入者：<p id="adminName"></p></span>
                         </div>
-                        <button class="btn secondary" id="logoutButton">登出</button>
+                        <button class="btn second" id="logoutButton">登出</button>
                     </div>
                     <section class="admin-panel active" id="settingsPanel">
                         <div class="portal-grid">
@@ -71,31 +71,48 @@
                                 <div class="card-head">
                                     <div><span class="eyebrow">PUBLIC&nbsp;WEBSITE</span>
                                         <h2>官方網站版面設定</h2>
-                                        <p>儲存後會寫入Company_WebSettings，不會修改其他營運資料表。</p>
+                                        <p>
+                                            儲存後會寫入資料庫，不會修改其他營運資料表。
+                                        </p>
                                     </div>
                                 </div>
-                                <div class="form-grid"><label class="field"><span>視覺主題</span><select name="theme">
+                                <div class="form-grid">
+                                    <label class="field">
+                                        <span>視覺主題</span>
+                                        <select name="theme">
                                             <option value="shield">銀盾藍</option>
                                             <option value="medal">勳章紅</option>
                                             <option value="steel">鋼鐵灰</option>
                                             <option value="white">專業白</option>
-                                        </select></label><label class="field full">
-                                        <span>首頁主標題</span><input name="hero_title" maxlength="60" required></label>
-                                    <label class="field full"><span>首頁說明</span>
-                                        <textarea name="hero_subtitle" maxlength="180" required></textarea></label>
-                                    <label class="field full"><span>最新公告</span>
-                                        <input name="announcement" maxlength="160"></label>
+                                        </select>
+                                    </label>
+                                    <label class="field full">
+                                        <span>首頁主標題</span>
+                                        <input name="hero_title" maxlength="60" required>
+                                    </label>
+                                    <label class="field full">
+                                        <span>首頁說明</span>
+                                        <textarea name="hero_subtitle" maxlength="180" required>
+                                        </textarea>
+                                    </label>
+                                    <label class="field full">
+                                        <span>最新公告</span>
+                                        <input name="announcement" maxlength="160">
+                                    </label>
                                 </div>
-                                <div class="actions"><button class="btn" type="submit">儲存並發布設定</button>
-                                    <a class="btn secondary" href="index.html" target="_blank" rel="noopener">查看官方網站</a>
+                                <div class="actions">
+                                    <button class="btn" type="submit">儲存並發布設定</button>
+                                    <a class="btn second" href="index.html" target="_blank" rel="noopener">官方網站</a>
                                 </div>
-                                <p id="settingsStatus" aria-live="polite"></p>
                             </form>
                             <aside class="portal-card narrow">
                                 <div class="card-head">
-                                    <div><span class="eyebrow">PREVIEW</span>
+                                    <div>
+                                        <span class="eyebrow">PREVIEW</span>
                                         <h2>首頁預覽</h2>
+
                                     </div>
+                                    <a id="settingsStatus" aria-live="polite"></a>
                                 </div>
                                 <div class="settings-preview shield" id="settingsPreview">
                                     <span>銀盾共同體</span>
@@ -133,8 +150,9 @@
                                     </table>
                                 </div>
                                 <div class="pager"><span id="pageInfo">第 1 頁</span>
-                                    <div><button class="btn secondary" id="prevPage">上一頁</button>
-                                        <button class="btn secondary" id="nextPage">下一頁</button>
+                                    <div>
+                                        <button class="btn ghost" id="prevPage">上一頁</button>
+                                        <button class="btn ghost" id="nextPage">下一頁</button>
                                     </div>
                                 </div>
                             </div>
@@ -146,7 +164,7 @@
                                 <h2>待審佇列</h2>
                                 <p>依建立員工或事件類別聚焦待審、代辦事項。</p>
                             </div>
-                            <a class="btn secondary" href="staff.html">查看出缺勤</a>
+                            <a class="btn second" href="staff.html">查看出缺勤</a>
                         </div>
                         <div class="review-workspace">
                             <aside class="review-people">
@@ -212,7 +230,7 @@
                                 </div>
                                 <label><input name="is_active" type="checkbox" checked> 啟用科目</label>
                                 <div class="actions"><button class="btn" type="submit">儲存科目</button><button
-                                        class="btn secondary" id="resetSubject" type="button">新增</button></div>
+                                        class="btn second" id="resetSubject" type="button">新增</button></div>
                             </form>
                             <form class="portal-card narrow" id="chapterForm"><input name="id" type="hidden">
                                 <h3>章節設定</h3><label class="field"><span>所屬科目</span><select name="subject_id"
@@ -225,7 +243,7 @@
                                         max="9999" value="0"></label>
                                 <label><input name="is_active" type="checkbox" checked> 啟用章節</label>
                                 <div class="actions"><button class="btn" type="submit">儲存章節</button><button
-                                        class="btn secondary" id="resetChapter" type="button">新增</button></div>
+                                        class="btn second" id="resetChapter" type="button">新增</button></div>
                             </form>
                             <section class="portal-card wide">
                                 <h3>目前分類</h3>
@@ -294,7 +312,7 @@
                                 <p class="hint" id="essayHint" hidden>申論題沒有標準答案；員工以文字方塊作答後，由 MIS 人員人工審核。</p>
                                 <div class="actions">
                                     <button class="btn" type="submit">儲存題目</button>
-                                    <button class="btn secondary" id="resetQuestion" type="button">新增另一題</button>
+                                    <button class="btn second" id="resetQuestion" type="button">新增另一題</button>
                                 </div>
                                 <p id="questionStatus" aria-live="polite"></p>
                             </form>
@@ -324,7 +342,7 @@
                                         <option value="published">發布</option>
                                         <option value="disabled">停用</option>
                                     </select>
-                                    <button class="btn secondary" id="applyQuestionBulk" type="button">套用至勾選題目</button>
+                                    <button class="btn second" id="applyQuestionBulk" type="button">套用至勾選題目</button>
                                 </div>
                                 <div class="staff-admin-list" id="questionList">
                                     <div class="empty">載入中…</div>

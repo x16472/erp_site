@@ -93,7 +93,7 @@ async function loadStaff() {
     renderStaff()
 }
 function renderDepartments() {
-    staffDepartment.innerHTML = '<option value="">請選擇部門</option>' + departmentItems.filter(item => item.is_active).map(item => `<option value="${esc(item.name)}">${esc(item.name)}</option>`).join(''); departmentList.innerHTML = departmentItems.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><div><b>${esc(item.name)}</b><small>${item.staff_count} 位在職員工${item.is_active ? '' : ' · 已停用'}</small></div><div class="btn-group"><button class="btn secondary" data-department-edit="${item.id}">編輯</button>${item.is_active ? `<button class="btn secondary" data-department-disable="${item.id}">停用</button>` : ''}</div></article>`).join('') || '<div class="empty">目前沒有部門資料。</div>';
+    staffDepartment.innerHTML = '<option value="">請選擇部門</option>' + departmentItems.filter(item => item.is_active).map(item => `<option value="${esc(item.name)}">${esc(item.name)}</option>`).join(''); departmentList.innerHTML = departmentItems.map(item => `<article class="staff-admin-card ${item.is_active ? '' : 'inactive'}"><div><b>${esc(item.name)}</b><small>${item.staff_count} 位在職員工${item.is_active ? '' : ' · 已停用'}</small></div><div class="btn-group"><button class="btn second" data-department-edit="${item.id}">編輯</button>${item.is_active ? `<button class="btn second" data-department-disable="${item.id}">停用</button>` : ''}</div></article>`).join('') || '<div class="empty">目前沒有部門資料。</div>';
     renderOrganization()
 }
 async function loadDepartments() {
