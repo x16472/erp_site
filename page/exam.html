@@ -40,13 +40,16 @@
                 <section id="academicPanel">
                     <section id="academicHome">
                         <div class="training-hero">
-                            <div><span class="eyebrow">ACADEMIC PRACTICE</span>
+                            <div>
+                                <span class="eyebrow">ACADEMIC&nbsp;PRACTICE</span>
                                 <h2>選擇科目開始練習</h2>
                                 <p>依章節與來源建立練習題組，或按照科目設定進行完整模擬考。</p>
                             </div>
-                            <div class="training-home-actions"><button class="btn second" id="resumeSession"
-                                    hidden>繼續未完成題組</button>
-                                <button class="btn second" id="openWrong">錯題本 <span id="wrongCount">0</span></button>
+                            <div class="training-home-actions">
+                                <button class="btn second" id="resumeSession" hidden>繼續未完成題組</button>
+                                <button class="btn second" id="openWrong">錯題本 <span id="wrongCount">0
+                                    </span>
+                                </button>
                             </div>
                         </div>
                         <div class="subject-grid" id="subjectGrid">
@@ -55,7 +58,8 @@
                     </section>
                     <section class="portal-card full" id="setupView" hidden>
                         <div class="card-head">
-                            <div><span class="eyebrow">SESSION SETUP</span>
+                            <div>
+                                <span class="eyebrow">SESSION&nbsp;SETUP</span>
                                 <h2 id="setupTitle">建立練習題組</h2>
                                 <p id="setupMeta"></p>
                             </div>
@@ -63,15 +67,27 @@
                         </div>
                         <form id="setupForm"><input name="subject_id" type="hidden">
                             <div class="training-mode-picker">
-                                <label><input name="mode" type="radio" value="practice"
-                                        checked><span><b>分類練習</b><small>每題立即顯示答案與解析</small></span></label>
-                                <label><input name="mode" type="radio" value="mock"><span><b>模擬考</b><small
-                                            id="mockRule">依科目規則計時與計分</small></span></label>
+                                <label>
+                                    <input name="mode" type="radio" value="practice" checked>
+                                    <span>
+                                        <b>分類練習</b>
+                                        <small>每題立即顯示答案與解析</small>
+                                    </span>
+                                </label>
+                                <label>
+                                    <input name="mode" type="radio" value="mock">
+                                    <span>
+                                        <b>模擬考</b>
+                                        <small id="mockRule">依科目規則計時與計分</small>
+                                    </span>
+                                </label>
                             </div>
                             <div class="form-grid training-filter-grid">
-                                <label class="field"><span>練習題數</span><select name="question_count">
-                                        <option value="10">10 題</option>
-                                        <option value="20">20 題</option>
+                                <label class="field">
+                                    <span>練習題數</span>
+                                    <select name="question_count">
+                                        <option value="10">10&nbsp;題</option>
+                                        <option value="20">20&nbsp;題</option>
                                         <option value="0">全部題目</option>
                                     </select></label>
                                 <fieldset class="filter-field">
@@ -85,28 +101,37 @@
                                 <fieldset class="filter-field">
                                     <legend>題型</legend>
                                     <div class="check-grid">
-                                        <label><input type="checkbox" name="question_type"
+                                        <label>
+                                            <input type="checkbox" name="question_type"
                                                 value="single_choice">單選題</label>
-                                        <label><input type="checkbox" name="question_type"
+                                        <label>
+                                            <input type="checkbox" name="question_type"
                                                 value="multiple_choice">多選題</label>
-                                        <label><input type="checkbox" name="question_type" value="reading">閱讀測驗</label>
-                                        <label><input type="checkbox" name="question_type"
-                                                value="fill_blank">程式碼填空</label>
-                                        <label><input type="checkbox" name="question_type" value="matching">配對題</label>
+                                        <label>
+                                            <input type="checkbox" name="question_type" value="reading">閱讀測驗</label>
+                                        <label>
+                                            <input type="checkbox" name="question_type" value="fill_blank">程式碼填空</label>
+                                        <label>
+                                            <input type="checkbox" name="question_type" value="matching">配對題</label>
                                     </div>
                                 </fieldset>
                             </div>
-                            <div class="actions"><button class="btn" type="submit">建立題組並開始</button></div>
+                            <div class="actions">
+                                <button class="btn" type="submit">建立題組並開始</button>
+                            </div>
                             <p id="setupStatus" aria-live="polite"></p>
                         </form>
                     </section>
                     <section class="training-session" id="sessionView" hidden>
                         <header class="session-head">
-                            <div><span class="tag" id="sessionMode"></span>
+                            <div>
+                                <span class="tag" id="sessionMode"></span>
                                 <h2 id="sessionTitle">作答中</h2>
                             </div>
-                            <div class="session-clock" id="sessionClock" hidden><small>剩餘時間</small><strong
-                                    id="countdown">--:--</strong></div>
+                            <div class="session-clock" id="sessionClock" hidden>
+                                <small>剩餘時間</small>
+                                <strong id="countdown">--:--</strong>
+                            </div>
                         </header>
                         <div class="progress"><span id="sessionProgress"></span></div>
                         <div class="session-layout">
@@ -114,18 +139,20 @@
                             <article class="portal-card question-stage">
                                 <div id="questionContent"></div>
                                 <div id="answerArea"></div>
-                                <p class="quiz-feedback" id="answerFeedback" aria-live="polite"></p>
-                                <div class="session-actions"><button class="btn second"
-                                        id="previousQuestion">上一題</button>
-                                    <button class="btn second" id="flagQuestion">標記待確認</button><button class="btn"
-                                        id="saveAnswer">送出答案</button>
-                                    <button class="btn second" id="nextQuestion">下一題</button><button class="btn red"
-                                        id="submitSession">交卷</button>
+                                <p class="quiz-feedback" id="answerFeedback" aria-live="polite">
+                                </p>
+                                <div class="session-actions">
+                                    <button class="btn second" id="previousQuestion">上一題</button>
+                                    <button class="btn second" id="flagQuestion">標記待確認</button>
+                                    <button class="btn" id="saveAnswer">送出答案</button>
+                                    <button class="btn second" id="nextQuestion">下一題</button>
+                                    <button class="btn red" id="submitSession">交卷</button>
                                 </div>
                             </article>
                         </div>
                     </section>
-                    <section class="portal-card full" id="resultView" hidden></section>
+                    <section class="portal-card full" id="resultView" hidden>
+                    </section>
                     <section class="portal-card full" id="wrongView" hidden>
                         <div class="card-head">
                             <div><span class="eyebrow">WRONG QUESTIONS</span>
@@ -139,7 +166,7 @@
                 </section>
                 <section id="practicalPanel" hidden>
                     <div class="training-hero">
-                        <div><span class="eyebrow">PRACTICAL REVIEW</span>
+                        <div><span class="eyebrow">PRACTICAL&nbsp;REVIEW</span>
                             <h2>術科申論</h2>
                             <p>以文字或程式碼完成作答，送交 MIS 人員人工審核。</p>
                         </div>

@@ -103,7 +103,7 @@ function startTimer() {
 }
 function openSession(session) {
     activeSession = session; questionIndex = 0;
-    if (session.status === 'submitted') return renderResult(session); showAcademic(sessionView); renderQuestion(); startTimer()
+    if (session.status === 'submitted') return renderResult(session); showAcademic(sessionView); renderQuestion(); startTimer();
 }
 async function saveCurrent(showMessage = true) {
     const question = sessionQuestion(), answers = answerValues(question), result = await writeRequest('/api/training/session/answer', { session_id: activeSession.id, order: question.order, response: { answers }, flagged: Boolean(question.flagged) });
@@ -144,7 +144,8 @@ function renderResult(session) {
         chapterMap[name].total++;
         chapterMap[name].correct += question.correct ? 1 : 0
     });
-    const chapterStats = Object.entries(chapterMap).map(([name, value]) => `<article class="metric-card"><p>${esc(name)}</p><strong>${Math.round(value.correct * 100 / value.total)}%</strong><small>${value.correct} / ${value.total} 題</small></article>`).join('');
+    const chapterStats = Object.entries(chapterMap).map(([name, value]) =>
+        `<article class="metric-card"><p>${esc(name)}</p><strong>${Math.round(value.correct * 100 / value.total)}%&nbsp;</strong><small>${value.correct} / ${value.total} 題</small></article>`).join('');
     resultView.innerHTML = `<div class="result-hero"><span class="eyebrow">RESULT</span><h2>${passed ? '已完成本次題組' : '本次尚未達及格標準'}</h2><strong>${Number(session.score || 0).toFixed(1)} 分</strong>${passScore != null ? `<p>及格標準 ${passScore} 分</p>` : ''}</div><div class="metric-grid">${chapterStats}</div><div class="review-list">${session.questions.map(renderReviewQuestion).join('')}</div><div class="actions"><button class="btn" id="backToSubjects">返回題庫首頁</button></div>`;
     resultView.querySelector('#backToSubjects').onclick = async () => {
         await loadCatalog();
