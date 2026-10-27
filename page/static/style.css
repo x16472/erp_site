@@ -1,3 +1,4 @@
+/* 精簡版：僅合併重複／被覆蓋的宣告並移除確定無效的規則，層疊順序與視覺結果與原檔一致 */
 :root {
     --navy: #17365f;
     --blue: #0798d3;
@@ -10,7 +11,60 @@
     --white: #fcfcfc;
     --line: #00000040;
     --shadow: 0 5px 10px #0400367c;
-    --radius: 20px
+    --radius: 20px;
+}
+
+/* 銀盾共同體企業主題：統一公開網站與內部入口的沉穩品牌色。 */
+:root {
+    --silver-shield-navy: #101b2d;
+    --silver-shield-blue: #244a73;
+    --silver-shield-red: #8f2634;
+    --silver-shield-silver: #c8ced6;
+    --silver-shield-gold: #c79b42
+}
+
+.question-card {
+    grid-template-columns: 24px minmax(0, 1fr) auto
+}
+
+.public-body,
+.settings-preview.shield {
+    --public-theme-dark: #101b2d;
+    --public-theme-mid: #244a73;
+    --public-theme-light: #41658f;
+    --public-theme-accent: #d8b66e;
+    --public-theme-detail: #8f2634;
+    --public-theme-surface: #f4f5f6
+}
+
+.public-body[data-theme="medal"],
+.settings-preview.medal {
+    --public-theme-dark: #3a1117;
+    --public-theme-mid: #8f2634;
+    --public-theme-light: #c2555f;
+    --public-theme-accent: #e1bd71;
+    --public-theme-detail: #c79b42;
+    --public-theme-surface: #f8f2f1
+}
+
+.public-body[data-theme="steel"],
+.settings-preview.steel {
+    --public-theme-dark: #252a31;
+    --public-theme-mid: #4f5b68;
+    --public-theme-light: #778492;
+    --public-theme-accent: #d7dde4;
+    --public-theme-detail: #8e9aa6;
+    --public-theme-surface: #f1f3f5
+}
+
+.public-body[data-theme="white"],
+.settings-preview.white {
+    --public-theme-dark: #000;
+    --public-theme-mid: #ffffff;
+    --public-theme-light: #ffffff;
+    --public-theme-accent: #ffff;
+    --public-theme-detail: #7a7a7a;
+    --public-theme-surface: #f1f3f5
 }
 
 * {
@@ -30,12 +84,12 @@ body {
 
 button,
 input,
-select {
-    font: inherit;
+select,
+textarea {
+    font: inherit
 }
 
 textarea {
-    font: inherit;
     width: 100%;
     height: 80px;
     margin-top: 5px;
@@ -44,8 +98,7 @@ textarea {
     border-radius: 6px;
     background: #f8fafc;
     font-family: monospace;
-    box-sizing: border-box;
-    resize: vertical;
+    resize: vertical
 }
 
 button,
@@ -82,21 +135,20 @@ iframe {
     color: var(--ink);
     text-decoration: none;
     font-weight: 800;
-    cursor: pointer;
+    cursor: pointer
 }
 
 .btn:hover {
-    background: #05445f9d;
+    background: #05445f9d
 }
 
 .btn.second {
     background: #9191913d;
-    color: #000000;
-    /* 移除強制的 height，靠 flex 垂直置中 */
+    color: #000;
     padding: 6px 12px !important;
     font-size: 16px !important;
     min-width: 64px;
-    white-space: nowrap;
+    white-space: nowrap
 }
 
 .btn.red {
@@ -153,9 +205,10 @@ iframe {
     color: var(--muted)
 }
 
-/*對外官方網站*/
+/* ===== 對外官方網站 ===== */
 .public-body {
-    background: #fff
+    background: var(--public-theme-surface);
+    color: var(--public-theme-dark)
 }
 
 .public-header {
@@ -166,8 +219,9 @@ iframe {
     align-items: center;
     justify-content: space-between;
     padding: 13px max(24px, 5vw);
-    border-bottom: 1px solid #e9ecec;
-    background: #ffffffed;
+    border-bottom: 1px solid #ffffff1f;
+    background: color-mix(in srgb, var(--public-theme-dark) 95%, transparent);
+    box-shadow: 0 12px 32px #07101d26;
     backdrop-filter: blur(14px)
 }
 
@@ -181,21 +235,23 @@ iframe {
 .public-logo img {
     width: 48px;
     height: 48px;
-    border-radius: 13px;
+    border: 1px solid #ffffff30;
+    border-radius: 8px;
     object-fit: cover;
     background: transparent
 }
 
 .public-logo b {
     display: block;
-    font-size: 18px
+    font-size: 18px;
+    color: #f7f8fa
 }
 
 .public-logo small {
     display: block;
-    color: var(--muted);
+    color: #aeb9c8;
     font-size: 11px;
-    letter-spacing: .08em
+    letter-spacing: .16em
 }
 
 .public-nav {
@@ -210,8 +266,12 @@ iframe {
     font-weight: 700
 }
 
+.public-nav a:not(.btn) {
+    color: #f7f8fa
+}
+
 .public-nav a:not(.btn):hover {
-    color: var(--blue)
+    color: var(--public-theme-accent)
 }
 
 .mobile-menu {
@@ -226,10 +286,11 @@ iframe {
     display: grid;
     grid-template-columns: 1.05fr .95fr;
     align-items: center;
-    min-height: 680px;
+    min-height: 720px;
     padding: 70px max(24px, 7vw);
     overflow: hidden;
-    background: linear-gradient(135deg, #f8fbfc 0%, #fef8ef 100%)
+    background: radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--public-theme-light) 38%, transparent) 0, transparent 35%), linear-gradient(120deg, var(--public-theme-dark) 0%, var(--public-theme-mid) 100%);
+    color: #fff
 }
 
 .public-hero:before {
@@ -237,10 +298,21 @@ iframe {
     position: absolute;
     width: 430px;
     height: 430px;
-    border: 65px solid #0798d315;
-    border-radius: 50%;
+    border: 65px solid #c8ced61f;
     right: -180px;
-    top: -190px
+    top: -190px;
+    transform: rotate(20deg)
+}
+
+.public-hero:after {
+    content: "SILVER SHIELD";
+    position: absolute;
+    left: max(24px, 7vw);
+    bottom: -42px;
+    color: rgba(23, 54, 95, .035);
+    font: 900 clamp(90px, 16vw, 220px)/1 ui-sans-serif, sans-serif;
+    letter-spacing: -.07em;
+    pointer-events: none
 }
 
 .hero-copy-public {
@@ -253,17 +325,23 @@ iframe {
     margin: 14px 0 22px;
     font-size: clamp(46px, 6.3vw, 84px);
     line-height: 1.05;
-    letter-spacing: -.055em
+    letter-spacing: -.035em
 }
 
 .hero-copy-public h1 span {
-    color: var(--blue)
+    color: var(--public-theme-accent)
 }
 
 .hero-copy-public p {
     max-width: 660px;
-    color: var(--muted);
+    color: #c2cad5;
     font-size: 19px
+}
+
+.hero-copy-public .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 28px
 }
 
 .announcement {
@@ -272,9 +350,10 @@ iframe {
     gap: 8px;
     margin-bottom: 15px;
     padding: 5px 15px;
+    border: 1px solid #ffffff24;
     border-radius: 5px;
-    background: #fff;
-    border: 1px solid var(--line);
+    background: #ffffff0d;
+    color: #e4e9ef;
     font-size: 13px
 }
 
@@ -288,17 +367,18 @@ iframe {
 
 .hero-stage {
     position: relative;
-    min-height: 500px
+    min-height: 530px
 }
 
 .hero-card {
     position: absolute;
-    inset: 30px 0 0 60px;
+    inset: 38px 22px 18px 70px;
     display: grid;
     place-items: center;
-    border-radius: 46% 54% 42% 58%/55% 43% 57% 45%;
-    background: linear-gradient(145deg, #0c91ca, #164272);
-    box-shadow: var(--shadow);
+    border: 1px solid #ffffff2e;
+    border-radius: 18px;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--public-theme-dark) 82%, transparent), color-mix(in srgb, var(--public-theme-light) 78%, transparent)), url("static/appicon.png") center / min(65%, 360px) no-repeat;
+    box-shadow: 0 32px 70px #050a1266;
     overflow: hidden
 }
 
@@ -307,7 +387,8 @@ iframe {
     position: absolute;
     width: 270px;
     height: 270px;
-    border: 45px solid var(--red);
+    border: 45px solid var(--public-theme-detail);
+    opacity: .8;
     transform: rotate(45deg);
     right: -100px;
     bottom: -150px
@@ -328,9 +409,10 @@ iframe {
     position: absolute;
     z-index: 3;
     padding: 16px 20px;
-    border-radius: 16px;
-    background: #fff;
-    box-shadow: var(--shadow)
+    border: 1px solid #d5dae1;
+    border-radius: 8px;
+    background: #f8f9fa;
+    box-shadow: 0 22px 48px #050a1242
 }
 
 .floating-note.one {
@@ -345,8 +427,9 @@ iframe {
 
 .floating-note b {
     display: block;
-    font-size: 24px;
-    color: var(--navy)
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 20px;
+    color: var(--public-theme-dark)
 }
 
 .floating-note small {
@@ -360,23 +443,35 @@ iframe {
     margin: -38px auto 0;
     position: relative;
     z-index: 4;
-    border-radius: 22px;
+    border: 1px solid #dfe3e8;
+    border-radius: 10px;
     background: #fff;
-    box-shadow: var(--shadow)
+    box-shadow: 0 20px 45px #0e1a2a18;
+    overflow: hidden
 }
 
 .public-stat {
+    position: relative;
     padding: 25px 30px;
-    border-right: 1px solid var(--line)
+    border-right: 1px solid #dfe3e8;
+    background: linear-gradient(180deg, #fff, #fbfcfc)
 }
 
 .public-stat:last-child {
     border: 0
 }
 
+.public-stat:before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--blue)
+}
+
 .public-stat b {
     font-size: 34px;
-    color: var(--navy);
+    color: var(--navy)
 }
 
 .public-stat span {
@@ -435,10 +530,30 @@ section {
 }
 
 .philosophy-card {
+    position: relative;
+    overflow: hidden;
     padding: 29px;
     border: 1px solid var(--line);
-    border-radius: 22px;
-    background: #fff
+    border-top: 3px solid var(--public-theme-mid);
+    border-radius: 10px;
+    background: #fff;
+    transition: transform .25s ease, box-shadow .25s ease
+}
+
+.philosophy-card:after {
+    content: "";
+    position: absolute;
+    right: -36px;
+    bottom: -36px;
+    width: 110px;
+    height: 110px;
+    border: 24px solid rgba(7, 152, 211, .06);
+    border-radius: 50%
+}
+
+.philosophy-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow)
 }
 
 .philosophy-card span {
@@ -473,36 +588,28 @@ section {
 
 @media (max-width: 768px) {
     .public-nav {
-        /* 手機選單跟隨目前公開網站主題。 */
         background-color: var(--public-theme-dark, #101b2d) !important;
-
-        /* 轉為垂直排列 */
         flex-direction: column;
         align-items: stretch;
-
-        /* 配合您圖片中的圓角與間距 */
         border-radius: 12px;
         padding: 24px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3)
     }
 
     .public-nav a {
         display: block;
         padding: 12px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        /* 手機版加上淡淡的分隔線 */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1)
     }
 
-    /* 手機版最後一項不要底線 */
     .public-nav a:last-child {
-        border-bottom: none;
+        border-bottom: none
     }
 
-    /* 手機版的預約按鈕撐滿、置中 */
     .public-nav a.btn {
         text-align: center;
         margin-top: 12px;
-        padding: 12px;
+        padding: 12px
     }
 }
 
@@ -532,13 +639,20 @@ section {
 .day-item {
     position: relative;
     overflow-wrap: anywhere;
+    min-height: 230px;
     padding: 25px 20px 22px;
-    border-radius: 18px;
-    background: #fff
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .08);
+    backdrop-filter: blur(10px)
 }
 
 .day-item time {
-    color: var(--red);
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, .11);
+    color: #ffd37e;
     font-size: 12px;
     font-weight: 900
 }
@@ -548,21 +662,62 @@ section {
 }
 
 .day-item p {
-    color: var(--muted);
+    color: #c4d6e3;
     font-size: 14px
 }
 
+.sector-card {
+    min-height: 260px;
+    border: 1px solid #910202b2;
+    border-top: 4px solid var(--public-theme-detail);
+    box-shadow: 0 12px 28px #77777777
+}
+
+.sector-card:nth-child(even) {
+    border-top-color: var(--public-theme-mid);
+    background-color: #616161
+}
+
+.sector-card time {
+    color: var(--public-theme-detail);
+    letter-spacing: .08em
+}
+
+.sector-card h3 {
+    margin-top: 22px;
+    font-size: 25px
+}
+
 .cta-banner {
+    position: relative;
+    overflow: hidden;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 30px;
     max-width: 2260px;
     margin: 0 auto 90px;
-    padding: 42px;
-    border-radius: 28px;
-    background: linear-gradient(120deg, var(--navy), #145874);
+    padding: 52px;
+    border: 1px solid #ffffff1c;
+    border-radius: 12px;
+    background: linear-gradient(120deg, var(--public-theme-dark), var(--public-theme-mid));
     color: #fff
+}
+
+.cta-banner:after {
+    content: "";
+    position: absolute;
+    right: -95px;
+    top: -95px;
+    width: 250px;
+    height: 250px;
+    border: 48px solid rgba(255, 255, 255, .08);
+    border-radius: 50%
+}
+
+.cta-banner>* {
+    position: relative;
+    z-index: 1
 }
 
 .cta-banner h2 {
@@ -599,7 +754,7 @@ footer a {
     margin: 7px 0
 }
 
-/*員工入口共用*/
+/* ===== 員工入口共用 ===== */
 .portal-shell {
     min-height: 100vh
 }
@@ -609,7 +764,7 @@ footer a {
     inset: 0 auto 0 0;
     width: 245px;
     padding: 25px 17px;
-    background: linear-gradient(180deg, #17365f, #102b4c);
+    background: linear-gradient(180deg, #101b2d, #172b43);
     color: #fff;
     z-index: 20;
     overflow-y: auto
@@ -655,11 +810,11 @@ footer a {
 
 .portal-nav a:hover {
     background: var(--ink);
-    border-color: var(--red);
+    border-color: var(--red)
 }
 
 .portal-nav a.active {
-    box-shadow: inset 5px 0 var(--red);
+    box-shadow: inset 5px 0 var(--red)
 }
 
 .portal-foot {
@@ -865,21 +1020,19 @@ footer a {
     color: var(--muted)
 }
 
-/*2.限制右側按鈕群組的排版*/
+/* 右側按鈕群組：按鈕間距固定，且不會被左側長文字壓扁 */
 .card-actions {
     display: flex;
     gap: 8px;
-    /*編輯與停用按鈕之間的左右間距*/
     align-items: center;
-    flex-shrink: 0;
-    /*防止按鈕因為左邊文字太長而被壓扁*/
+    flex-shrink: 0
 }
 
+/* 改變欄數，下個連結就會自動換行 */
 .quick-links {
     display: grid;
-    /*修改數值，下個連結就會自動換行到第二行*/
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 10px
 }
 
 .quick-link {
@@ -987,7 +1140,7 @@ footer a {
     font-size: 13px
 }
 
-/*表單、流程與管理*/
+/* ===== 表單、流程與管理 ===== */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1126,11 +1279,6 @@ footer a {
     color: var(--muted)
 }
 
-.admin-console[hidden],
-.login-shell[hidden] {
-    display: none
-}
-
 .admin-tabs {
     display: flex;
     gap: 7px;
@@ -1152,19 +1300,12 @@ footer a {
     color: #fff
 }
 
-.admin-panel {
-    display: none
-}
-
-.admin-panel.active {
-    display: block
-}
-
-/*分業選單*/
+.admin-panel,
 .panel {
     display: none
 }
 
+.admin-panel.active,
 .panel.active {
     display: block
 }
@@ -1172,9 +1313,7 @@ footer a {
 .settings-preview {
     padding: 25px;
     border-radius: 18px;
-    background: linear-gradient(125deg,
-            var(--public-theme-dark, #101b2d),
-            var(--public-theme-mid, #244a73));
+    background: linear-gradient(125deg, var(--public-theme-dark, #101b2d), var(--public-theme-mid, #244a73));
     color: #fff
 }
 
@@ -1194,7 +1333,7 @@ footer a {
 
 .catalog-pane {
     padding: 10%;
-    background: #ffffff;
+    background: #fff;
     border-right: 15px solid var(--line)
 }
 
@@ -1345,7 +1484,7 @@ footer a {
     transition: .3s
 }
 
-/*Youtube區塊*/
+/* ===== YouTube ===== */
 .youtube-control {
     margin-bottom: 22px
 }
@@ -1395,70 +1534,59 @@ footer a {
     font-size: 18px
 }
 
-/*Youtube縮圖下載*/
-/*縮圖卡片網格*/
-/* 自動換行的網格：每欄最小 240px（容器較窄時縮到 100%），並平均分配剩餘空間 */
+/* YouTube 縮圖下載 */
+/* 每欄最小 240px（容器較窄時縮到 100%），平均分配剩餘空間 */
 .thumbnail-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-    gap: 16px;
+    gap: 16px
 }
 
-/* 卡片外框：淺色邊框加圓角，overflow 隱藏可讓圖片的四角跟著圓角裁切 */
+/* overflow 隱藏可讓圖片四角跟著圓角裁切 */
 .thumbnail-card {
     border: 1px solid #dbe2ea;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: hidden
 }
 
-/* 卡片文字區的內距 */
 .thumbnail-card-body {
-    padding: 16px;
+    padding: 16px
 }
 
-/*最近瀏覽清單*/
-/* 橫向排列，絕對不換行 */
+/* 最近瀏覽：橫向排列、不換行，整體寬度限制為 60% */
 .thumbnail-recent-list {
     display: flex;
     flex-wrap: nowrap;
-    /* 強制不換行 */
     gap: 10px;
-    width: 60%;
-    /* 限制整個清單佔畫面的 50% 寬度 */
+    width: 60%
 }
 
-/* 整個按鈕可點擊，顯示手指游標提示 */
+/* 按鈕只當透明點擊層 */
 .thumbnail-recent-list button {
-    /* 移除按鈕所有預設外觀，讓它變成透明無感的點擊層 */
     cursor: pointer;
     background: none;
     border: none;
     padding: 0;
-    margin: 0;
+    margin: 0
 }
 
-/*圖片共用與個別設定*/
-/* 圖片改為區塊元素，避免行內元素底部多出一小段空白 */
 .thumbnail-card img,
 .thumbnail-recent-list img {
-    display: block;
+    display: block
 }
 
-/* 卡片內的圖片：寬度填滿卡片，高度依原始比例自動調整 */
 .thumbnail-card img {
     width: 100%;
-    height: auto;
+    height: auto
 }
 
-/* 最近瀏覽的圖片：固定 16:9 比例，不換行、不左右滾、依數量自動均分 */
 .thumbnail-recent-list img {
     width: 100%;
-    /* 維持 16:9 且不裁切完整顯示 */
-    aspect-ratio: 16 / 9;
-    object-fit: contain;
+    aspect-ratio: 16/9;
+    object-fit: contain
 }
 
-/*專業團隊、打卡與內部營運手冊*/
+/* ===== 專業團隊、打卡與內部營運手冊 ===== */
 .staff-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1513,9 +1641,7 @@ footer a {
     align-items: center;
     gap: 18px;
     margin: 15px;
-    /*外距*/
     padding: 5px;
-    /*內距*/
     border: 1px solid var(--line);
     border-radius: 18px;
     background: #fff
@@ -1552,10 +1678,7 @@ footer a {
 .clock-form {
     display: flex;
     align-items: end;
-    gap: 10px
-}
-
-.clock-form {
+    gap: 10px;
     min-width: 145px
 }
 
@@ -1566,14 +1689,12 @@ footer a {
 
 .clock-result {
     width: 100%;
-    /* 在小螢幕時撐滿 */
     max-width: 500px;
-    /* 最大寬度限制在 500px */
     min-height: 48px;
     padding: 11px 13px;
     border-radius: 11px;
     background: #f4f6f7;
-    color: var(--muted);
+    color: var(--muted)
 }
 
 .training-toolbar {
@@ -1704,19 +1825,17 @@ footer a {
     gap: 9px
 }
 
-/*.staff-admin-card 的完整定義統一放在下方*/
 .staff-admin-card {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
-    width: 100%;
-    box-sizing: border-box;
+    width: 100%
 }
 
 /* 員工名冊才有照片欄，固定維持照片、資訊、按鈕三欄。 */
 #staffList .staff-admin-card {
-    grid-template-columns: 52px minmax(0, 1fr) auto;
+    grid-template-columns: 52px minmax(0, 1fr) auto
 }
 
 .training-document-card .compact-action {
@@ -1725,29 +1844,26 @@ footer a {
     min-width: 0;
     padding: 6px 14px;
     font-size: 13px;
-    white-space: nowrap;
+    white-space: nowrap
 }
 
 .question-card .question-title {
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: nowrap
 }
 
 .staff-admin-card>div:first-child {
     min-width: 0;
-    overflow: hidden;
-    /*防止內容撐爆欄位*/
+    overflow: hidden
 }
 
 .staff-admin-card b {
     display: block;
     white-space: normal;
     overflow-wrap: break-word;
-    /*改用 overflow-wrap，只在真的太長的單字才斷*/
     word-break: normal;
-    /*避免中文也被逐字斷行*/
-    line-height: 1.4;
+    line-height: 1.4
 }
 
 .staff-admin-card.inactive {
@@ -1764,21 +1880,16 @@ footer a {
 
 .staff-admin-card .btn-group {
     display: flex;
-    /*群組內部改用flex排兩顆按鈕 */
     gap: 8px;
-    justify-self: end;
-    /*在 grid 中靠右對齊*/
+    justify-self: end
 }
 
 .staff-admin-card .btn-group .btn {
     flex: 0 0 auto;
     min-width: 72px;
     text-align: center;
-    white-space: nowrap;
+    white-space: nowrap
 }
-
-/* 讓兩顆按鈕等寬 */
-
 
 .staff-admin-card small {
     display: block;
@@ -2134,14 +2245,8 @@ footer a {
 
 .staff-fields {
     display: grid;
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
-    align-content: start;
-    gap: 10px 16px
-}
-
-.staff-fields {
-    display: grid;
     grid-template-columns: 88px minmax(0, 1fr);
+    align-content: start;
     align-items: center;
     gap: 8px;
     margin: 0
@@ -2220,23 +2325,16 @@ footer a {
     padding: 55px 0
 }
 
+/* 去背圖：完整顯示、不加陰影與邊框 */
 .employee-access-brand img {
     max-width: 155px;
-    /*限制最大寬度，避免原圖過大撐破版面*/
     height: auto;
-    /*寬度縮放時，高度自動依比例縮放*/
     object-fit: contain;
-    /*核心：確保整張圖片完整顯示，絕不裁切*/
     border-radius: 0;
-    /*移除 22px 的圓角（去背圖不需要圓角邊框）*/
     border: none !important;
-    /*強制移除所有可能的實體邊框*/
     box-shadow: none;
-    /*核心：移除陰影（原本的陰影在去背圖上會變成一圈方框*/
-    background: transparent !important;
-    /*確保背景透明*/
+    background: transparent !important
 }
-
 
 .employee-access-brand .top-kicker {
     margin-top: 30px;
@@ -2252,11 +2350,11 @@ footer a {
 
 .employee-access-brand p {
     max-width: 620px;
-    color: #ffffff;
+    color: #fff
 }
 
 .employee-access-brand a {
-    color: #ffffff
+    color: #fff
 }
 
 .employee-access-card {
@@ -2283,109 +2381,7 @@ footer a {
     min-height: 50px
 }
 
-/*第 94 行需求：公開網站、入口打卡與待審工作區*/
-.public-header {
-    box-shadow: 0 8px 30px rgba(19, 52, 87, .06)
-}
-
-.public-hero {
-    background:
-        radial-gradient(circle at 12% 18%, rgba(7, 152, 211, .12), transparent 30%),
-        radial-gradient(circle at 88% 82%, rgba(244, 183, 68, .14), transparent 26%),
-        linear-gradient(135deg, #f8fbfc 0%, #fef9f0 100%)
-}
-
-.public-hero:after {
-    content: "SILVER SHIELD";
-    position: absolute;
-    left: max(24px, 7vw);
-    bottom: -42px;
-    color: rgba(23, 54, 95, .035);
-    font: 900 clamp(90px, 16vw, 220px)/1 ui-sans-serif, sans-serif;
-    letter-spacing: -.07em;
-    pointer-events: none
-}
-
-.hero-copy-public .actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 28px
-}
-
-.hero-trust {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 26px
-}
-
-.hero-trust span {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 800
-}
-
-.public-stats {
-    border: 1px solid rgba(228, 231, 231, .8);
-    overflow: hidden
-}
-
-.public-stat {
-    position: relative;
-    background: linear-gradient(180deg, #fff, #fbfcfc)
-}
-
-.public-stat:before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    background: var(--blue)
-}
-
-.philosophy-card {
-    position: relative;
-    overflow: hidden;
-    transition: transform .25s ease, box-shadow .25s ease
-}
-
-.philosophy-card:after {
-    content: "";
-    position: absolute;
-    right: -36px;
-    bottom: -36px;
-    width: 110px;
-    height: 110px;
-    border: 24px solid rgba(7, 152, 211, .06);
-    border-radius: 50%
-}
-
-.philosophy-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow)
-}
-
-.day-item {
-    min-height: 230px;
-    border: 1px solid rgba(255, 255, 255, .14);
-    background: rgba(255, 255, 255, .08);
-    backdrop-filter: blur(10px)
-}
-
-.day-item time {
-    display: inline-flex;
-    padding: 5px 10px;
-    border-radius: 99px;
-    background: rgba(255, 255, 255, .11);
-    color: #ffd37e
-}
-
-.day-item p {
-    color: #c4d6e3
-}
-
+/* ===== 入口打卡與待審工作區 ===== */
 .team-toolbar {
     display: flex;
     align-items: end;
@@ -2403,29 +2399,6 @@ footer a {
     color: var(--muted);
     font-size: 13px
 }
-
-.cta-banner {
-    position: relative;
-    overflow: hidden;
-    padding: 52px
-}
-
-.cta-banner:after {
-    content: "";
-    position: absolute;
-    right: -95px;
-    top: -95px;
-    width: 250px;
-    height: 250px;
-    border: 48px solid rgba(255, 255, 255, .08);
-    border-radius: 50%
-}
-
-.cta-banner>* {
-    position: relative;
-    z-index: 1
-}
-
 
 .access-time {
     padding: 22px 20px;
@@ -2449,9 +2422,7 @@ footer a {
 .attendance-session-state {
     display: flex;
     flex-direction: column;
-    /*讓子元素由上往下垂直排列*/
     justify-content: center;
-    /*垂直居中對齊*/
     gap: 6px
 }
 
@@ -2459,23 +2430,18 @@ footer a {
     color: #a24c37 !important;
     font-size: 12px;
     font-weight: 800;
-    /*清除 p 標籤的預設外邊距*/
-    margin: 0;
+    margin: 0
 }
 
 .attendance-session-actions {
-    /*將此容器宣告為網格佈局*/
     display: grid;
-    /*網格元件之間的間距（上下左右）皆為 8px。*/
     gap: 6px;
-    /*限制此容器的最小寬度*/
     min-width: 300px
 }
 
 /* 兩個按鈕同時顯示時並列 */
-.attendance-session-actions:has(.btn:not([hidden])+.btn:not([hidden])) {
-    /* 定義網格為 兩欄（Columns），且兩欄的寬度比例為 1:1（平分剩餘空間） */
-    grid-template-columns: 1fr 1fr;
+.attendance-session-actions:has(.btn:not([hidden]) + .btn:not([hidden])) {
+    grid-template-columns: 1fr 1fr
 }
 
 .queue-head,
@@ -2502,43 +2468,34 @@ footer a {
     color: var(--muted)
 }
 
-/*桌面版 RWD 樣式 */
 .review-workspace {
     display: grid;
     grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-    /* 1. 限制整體高度（可依你的版面微調，例如 650px） */
     height: calc(100vh - 160px);
     min-height: 560px;
-
     overflow: hidden;
-    /* 防止整體溢出外框 */
     border: 1px solid var(--line);
     border-radius: 18px;
-    background: #fff;
+    background: #fff
 }
 
-/* 左側：員工列表 */
+/* 左側：員工列表（內層 .review-person-list 負責滾動，避免雙重滾動條） */
 .review-people {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     padding: 18px;
     border-right: 1px solid var(--line);
     background: #f6f8f9;
-    /* 高度填滿父層，並開啟垂直滾動 */
-    height: 100%;
     box-sizing: border-box;
-    /*啟用 Flex 佈局，讓內部的名單（flex: 1）能夠直通到底部 */
-    display: flex;
-    flex-direction: column;
-    /*外殼關閉滾動，避免與內層產生雙重滾動條 */
-    overflow: hidden;
+    overflow: hidden
 }
 
 .review-person-list {
     display: grid;
     gap: 7px;
-    /*這行會成功生效，自動將灰色背景延伸到紅框底部 */
     flex: 1;
-    /* 當員工名單超出高度時，在這裡產生滾動條 */
-    overflow-y: auto;
+    overflow-y: auto
 }
 
 .review-person {
@@ -2585,50 +2542,33 @@ footer a {
     color: var(--blue)
 }
 
-/* 右側：申請事件外殼 */
+/* 右側：申請事件（標題與篩選固定，只有 .result-list 滾動） */
 .review-events {
-    height: 100%;
-    /* 填滿紅框高度 */
-    /* 啟用 Flex 佈局，才能讓內部的 result-list 滾動 */
     display: flex;
     flex-direction: column;
+    height: 100%;
     padding: 0;
     box-sizing: border-box;
-    overflow: hidden;
-    /* 確保外殼不出現雙滾動條 */
+    overflow: hidden
 }
 
-/* 右側頂部固定區（標題與篩選按鈕保持不動） */
 .review-event-head,
 .queue-filters {
     padding-left: 24px;
     padding-right: 24px;
-    flex-shrink: 0;
-    /* 防止被壓縮 */
+    flex-shrink: 0
 }
 
 .review-event-head {
-    padding-top: 24px;
-}
-
-.queue-filters {
-    padding-top: 12px;
-    padding-bottom: 12px;
-}
-
-/* 右側事件列表*/
-.review-events .result-list {
-    flex: 1;
-    /* 自動佔滿剩餘的所有高度 */
-    overflow-y: auto;
-    /* 垂直滾動條 */
-    padding: 12px 24px 24px 24px;
+    padding-top: 24px
 }
 
 .queue-filters {
     display: flex;
     gap: 7px;
     margin: 17px 0;
+    padding-top: 12px;
+    padding-bottom: 12px;
     overflow: auto
 }
 
@@ -2645,6 +2585,12 @@ footer a {
     border-color: var(--navy);
     background: var(--navy);
     color: #fff
+}
+
+.review-events .result-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 24px 24px 24px
 }
 
 .review-event-card {
@@ -2667,14 +2613,15 @@ footer a {
     font-size: 12px
 }
 
-/* 平板/手機版 RWD 樣式（小於 980px） */
-@media(max-width:980px) {
+/* ===== 平板／手機版（小於 980px） ===== */
+@media (max-width: 980px) {
     .public-nav {
         display: none
     }
 
     .mobile-menu {
-        display: block
+        display: block;
+        color: #fff
     }
 
     .public-nav.open {
@@ -2694,18 +2641,15 @@ footer a {
         padding-top: 50px
     }
 
-    .hero-stage {
-        min-height: 430px
+    .hero-card {
+        inset: 20px
     }
 
     .public-stats {
         margin: 0 25px
     }
 
-    .day-grid {
-        grid-template-columns: repeat(2, 1fr)
-    }
-
+    .day-grid,
     .staff-grid {
         grid-template-columns: repeat(2, 1fr)
     }
@@ -2772,57 +2716,50 @@ footer a {
         min-width: 170px
     }
 
-    /* 父層：取消桌面版高度，使其隨網頁自然延伸 */
+    /* 取消桌面版固定高度，隨網頁自然延伸 */
     .review-workspace {
         grid-template-columns: 1fr;
         height: auto;
-        overflow: visible;
+        overflow: visible
     }
 
-    /* 上方員工區：移除右邊框，改為下邊框 */
     .review-people {
         border-right: 0;
         border-bottom: 1px solid var(--line);
         height: auto;
-        overflow: visible;
+        overflow: visible
     }
 
-    /* 員工列表：維持原本的 2 欄設定 */
     .review-person-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(230px, 1fr));
         max-height: 300px;
-        overflow-y: auto;
+        overflow-y: auto
     }
 
-    /* 下方事件外殼：取消它的滾動，讓它變成靜態容器，標題和按鈕就不會跟著滾 */
     .review-events {
         height: auto;
         overflow: visible;
-        padding: 0;
+        padding: 0
     }
 
-    /* 調整手機版標題與篩選器的內距 */
     .review-event-head,
     .queue-filters {
         padding-left: 16px;
-        padding-right: 16px;
+        padding-right: 16px
     }
 
-    /* 下方卡片列表：把固定高度與滾動條鎖在這裡！ */
+    /* 只有卡片列表滾動，上方標題與篩選按鈕固定 */
     .review-events .result-list {
-        /* 設定一個適合手機版卡片滾動的高度（例如 400px，可依需求調整） */
         height: 400px;
-        /* 啟用垂直滾動，只有卡片會滾動，上方的標題與篩選按鈕會固定住 */
         overflow-y: auto;
         box-sizing: border-box;
-        /* 保持漂亮的卡片與外框間距 */
-        padding: 12px 16px 20px 16px;
+        padding: 12px 16px 20px 16px
     }
 }
 
-/* 平板/手機版 RWD 樣式（小於 680px） */
-@media(max-width:680px) {
+/* ===== 手機版（小於 680px） ===== */
+@media (max-width: 680px) {
     .public-hero {
         min-height: auto
     }
@@ -2832,15 +2769,7 @@ footer a {
     }
 
     .hero-stage {
-        min-height: 350px
-    }
-
-    .hero-card {
-        inset: 20px
-    }
-
-    .floating-note.two {
-        right: 0
+        min-height: 360px
     }
 
     .public-stats {
@@ -2858,6 +2787,10 @@ footer a {
         grid-template-columns: 1fr
     }
 
+    .sector-card {
+        min-height: 0
+    }
+
     .section-intro,
     .cta-banner {
         display: block
@@ -2865,6 +2798,10 @@ footer a {
 
     .cta-banner .btn {
         margin-top: 20px
+    }
+
+    .cta-banner {
+        padding: 34px 25px
     }
 
     .public-body>footer {
@@ -2924,45 +2861,36 @@ footer a {
         margin-top: 12px
     }
 
-    /* 窄螢幕下，兩種卡片改為直式排列：
-       文字/照片區在上、按鈕群組在下靠右，避免橫向空間不足時
-       文字被壓縮到只剩省略號、或按鈕被撐爆變形 */
-    .staff-admin-card {
-        grid-template-columns: 1fr;
-        /* 有照片的員工卡：照片和文字仍在同一行，靠內層 flex 排列 */
-    }
-
+    /* 窄螢幕改直式排列：文字／照片在上，按鈕群組在下，避免文字被壓成省略號或按鈕變形 */
+    .staff-admin-card,
     #staffList .staff-admin-card {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr
     }
 
     .staff-admin-card:has(img) {
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
+        align-items: center
     }
 
     .staff-admin-card:has(img) img {
-        flex: 0 0 auto;
+        flex: 0 0 auto
     }
 
     .staff-admin-card:has(img)>div:first-child {
         flex: 1 1 auto;
-        min-width: 0;
+        min-width: 0
     }
 
     .staff-admin-card .btn-group {
         justify-self: start;
-        /* 直式排列下靠左對齊，與上方文字對齊 */
         width: 100%;
-        margin-top: 8px;
+        margin-top: 8px
     }
 
     .staff-admin-card .btn-group .btn {
-        flex: 1 1 0;
-        /* 窄螢幕下讓兩顆按鈕平分寬度，方便點擊 */
+        flex: 1 1 0
     }
-
 
     .youtube-form {
         grid-template-columns: 1fr
@@ -3004,10 +2932,6 @@ footer a {
         width: 100%
     }
 
-    .cta-banner {
-        padding: 34px 25px
-    }
-
     .review-person-list {
         grid-template-columns: 1fr
     }
@@ -3026,15 +2950,7 @@ footer a {
     }
 }
 
-/* 銀盾共同體企業主題：統一公開網站與內部入口的沉穩品牌色。 */
-:root {
-    --silver-shield-navy: #101b2d;
-    --silver-shield-blue: #244a73;
-    --silver-shield-red: #8f2634;
-    --silver-shield-silver: #c8ced6;
-    --silver-shield-gold: #c79b42
-}
-
+/* ===== 企業主題（銀盾共同體）：統一公開網站與內部入口的品牌色 ===== */
 .question-card {
     grid-template-columns: 24px minmax(0, 1fr) auto
 }
@@ -3079,183 +2995,7 @@ footer a {
     --public-theme-surface: #f1f3f5
 }
 
-/* 公開首頁使用深色企業主視覺，避免舊版童趣漸層。 */
-.public-body {
-    background: var(--public-theme-surface);
-    color: var(--public-theme-dark)
-}
-
-.public-header {
-    border-bottom-color: #ffffff1f;
-    background: color-mix(in srgb, var(--public-theme-dark) 95%, transparent);
-    box-shadow: 0 12px 32px #07101d26
-}
-
-.public-logo b,
-.public-nav a:not(.btn) {
-    color: #f7f8fa
-}
-
-.public-logo small {
-    color: #aeb9c8;
-    letter-spacing: .16em
-}
-
-.public-logo img {
-    border: 1px solid #ffffff30;
-    border-radius: 8px
-}
-
-.public-nav a:not(.btn):hover {
-    color: var(--public-theme-accent)
-}
-
-.public-hero {
-    min-height: 720px;
-    background:
-        radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--public-theme-light) 38%, transparent) 0, transparent 35%),
-        linear-gradient(120deg, var(--public-theme-dark) 0%, var(--public-theme-mid) 100%);
-    color: #fff
-}
-
-.public-hero:before {
-    border-color: #c8ced61f;
-    border-radius: 0;
-    transform: rotate(20deg)
-}
-
-.hero-copy-public h1 {
-    letter-spacing: -.035em
-}
-
-.hero-copy-public h1 span {
-    color: var(--public-theme-accent)
-}
-
-.hero-copy-public p {
-    color: #c2cad5
-}
-
-.announcement {
-    border-color: #ffffff24;
-    background: #ffffff0d;
-    color: #e4e9ef
-}
-
-.hero-stage {
-    min-height: 530px
-}
-
-.hero-card {
-    inset: 38px 22px 18px 70px;
-    border: 1px solid #ffffff2e;
-    border-radius: 18px;
-    background:
-        linear-gradient(145deg,
-            color-mix(in srgb, var(--public-theme-dark) 82%, transparent),
-            color-mix(in srgb, var(--public-theme-light) 78%, transparent)),
-        url("static/appicon.png") center / min(65%, 360px) no-repeat;
-    box-shadow: 0 32px 70px #050a1266
-}
-
-.hero-card:after {
-    border-color: var(--public-theme-detail);
-    opacity: .8
-}
-
-.floating-note {
-    border: 1px solid #d5dae1;
-    border-radius: 8px;
-    background: #f8f9fa;
-    box-shadow: 0 22px 48px #050a1242
-}
-
-.floating-note b {
-    color: var(--public-theme-dark);
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 20px
-}
-
-.public-stats {
-    border: 1px solid #dfe3e8;
-    border-radius: 10px;
-    box-shadow: 0 20px 45px #0e1a2a18
-}
-
-.public-stat {
-    border-right-color: #dfe3e8
-}
-
-.philosophy-card,
-.day-item {
-    border-radius: 10px
-}
-
-.philosophy-card {
-    border-top: 3px solid var(--public-theme-mid)
-}
-
-.sector-card {
-    min-height: 260px;
-    border: 1px solid #910202b2;
-    border-top: 4px solid var(--public-theme-detail);
-    box-shadow: 0 12px 28px #77777777
-}
-
-.sector-card:nth-child(even) {
-    border-top-color: var(--public-theme-mid);
-    background-color: #616161;
-}
-
-.sector-card time {
-    color: var(--public-theme-detail);
-    letter-spacing: .08em
-}
-
-.sector-card h3 {
-    margin-top: 22px;
-    font-size: 25px
-}
-
-.cta-banner {
-    border: 1px solid #ffffff1c;
-    border-radius: 12px;
-    background: linear-gradient(120deg, var(--public-theme-dark), var(--public-theme-mid))
-}
-
-/* 內部系統沿用相同企業色，確保官方網站與工作入口一致。 */
-.portal-sidebar {
-    background: linear-gradient(180deg, #101b2d, #172b43)
-}
-
-@media(max-width:980px) {
-    .mobile-menu {
-        color: #fff
-    }
-
-    .public-nav {
-        background: var(--public-theme-dark)
-    }
-
-    .hero-card {
-        inset: 20px
-    }
-}
-
-@media(max-width:680px) {
-    .public-hero {
-        min-height: auto
-    }
-
-    .hero-stage {
-        min-height: 360px
-    }
-
-    .sector-card {
-        min-height: 0
-    }
-}
-
+/* ===== 申請與作答 ===== */
 .operation-history,
 .essay-review-panel {
     margin-top: 24px
@@ -3331,7 +3071,7 @@ footer a {
     white-space: pre-wrap
 }
 
-/* 題庫練習中心 */
+/* ===== 題庫練習中心 ===== */
 .training-hero,
 .session-head,
 .practical-card header {
@@ -3501,9 +3241,9 @@ footer a {
     align-items: start
 }
 
-/* 當沒有側邊欄時，強制轉為單欄 */
+/* 沒有側邊欄時改為單欄 */
 .session-layout.no-sidebar {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr
 }
 
 .question-navigator {
@@ -3671,7 +3411,7 @@ footer a {
     height: 18px
 }
 
-/*SD*/
+/* ===== SD ===== */
 #drop-zone {
     border: 2px dashed #cbd5e0;
     border-radius: 8px;
@@ -3679,17 +3419,17 @@ footer a {
     text-align: center;
     cursor: pointer;
     background: #f8fafc;
-    transition: all 0.3s;
+    transition: all 0.3s
 }
 
 #drop-zone:hover,
 #drop-zone.dragover {
     border-color: #4299e1;
-    background: #ebf8ff;
+    background: #ebf8ff
 }
 
 #file-input {
-    display: none;
+    display: none
 }
 
 .preview-img {
@@ -3698,7 +3438,7 @@ footer a {
     display: block;
     margin: 0 auto 20px auto;
     border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
 }
 
 .error {
@@ -3708,12 +3448,12 @@ footer a {
     border-radius: 6px;
     margin-top: 20px;
     display: none;
-    border: 1px solid #fed7d7;
+    border: 1px solid #fed7d7
 }
 
-/*隱藏使用過的互動元件*/
+/* 隱藏使用過的互動元件 */
 [hidden] {
-    display: none !important;
+    display: none !important
 }
 
 @media (max-width: 900px) {
