@@ -35,7 +35,7 @@
                     <button class="active" data-panel="settingsPanel">官方網站設定</button>
                     <button data-panel="queuePanel">待審佇列</button>
                     <button data-panel="freeQuetionPanel">申論題審核</button>
-                    <button data-panel="trainingPanel">SOP文件</button>
+                    <button data-panel="trainingPanel">文件管理</button>
                     <button data-panel="questionPanel">題庫維護</button>
                     <button data-panel="dataPanel">資料表查閱</button>
                 </nav>
@@ -210,36 +210,54 @@
                     </section>
                     <section class="admin-panel" id="trainingPanel">
                         <div class="queue-head">
-                            <div><span class="eyebrow">TRAINING FILES</span>
+                            <div>
                                 <h2>來源同步與題庫分類</h2>
-                                <p>同步 Word、Excel 與 PDF；題目解析後一律進入草稿，不會直接發布。</p>
-                            </div><button class="btn" id="syncTraining" type="button">同步文件與題目草稿</button>
+                                <span class="eyebrow"> 同步&nbsp;Word、Excel&nbsp;與&nbsp;PDF；題目解析後一律進入草稿，不會直接發布。 </span>
+                            </div>
+                            <button class="btn" id="syncTraining" type="button">同步文件與題目草稿</button>
                         </div>
                         <p id="syncStatus" aria-live="polite"></p>
                         <div class="portal-grid workspace-layout training-taxonomy-admin">
-                            <form class="portal-card narrow" id="subjectForm"><input name="id" type="hidden">
+                            <form class="portal-card narrow" id="subjectForm">
+                                <input name="id" type="hidden">
                                 <h3>科目與模考設定</h3>
-                                <label class="field"><span>領域</span><select name="domain">
+                                <label class="field">
+                                    <span>領域</span>
+                                    <select name="domain">
                                         <option value="academic">學科</option>
                                         <option value="practical">術科</option>
                                     </select></label>
-                                <label class="field"><span>科目名稱</span><input name="name" maxlength="100"
-                                        required></label>
-                                <div class="form-grid"><label class="field"><span>模考題數</span><input
-                                            name="mock_question_count" type="number" min="1" max="200"
-                                            value="40"></label>
-                                    <label class="field"><span>分鐘</span><input name="mock_duration_minutes"
-                                            type="number" min="1" max="300" value="45"></label>
-                                    <label class="field"><span>及格分數</span><input name="mock_pass_score" type="number"
-                                            min="1" max="100" value="70"></label>
+                                <label class="field">
+                                    <span>科目名稱</span>
+                                    <input name="name" maxlength="100" required>
+                                </label>
+                                <div class="form-grid">
+                                    <label class="field">
+                                        <span>模考題數</span>
+                                        <input name="mock_question_count" type="number" min="1" max="200" value="40">
+                                    </label>
+                                    <label class="field">
+                                        <span>分鐘</span>
+                                        <input name="mock_duration_minutes" type="number" min="1" max="300" value="45">
+                                    </label>
+                                    <label class="field"><span>及格分數</span>
+                                        <input name="mock_pass_score" type="number" min="1" max="100" value="70">
+                                    </label>
                                 </div>
-                                <label><input name="is_active" type="checkbox" checked> 啟用科目</label>
-                                <div class="actions"><button class="btn" type="submit">儲存科目</button><button
-                                        class="btn second" id="resetSubject" type="button">新增</button></div>
+                                <label><input name="is_active" type="checkbox" checked>啟用科目</label>
+                                <div class="actions">
+                                    <button class="btn" type="submit">儲存科目</button>
+                                    <button class="btn second" id="resetSubject" type="button">新增</button>
+                                </div>
                             </form>
-                            <form class="portal-card narrow" id="chapterForm"><input name="id" type="hidden">
-                                <h3>章節設定</h3><label class="field"><span>所屬科目</span><select name="subject_id"
-                                        id="chapterSubject" required></select></label>
+                            <form class="portal-card narrow" id="chapterForm">
+                                <input name="id" type="hidden">
+                                <h3>章節設定</h3>
+                                <label class="field">
+                                    <span>所屬科目</span>
+                                    <select name="subject_id" id="chapterSubject" required>
+                                    </select>
+                                </label>
                                 <label class="field"><span>章節代碼</span><input name="code" maxlength="30"
                                         placeholder="CH01" required></label>
                                 <label class="field"><span>章節名稱</span><input name="name" maxlength="120"
@@ -250,14 +268,14 @@
                                 <div class="actions"><button class="btn" type="submit">儲存章節</button><button
                                         class="btn second" id="resetChapter" type="button">新增</button></div>
                             </form>
-                            <section class="portal-card wide">
-                                <h3>目前分類</h3>
-                                <div class="staff-admin-list" id="taxonomyList"></div>
-                            </section>
                         </div>
-                        <div class="staff-admin-list" id="trainingDocumentList">
+                        <section class="portal-card">
+                            <h3>目前分類</h3>
+                            <div class="staff-admin-list" id="taxonomyList"></div>
+                        </section>
+                        <form class="staff-admin-list" id="trainingDocumentList">
                             <div class="empty">載入中…</div>
-                        </div>
+                        </form>
                     </section>
                     <section class="admin-panel" id="questionPanel">
                         <div class="portal-grid workspace-layout staff-maintenance">
@@ -282,21 +300,32 @@
                                         <option value="academic">學科</option>
                                         <option value="practical">術科</option>
                                     </select></label>
-                                <label class="field"><span>科目</span><select name="subject_id" id="questionSubject"
-                                        required></select></label>
-                                <label class="field"><span>章節</span><select name="chapter_id" id="questionChapter"
-                                        required></select></label>
-                                <label class="field"><span>儲存狀態</span><select name="status">
+                                <label class="field">
+                                    <span>科目</span>
+                                    <select name="subject_id" id="questionSubject" required>
+                                    </select>
+                                </label>
+                                <label class="field">
+                                    <span>章節</span>
+                                    <select name="chapter_id" id="questionChapter" required>
+                                    </select>
+                                </label>
+                                <label class="field">
+                                    <span>儲存狀態</span>
+                                    <select name="status">
                                         <option value="draft">草稿</option>
                                         <option value="published">發布</option>
                                         <option value="disabled">停用</option>
-                                    </select></label>
-                                <label class="field"><span>關聯文件</span>
+                                    </select>
+                                </label>
+                                <label class="field">
+                                    <span>關聯文件</span>
                                     <select name="document_id" id="questionDocument">
                                         <option value="">不指定文件</option>
                                     </select>
                                 </label>
-                                <label class="field"><span>題目</span>
+                                <label class="field">
+                                    <span>題目</span>
                                     <textarea name="question" maxlength="500" required></textarea>
                                 </label>
                                 <label class="field" id="passageField" hidden>
