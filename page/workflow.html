@@ -7,6 +7,8 @@
     <title>工作面板｜銀盾共同體營運中心</title>
     <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
+    <link rel="stylesheet" href="./static/pac-man.css">
+    <link rel="stylesheet" href="./static/teris.css">
     <link rel="icon" href="./static/ico/Github-Octicons-Cache-16.ico" type="image/x-icon">
 </head>
 
@@ -34,11 +36,12 @@
                 <nav class="admin-tabs" id="staffTabs">
                     <button class="active" data-panel="pl1">SD參數讀取</button>
                     <button data-panel="pl2">F&nbsp;&amp;&nbsp;Q</button>
-                    <button data-panel="pl3">環境三</button>
-                    <button data-panel="pl4">環境四</button>
+                    <button data-panel="pl3">第&nbsp;三&nbsp;分頁</button>
+                    <button data-panel="pl4">俄羅斯方塊&nbsp;Teris</button>
                 </nav>
                 <span class="api-state ok" id="playerState">工作區就緒</span>
-                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
+                    aria-pressed="false">切換深色</button>
             </header>
             <div class="portal-content">
                 <!-- 第一個分頁內容 -->
@@ -51,7 +54,7 @@
                             <img id="img-prev" class="preview-img" alt="上傳圖片預覽" hidden>
                             <p>或&nbsp;點擊此處選擇檔案</p>
                         </div>
-                        <!-- input 移出 drop-zone，避免點擊事件冒泡 -->
+                        <!-- input 移出 drop-zone-->
                         <input type="file" id="fi" accept="image/png" hidden>
                         <!-- 加上 hidden，開啟頁面時不顯示 -->
                         <p id="err" class="error" hidden></p>
@@ -62,14 +65,12 @@
                             <label>正向提示詞&nbsp;:Prompt</label>
                             <button onclick="copy('cp')">複製正向提示詞</button>
                             <textarea id="cp" rows="5" cols="50" readonly></textarea>
-
                             <label>反向提示詞&nbsp;:Negative&nbsp;Prompt</label>
                             <button onclick="copy('cn')">複製反向提示詞</button>
                             <textarea id="cn" rows="5" cols="50" readonly></textarea>
-
-                            <label>其他生成參數&nbsp;:Steps,&nbsp;Seed,&nbsp;Sampler...</label>
                             <br>
-                            <b>偵測到的 LoRA:</b><span id="loras"></span>
+                            <label>偵測到的 LoRA&nbsp;:</label><span id="loras"></span>
+                            <hr>
                             <div class="workflow-table-scroll">
                                 <table class="data-table">
                                     <tr>
@@ -107,7 +108,7 @@
                     <h2>常見問題，一次為你解答。</h2>
                     <p>還有其他問題？歡迎直接來電。</p>
                     <div class="workflow-table-scroll">
-                                <table class="data-table">
+                        <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>常見問題</th>
@@ -182,15 +183,65 @@
                     </div>
                 </section>
                 <section class="panel workflow-panel" id="pl3">
-                    <p>第三個分頁內容</p>
+                    <p>第三分頁</p>
                 </section>
                 <section class="panel workflow-panel" id="pl4">
-                    <p>第四個分頁內容</p>
+                    <div class="game-wrapper">
+                        <!-- 左側面板 -->
+                        <div class="left-panel">
+                            <div class="panel-box">
+                                <h3>分數</h3>
+                                <div class="value" id="score">0</div>
+                            </div>
+                            <div class="panel-box">
+                                <h3>最高分</h3>
+                                <div class="value" id="high-score">0</div>
+                            </div>
+                            <div class="panel-box">
+                                <h3>等級</h3>
+                                <div class="value" id="level">1</div>
+                                <div class="level-bar-container">
+                                    <div class="level-bar" id="level-bar" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div class="panel-box">
+                                <h3>行數</h3>
+                                <div class="value" id="lines">0</div>
+                            </div>
+                        </div>
+                        <!-- 遊戲畫面 -->
+                        <div class="canvas-container" id="canvas-container">
+                            <canvas id="game-canvas" width="300" height="600"></canvas>
+                            <div id="overlay" style="width:300px;height:600px;top:0;left:0;">
+                                <div>🎮 俄羅斯方塊</div>
+                                <div class="sub">按「開始遊戲」開始</div>
+                            </div>
+                        </div>
+                        <!-- 右側面板 -->
+                        <div class="right-panel">
+                            <div class="panel-box">
+                                <h3>下一個</h3>
+                                <canvas id="next-canvas" width="100" height="100"></canvas>
+                            </div>
+                            <button class="btn" id="start-btn" onclick="startGame()">開始遊戲</button>
+                            <button class="btn" id="pause-btn" onclick="togglePause()" disabled>暫停</button>
+                            <div class="controls-info">
+                                <h3>操作說明</h3>
+                                <span class="key">←→</span> 移動<br />
+                                <span class="key">↑</span> 旋轉<br />
+                                <span class="key">↓</span> 加速<br />
+                                <span class="key">Space</span> 直落<br />
+                                <span class="key">P</span> 暫停
+                            </div>
+                        </div>
+                    </div>
                 </section>
             </div>
         </main>
     </div>
     <script type="module" src="./static/panel.js"></script>
     <script src="./static/SD_ProMpt.js" defer></script>
+    <script src="./static/teris.js" defer></script>
 </body>
+
 </html>

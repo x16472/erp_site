@@ -1,0 +1,35 @@
+#scoreboard {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+#scoreboard span {
+    color: #FFD700;
+    font-weight: bold;
+}
+
+canvas {
+    border: 3px solid #1a6fff;
+    border-radius: 6px;
+    box-shadow: 0 0 30px #1a6fff88;
+    display: block;
+}
+
+#message {
+    margin-top: 14px;
+    font-size: 1.3rem;
+    color: #FF4136;
+    letter-spacing: 2px;
+    min-height: 30px;
+    text-shadow: 0 0 8px #FF4136;
+}
+
+#controls {
+    margin-top: 12px;
+    color: #aaa;
+    font-size: 0.85rem;
+    text-align: center;
+    line-height: 1.8;
+}

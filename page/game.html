@@ -7,6 +7,7 @@
     <title>企業宣導中心｜銀盾共同體營運中心</title>
     <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
+    <link rel="stylesheet" href="./static/pac-man.css">
     <link rel="icon" href="./static/ico/Sinem-File-Movies.ico" type="image/x-icon">
 </head>
 
@@ -37,9 +38,11 @@
                     <button data-panel="niconico">ニコニコ</button>
                     <button data-panel="douyin">Douyin</button>
                     <button data-panel="tiktok">Tiktok</button>
+                    <button data-panel="pacman">小精靈</button>
                 </nav>
                 <span class="api-state ok" id="playerState">播放器就緒</span>
-                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
+                    aria-pressed="false">切換深色</button>
             </header>
             <div class="portal-content">
                 <!-- 第一YouTube -->
@@ -267,11 +270,29 @@
                         </div>
                     </section>
                 </section>
+                <section class="panel" id="pacman">
+                    <h1>🟡 小精靈 PAC-MAN</h1>
+                    <div id="scoreboard">
+                        <div>分數：<span id="score">0</span></div>
+                        <div>最高分：<span id="highscore">0</span></div>
+                        <div>生命：<span id="lives">❤️❤️❤️</span></div>
+                        <div>關卡：<span id="level">1</span></div>
+                    </div>
+                    <canvas id="gameCanvas"></canvas>
+                    <div id="message">
+                        按&nbsp;↑&nbsp;↓&nbsp;←→&nbsp;或&nbsp;WASD&nbsp;開始遊戲！
+                    </div>
+                    <div id="controls">
+                        鍵盤：方向鍵&nbsp;/&nbsp;WASD 控制移動&nbsp;|&nbsp;手機：點擊畫面上下左右區域
+                    </div>
+                </section>
             </div>
         </main>
     </div>
     <script type="module" src="./static/panel.js"></script>
     <script type="module" src="./static/game.js"></script>
     <script type="module" src="./static/youtube_thumbnail.js"></script>
+    <script type="module" src="./static/pac-man.js" defer></script>
 </body>
+
 </html>
