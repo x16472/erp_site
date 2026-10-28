@@ -218,12 +218,7 @@
                             <button class="btn" id="syncTraining" type="button">同步文件與題目草稿</button>
                         </div>
                         <p id="syncStatus" aria-live="polite"></p>
-
-                        <section class="portal-card">
-                            <h3>目前分類</h3>
-                            <div class="staff-admin-list" id="taxonomyList"></div>
-                        </section>
-                        <form class="staff-admin-list" id="trainingDocumentList">
+                        <form id="trainingDocumentList">
                             <div class="empty">載入中…</div>
                         </form>
                     </section>
@@ -280,6 +275,10 @@
                                         class="btn second" id="resetChapter" type="button">新增</button></div>
                             </form>
                         </div>
+                        <section class="portal-card">
+                            <h3>目前分類</h3>
+                            <div id="taxonomyList"></div>
+                        </section>
                     </section>
                     <section class="admin-panel" id="questionPanel">
                         <div class="portal-grid workspace-layout staff-maintenance">
@@ -383,7 +382,7 @@
                                     </select>
                                     <button class="btn second" id="applyQuestionBulk" type="button">套用至勾選題目</button>
                                 </div>
-                                <div class="staff-admin-list" id="questionList">
+                                <div id="questionList">
                                     <div class="empty">載入中…</div>
                                 </div>
                             </section>
