@@ -13,17 +13,16 @@
 <body class="employee-access-page">
     <div class="portal-shell">
         <aside class="portal-sidebar employee-access-brand">
-            <img src="./static/appicon.png" alt="銀盾共同體標誌">
-            <span class="top-kicker">Company&nbsp;Operations</span>
-            <h1>員工相關入口</h1>
-            <p>匯聚你工作所需一切，通往事業與福利的入口。</p>
+
             <a class="btn" href="index.html">返回官方網站</a>
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <span class="top-kicker">Employee Access</span>
-                <h1>員工登入</h1>
-                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
+                <span class="top-kicker">Company&nbsp;Operations</span>
+                <h1>員工相關入口</h1>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
+                    aria-pressed="false">切換深色
+                </button>
             </header>
             <div class="portal-content employee-access-content">
                 <section class="portal-card employee-access-card">
@@ -33,6 +32,7 @@
                     </div>
                     <form id="accessForm">
                         <label class="field">
+                            <p align="center">匯聚你工作所需一切，通往事業與福利的入口。</p>
                             <span>員工編號</span>
                             <input name="employee_id" autocomplete="username" maxlength="20" pattern="[A-Za-z0-9_-]+"
                                 placeholder="例如 K001" required autofocus>
@@ -49,4 +49,5 @@
     </div>
     <script type="module" src="./static/employee-login.js"></script>
 </body>
+
 </html>

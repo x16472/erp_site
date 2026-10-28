@@ -3100,14 +3100,14 @@ textarea::placeholder {
     padding-inline: var(--content-space);
 }
 
-.portal-topbar > .admin-tabs {
+.portal-topbar>.admin-tabs {
     flex: 1 1 320px;
     min-width: 0;
     margin: 0;
     padding: 3px;
 }
 
-.portal-topbar > .api-state {
+.portal-topbar>.api-state {
     margin-left: auto;
 }
 
@@ -3127,7 +3127,7 @@ textarea::placeholder {
     overflow: hidden;
 }
 
-.workspace-layout > * {
+.workspace-layout>* {
     min-width: 0;
     max-width: 100%;
 }
@@ -3146,7 +3146,7 @@ textarea::placeholder {
     grid-template-columns: minmax(0, 1fr) var(--workspace-sidebar-width);
 }
 
-.portal-grid.workspace-layout > .portal-card {
+.portal-grid.workspace-layout>.portal-card {
     grid-column: auto;
     padding: var(--panel-space);
     border: 0;
@@ -3154,15 +3154,15 @@ textarea::placeholder {
     box-shadow: none;
 }
 
-.portal-grid.workspace-layout > .portal-card + .portal-card {
+.portal-grid.workspace-layout>.portal-card+.portal-card {
     border-left: 1px solid var(--line);
 }
 
-.portal-grid.workspace-layout > .full {
+.portal-grid.workspace-layout>.full {
     grid-column: 1 / -1;
 }
 
-.portal-grid.workspace-layout > .narrow {
+.portal-grid.workspace-layout>.narrow {
     background: var(--surface-subtle);
 }
 
@@ -3175,14 +3175,14 @@ textarea::placeholder {
     gap: 0;
 }
 
-.session-layout.workspace-layout > .question-navigator {
+.session-layout.workspace-layout>.question-navigator {
     align-content: start;
     padding: var(--panel-space);
     border-right: 1px solid var(--line);
     background: var(--surface-subtle);
 }
 
-.session-layout.workspace-layout > .question-stage {
+.session-layout.workspace-layout>.question-stage {
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -3195,8 +3195,8 @@ textarea::placeholder {
 
 .field,
 .staff-directory-actions,
-.training-bulk-toolbar > *,
-.youtube-form > * {
+.training-bulk-toolbar>*,
+.youtube-form>* {
     min-width: 0;
 }
 
@@ -3446,7 +3446,7 @@ textarea::placeholder {
     }
 
     .portal-brand {
-        margin-bottom: 14px;
+        display: none;
     }
 
     .portal-nav {
@@ -3580,12 +3580,12 @@ textarea::placeholder {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .portal-grid.workspace-layout > .portal-card + .portal-card {
+    .portal-grid.workspace-layout>.portal-card+.portal-card {
         border-left: 0;
         border-top: 1px solid var(--line);
     }
 
-    .session-layout.workspace-layout > .question-navigator {
+    .session-layout.workspace-layout>.question-navigator {
         border-right: 0;
         border-bottom: 1px solid var(--line);
     }
@@ -3631,11 +3631,12 @@ textarea::placeholder {
         min-height: 0;
         padding-block: 32px;
     }
+
     .staff-admin-card.question-card {
         grid-template-columns: 24px minmax(0, 1fr);
     }
 
-    .staff-admin-card.question-card > .btn-group {
+    .staff-admin-card.question-card>.btn-group {
         grid-column: 1 / -1;
         justify-self: stretch;
         flex-wrap: wrap;
@@ -3891,7 +3892,7 @@ textarea::placeholder {
         gap: 10px;
     }
 
-    .portal-topbar > .admin-tabs {
+    .portal-topbar>.admin-tabs {
         order: 3;
         flex-basis: 100%;
         max-width: 100%;
@@ -3901,12 +3902,12 @@ textarea::placeholder {
         flex-basis: auto;
     }
 
-    .portal-topbar > .api-state {
+    .portal-topbar>.api-state {
         flex: 1 1 auto;
         margin-left: 0;
     }
 
-    .portal-topbar > .theme-toggle {
+    .portal-topbar>.theme-toggle {
         margin-left: auto;
     }
 
@@ -3960,7 +3961,7 @@ textarea::placeholder {
         grid-template-columns: 24px minmax(0, 1fr);
     }
 
-    .staff-admin-card.question-card > .btn-group {
+    .staff-admin-card.question-card>.btn-group {
         grid-column: 1 / -1;
     }
 
@@ -3968,7 +3969,7 @@ textarea::placeholder {
         flex: 1 1 100px;
     }
 
-    .training-bulk-toolbar > *,
+    .training-bulk-toolbar>*,
     .training-bulk-toolbar select,
     .training-home-actions,
     .training-home-actions .btn {
