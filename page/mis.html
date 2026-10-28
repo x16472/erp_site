@@ -264,15 +264,22 @@
                                     <select name="subject_id" id="chapterSubject" required>
                                     </select>
                                 </label>
-                                <label class="field"><span>章節代碼</span><input name="code" maxlength="30"
-                                        placeholder="CH01" required></label>
-                                <label class="field"><span>章節名稱</span><input name="name" maxlength="120"
-                                        required></label>
-                                <label class="field"><span>排序</span><input name="display_order" type="number" min="0"
-                                        max="9999" value="0"></label>
-                                <label><input name="is_active" type="checkbox" checked> 啟用章節</label>
-                                <div class="actions"><button class="btn" type="submit">儲存章節</button><button
-                                        class="btn second" id="resetChapter" type="button">新增</button></div>
+                                <label class="field">
+                                    <span>章節代碼</span>
+                                    <input name="code" maxlength="30" placeholder="CH01" required>
+                                </label>
+                                <label class="field">
+                                    <span>章節名稱</span>
+                                    <input name="name" maxlength="120" required>
+                                </label>
+                                <label class="field">
+                                    <span>排序</span>
+                                    <input name="display_order" type="number" min="0" max="9999" value="0"></label>
+                                <label>
+                                    <input name="is_active" type="checkbox" checked>啟用章節</label>
+                                <div class="actions"><button class="btn" type="submit">儲存章節</button>
+                                    <button class="btn second" id="resetChapter" type="button">新增</button>
+                                </div>
                             </form>
                         </div>
                         <section class="portal-card">
@@ -281,111 +288,178 @@
                         </section>
                     </section>
                     <section class="admin-panel" id="questionPanel">
-                        <div class="portal-grid workspace-layout staff-maintenance">
-                            <form class="portal-card narrow" id="questionForm">
-                                <div class="card-head">
-                                    <div>
-                                        <span class="eyebrow">QUESTION&nbsp;EDITOR</span>
-                                        <h2>新增或更新題目</h2>
+                        <div class="staff-manager-workspace workspace-layout">
+                            <aside class="organization-pane question-control-pane" aria-label="題庫操作與分類變更">
+                                <section class="maintenance-bulk-section" aria-labelledby="questionBulkTitle">
+                                    <div class="organization-head">
+                                        <div>
+                                            <span class="eyebrow">BATCH CLASSIFICATION</span>
+                                            <h2 id="questionBulkTitle">變更科目章節</h2>
+                                        </div>
                                     </div>
-                                </div>
-                                <input name="id" type="hidden">
-                                <input name="question_type" type="hidden" value="single_choice">
-                                <nav class="question-type-tabs" id="questionTypeTabs" aria-label="題型">
-                                    <button class="active" data-question-type="single_choice" type="button">單選題</button>
-                                    <button data-question-type="multiple_choice" type="button">多選題</button>
-                                    <button data-question-type="reading" type="button">閱讀測驗</button>
-                                    <button data-question-type="essay" type="button">申論題</button>
-                                </nav>
-                                <label class="field">
-                                    <span>領域</span>
-                                    <select name="domain" id="questionDomain">
-                                        <option value="academic">學科</option>
-                                        <option value="practical">術科</option>
-                                    </select></label>
-                                <label class="field">
-                                    <span>科目</span>
-                                    <select name="subject_id" id="questionSubject" required>
-                                    </select>
-                                </label>
-                                <label class="field">
-                                    <span>章節</span>
-                                    <select name="chapter_id" id="questionChapter" required>
-                                    </select>
-                                </label>
-                                <label class="field">
-                                    <span>儲存狀態</span>
-                                    <select name="status">
-                                        <option value="draft">草稿</option>
-                                        <option value="published">發布</option>
-                                        <option value="disabled">停用</option>
-                                    </select>
-                                </label>
-                                <label class="field">
-                                    <span>關聯文件</span>
-                                    <select name="document_id" id="questionDocument">
-                                        <option value="">不指定文件</option>
-                                    </select>
-                                </label>
-                                <label class="field">
-                                    <span>題目</span>
-                                    <textarea name="question" maxlength="500" required></textarea>
-                                </label>
-                                <label class="field" id="passageField" hidden>
-                                    <span>閱讀文章</span>
-                                    <textarea name="passage" rows="8" maxlength="5000"></textarea>
-                                </label>
-                                <label class="field" id="optionsField">
-                                    <span>選項（每行一個，2 至 6 個）</span>
-                                    <textarea name="options" rows="6" required></textarea>
-                                </label>
-                                <label class="field" id="answersField">
-                                    <span>正確答案序號</span>
-                                    <input name="answers" placeholder="例如：1；多選題可輸入 1,3" required>
-                                </label>
-                                <label class="field" id="explanationField">
-                                    <span>答案解說</span>
-                                    <textarea name="explanation" maxlength="1000" required></textarea>
-                                </label>
-                                <p class="hint" id="essayHint" hidden>申論題沒有標準答案；員工以文字方塊作答後，由 MIS 人員人工審核。</p>
-                                <div class="actions">
-                                    <button class="btn" type="submit">儲存題目</button>
-                                    <button class="btn second" id="resetQuestion" type="button">新增另一題</button>
-                                </div>
+                                    <p class="hint">勾選右側題目後，套用分類或狀態變更。</p>
+                                    <label class="field">
+                                        <span>科目</span>
+                                        <select id="bulkSubject">
+                                            <option value="">不變更科目</option>
+                                        </select>
+                                    </label>
+                                    <label class="field">
+                                        <span>章節</span>
+                                        <select id="bulkChapter">
+                                            <option value="">不變更章節</option>
+                                        </select>
+                                    </label>
+                                    <label class="field">
+                                        <span>狀態</span>
+                                        <select id="bulkStatus">
+                                            <option value="">不變更狀態</option>
+                                            <option value="draft">草稿</option>
+                                            <option value="published">發布</option>
+                                            <option value="disabled">停用</option>
+                                        </select>
+                                    </label>
+                                    <button class="btn second" id="applyQuestionBulk" type="button"
+                                        disabled>套用至勾選題目</button>
+                                </section>
+                                <p id="questionSelectionSummary" aria-live="polite">已勾選 0 題
+                                </p>
                                 <p id="questionStatus" aria-live="polite"></p>
-                            </form>
-                            <section class="portal-card wide">
-                                <div class="card-head">
-                                    <div><span class="eyebrow">QUESTION BANK</span>
-                                        <h2>題庫</h2>
+                                <div class="organization-head">
+                                    <div>
+                                        <span class="eyebrow">QUESTION CONTROLS</span>
+                                        <h2>題庫操作</h2>
                                     </div>
                                 </div>
-                                <div class="training-bulk-toolbar"><input id="questionSearch" type="search"
-                                        placeholder="搜尋題目、科目或章節">
-                                    <select id="questionStatusFilter">
-                                        <option value="">全部狀態</option>
-                                        <option value="draft">草稿</option>
-                                        <option value="published">已發布</option>
-                                        <option value="disabled">已停用</option>
-                                    </select>
-                                    <select id="bulkSubject">
-                                        <option value="">不變更科目</option>
-                                    </select>
-                                    <select id="bulkChapter">
-                                        <option value="">不變更章節</option>
-                                    </select>
-                                    <select id="bulkStatus">
-                                        <option value="">不變更狀態</option>
-                                        <option value="draft">草稿</option>
-                                        <option value="published">發布</option>
-                                        <option value="disabled">停用</option>
-                                    </select>
-                                    <button class="btn second" id="applyQuestionBulk" type="button">套用至勾選題目</button>
+                                <div class="maintenance-actions" id="questionControls" role="group" aria-label="目前題目操作">
+                                    <button class="btn second" id="resetQuestion" type="button">新增題目</button>
+                                    <button class="btn second" id="refreshQuestions" type="button">重新讀取</button>
+                                    <button class="btn" id="saveQuestion" type="submit"
+                                        form="questionForm">儲存題目</button>
+                                    <button class="btn red" id="deleteQuestion" type="button" disabled>刪除題目</button>
+                                    <button class="btn" id="publishQuestion" type="button" disabled>發布題目</button>
+                                    <button class="btn second" id="draftQuestion" type="button" disabled>退回草稿</button>
+                                    <button class="btn second" id="disableQuestion" type="button" disabled>停用題目</button>
+                                    <button class="btn second" id="reimportQuestion" type="button"
+                                        disabled>以來源重新匯入</button>
                                 </div>
-                                <div id="questionList">
-                                    <div class="empty">載入中…</div>
-                                </div>
-                            </section>
+                                <p class="hint" id="questionControlSummary" aria-live="polite">目前為新增題目；請從右側清單選取要編輯的題目。
+                                </p>
+                            </aside>
+                            <div class="staff-master-detail">
+                                <section class="staff-directory-pane">
+                                    <div class="staff-directory-toolbar">
+                                        <div>
+                                            <span class="eyebrow">QUESTION BANK</span>
+                                            <h2>題庫 <span class="tag" id="questionCount">0 題</span></h2>
+                                        </div>
+                                        <div class="staff-directory-actions">
+                                            <label class="staff-search">
+                                                <span class="sr-only">搜尋題目、科目或章節</span>
+                                                <input id="questionSearch" type="search" placeholder="搜尋題目、科目或章節">
+                                            </label>
+                                            <label class="field">
+                                                <span class="sr-only">篩選題目狀態</span>
+                                                <select id="questionStatusFilter">
+                                                    <option value="">全部狀態</option>
+                                                    <option value="draft">草稿</option>
+                                                    <option value="published">已發布</option>
+                                                    <option value="disabled">已停用</option>
+                                                </select>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="staff-table-scroll">
+                                        <table class="staff-directory-table question-directory-table">
+                                            <thead>
+                                                <tr>
+                                                    <th><input id="selectAllQuestions" type="checkbox"
+                                                            aria-label="勾選目前顯示的全部題目"></th>
+                                                    <th>編號</th>
+                                                    <th>題目</th>
+                                                    <th>科目</th>
+                                                    <th>章節</th>
+                                                    <th>題型</th>
+                                                    <th>狀態</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="questionList">
+                                                <tr>
+                                                    <td colspan="7" class="empty">載入中…</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+                                <form class="staff-detail-pane" id="questionForm">
+                                    <div class="staff-detail-title">
+                                        <div>
+                                            <span class="eyebrow">QUESTION&nbsp;EDITOR</span>
+                                            <h2>新增或更新題目</h2>
+                                        </div>
+                                        <span class="staff-editing-label" id="questionEditingLabel">新增題目</span>
+                                    </div>
+                                    <input name="id" type="hidden">
+                                    <input name="question_type" type="hidden" value="single_choice">
+                                    <nav class="question-type-tabs" id="questionTypeTabs" aria-label="題型">
+                                        <button class="active" data-question-type="single_choice"
+                                            type="button">單選題</button>
+                                        <button data-question-type="multiple_choice" type="button">多選題</button>
+                                        <button data-question-type="reading" type="button">閱讀測驗</button>
+                                        <button data-question-type="essay" type="button">申論題</button>
+                                    </nav>
+                                    <div class="staff-fields">
+                                        <label class="field">
+                                            <span>領域</span>
+                                            <select name="domain" id="questionDomain">
+                                                <option value="academic">學科</option>
+                                                <option value="practical">術科</option>
+                                            </select>
+                                            <span>科目</span>
+                                            <select name="subject_id" id="questionSubject" required>
+                                            </select>
+                                        </label>
+                                        <label class="field">
+                                            <span>章節</span>
+                                            <select name="chapter_id" id="questionChapter" required>
+                                            </select>
+                                            <span>儲存狀態</span>
+                                            <select name="status">
+                                                <option value="draft">草稿</option>
+                                                <option value="published">發布</option>
+                                                <option value="disabled">停用</option>
+                                            </select>
+                                        </label>
+                                        <label class="field">
+                                            <span>題目</span>
+                                            <textarea name="question" rows="5" maxlength="500" required></textarea>
+                                        </label>
+                                        <label class="field" id="passageField" hidden>
+                                            <span>閱讀文章</span>
+                                            <textarea name="passage" rows="5" maxlength="500"></textarea>
+                                        </label>
+                                        <label class="field" id="optionsField">
+                                            <span>選項（每行一個，2 至 6 個）</span>
+                                            <textarea name="options" rows="5" required></textarea>
+                                        </label>
+                                        <label class="field" id="explanationField">
+                                            <span>答案解說</span>
+                                            <textarea name="explanation" rows="5" maxlength="500" required></textarea>
+                                        </label>
+                                        <label class="field" id="answersField">
+                                            <span>正確答案序號</span>
+                                            <input name="answers" placeholder="例如：1；多選題可輸入 1,3" required>
+                                            <!-- </label>
+                                        <label class="field"> -->
+                                            <span>關聯文件</span>
+                                            <select name="document_id" id="questionDocument">
+                                                <option value="">不指定文件</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <p class="hint" id="essayHint" hidden>申論題沒有標準答案；員工以文字方塊作答後，由 MIS 人員人工審核。</p>
+                                </form>
+                            </div>
                         </div>
                     </section>
                 </div>

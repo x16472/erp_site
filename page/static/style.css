@@ -1879,7 +1879,7 @@ footer a {
     object-fit: cover;
 }
 
-/* 員工管理：依組織樹、名冊、明細的主從式工作區排列。 */
+/* 員工與題庫共用側欄、清單、明細的主從式工作區。 */
 .staff-manager-workspace {
     display: grid;
     grid-template-columns: var(--workspace-sidebar-width) minmax(0, 1fr);
@@ -2136,6 +2136,64 @@ footer a {
     min-width: 0;
     padding: 14px 18px 13px;
     background: var(--surface);
+}
+
+.maintenance-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.maintenance-actions .btn {
+    min-width: 0;
+    padding: 9px 8px;
+    font-size: 12px;
+}
+
+.maintenance-bulk-section {
+    margin-top: 12px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+}
+
+.maintenance-bulk-section>.btn {
+    width: 100%;
+}
+
+.question-control-pane .organization-summary {
+    margin-bottom: 0;
+}
+
+.question-control-pane [aria-live] {
+    overflow-wrap: anywhere;
+}
+
+.question-directory-table .question-text-cell {
+    min-width: 220px;
+    max-width: 380px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.question-text-cell .text-action {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--heading);
+    font: inherit;
+    text-align: left;
+}
+
+.question-text-cell small {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+}
+
+.question-directory-table tbody tr.selected {
+    background: var(--info-surface);
+    box-shadow: inset 3px 0 var(--blue);
 }
 
 .staff-editing-label {

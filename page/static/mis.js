@@ -52,6 +52,9 @@ const trainingDocumentList = document.querySelector('#trainingDocumentList'),
     questionList = document.querySelector('#questionList'),
     questionStatus = document.querySelector('#questionStatus'),
     resetQuestion = document.querySelector('#resetQuestion'),
+    questionControls = document.querySelector('#questionControls'),
+    selectAllQuestions = document.querySelector('#selectAllQuestions'),
+    applyQuestionBulk = document.querySelector('#applyQuestionBulk'),
     questionTypeTabs = document.querySelector('#questionTypeTabs'),
     passageField = document.querySelector('#passageField'),
     optionsField = document.querySelector('#optionsField'),
@@ -297,6 +300,99 @@ function renderTrainingDocuments() {
 const questionTypeNames = {
     single_choice: '單選題', multiple_choice: '多選題', reading: '閱讀測驗', essay: '申論題'
 };
+const questionStatusNames = { draft: '草稿', published: '已發布', disabled: '已停用' };
+const selectedQuestionIds = new Set();
+let questionBusy = false;
+
+function currentQuestion() {
+    return complianceQuestions.find(item => item.id === Number(questionForm.elements.id.value));
+}
+
+function updateQuestionControls() {
+    const item = currentQuestion();
+    document.querySelector('#questionEditingLabel').textContent = item ? `編輯題目 #${item.id}` : '新增題目';
+    document.querySelector('#questionControlSummary').textContent = item
+        ? `目前編輯：題目 #${item.id}（${questionStatusNames[item.status] || item.status}）。上方操作僅作用於此題。`
+        : '目前為新增題目；請從右側清單選取要編輯的題目。';
+    questionControls.querySelectorAll('button').forEach(button => {
+        button.disabled = questionBusy;
+    });
+    document.querySelector('#deleteQuestion').disabled = questionBusy || !item;
+    document.querySelector('#publishQuestion').disabled = questionBusy || !item || item.status === 'published' || !Object.hasOwn(questionTypeNames, item.question_type);
+    document.querySelector('#draftQuestion').disabled = questionBusy || !item || item.status === 'draft';
+    document.querySelector('#disableQuestion').disabled = questionBusy || !item || item.status === 'disabled';
+    document.querySelector('#reimportQuestion').disabled = questionBusy || !item?.source;
+    applyQuestionBulk.disabled = questionBusy || !selectedQuestionIds.size;
+    document.querySelector('#questionSelectionSummary').textContent = `已勾選 ${selectedQuestionIds.size} 題`;
+    const checkboxes = [...questionList.querySelectorAll('[data-question-select]')];
+    const checkedCount = checkboxes.filter(input => input.checked).length;
+    selectAllQuestions.checked = checkboxes.length > 0 && checkedCount === checkboxes.length;
+    selectAllQuestions.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+    selectAllQuestions.disabled = questionBusy || !checkboxes.length;
+    [questionSearch, questionStatusFilter, bulkSubject, bulkChapter, bulkStatus,
+        ...questionForm.querySelectorAll('input, select, textarea, button'), ...checkboxes].forEach(input => {
+        input.disabled = questionBusy;
+    });
+}
+
+async function runQuestionAction(action) {
+    if (questionBusy) return;
+    questionBusy = true;
+    questionStatus.className = '';
+    questionStatus.textContent = '處理中…';
+    updateQuestionControls();
+    try {
+        await action();
+    } catch (error) {
+        questionStatus.className = 'error-note';
+        questionStatus.textContent = error.message;
+    } finally {
+        questionBusy = false;
+        updateQuestionControls();
+    }
+}
+
+function showQuestionSuccess(message) {
+    questionStatus.className = 'success-note';
+    questionStatus.textContent = message;
+}
+
+function resetQuestionEditor() {
+    questionForm.reset();
+    questionForm.elements.id.value = '';
+    renderQuestionChapters();
+    setQuestionType('single_choice');
+    questionStatus.className = '';
+    questionStatus.textContent = '';
+    renderQuestions();
+}
+
+function editQuestion(item) {
+    const values = {
+        id: item.id, document_id: item.document_id || '', subject_id: item.subject_id || '',
+        status: item.status, question: item.question, passage: item.passage || '',
+        options: item.options.join('\n'), explanation: item.explanation || ''
+    };
+    Object.entries(values).forEach(([name, value]) => questionForm.elements[name].value = value);
+    renderQuestionChapters();
+    questionForm.elements.chapter_id.value = item.chapter_id || '';
+    setQuestionType(item.question_type);
+    questionDomain.value = item.domain;
+    const supported = Object.hasOwn(questionTypeNames, item.question_type);
+    questionForm.elements.answers.value = supported ? item.answers.map(value => value + 1).join(',') : '';
+    questionStatus.className = supported ? '' : 'error-note';
+    questionStatus.textContent = supported ? '' : '原題型已停用，請重新設定題型、選項與正確答案後儲存。';
+    renderQuestions();
+}
+
+async function reloadQuestions() {
+    const editingId = Number(questionForm.elements.id.value);
+    complianceQuestions = await request('/api/admin/compliance/questions');
+    const item = complianceQuestions.find(row => row.id === editingId);
+    if (item) editQuestion(item);
+    else if (editingId) resetQuestionEditor();
+    else renderQuestions();
+}
 function setQuestionType(type) {
     type = Object.hasOwn(questionTypeNames, type) ? type : 'single_choice';
     questionForm.elements.question_type.value = type;
@@ -318,24 +414,32 @@ questionTypeTabs.onclick = event => {
     const button = event.target.closest('[data-question-type]');
     if (button) setQuestionType(button.dataset.questionType)
 };
+questionForm.elements.status.onchange = () => {
+    questionForm.elements.explanation.required = questionForm.elements.question_type.value !== 'essay'
+        && questionForm.elements.status.value === 'published';
+};
 function renderQuestions() {
     const keyword = questionSearch.value.trim().toLowerCase(), statusFilter = questionStatusFilter.value,
         visibleQuestions = complianceQuestions.filter(item => (!statusFilter || item.status === statusFilter) &&
             (!keyword || `${item.subject} ${item.chapter} ${item.question}`.toLowerCase().includes(keyword)));
-    questionList.innerHTML = visibleQuestions.map(item => `<article class="staff-admin-card question-card ${item.status === 'published' ? '' : 'inactive'}">
-    <input type="checkbox" data-question-select="${item.id}" aria-label="選取題目 ${item.id}">
-    <div>
-        <b class="question-title" title="${esc(item.subject)}｜${esc(item.chapter)}｜${esc(item.question)}">${esc(item.subject || '未分類')}｜${esc(item.chapter || item.category)}｜${esc(item.question)}</b>
-        <small>${item.domain === 'practical' ? '術科' : '學科'} · ${esc(questionTypeNames[item.question_type] || '已停用題型')} · ${esc(item.status)}${item.admin_locked ? ' · 管理員保護' : ''}${item.parse_warnings?.length ? ` · ${item.parse_warnings.length} 項解析警告` : ''}</small>
-    </div>
-    <div class="btn-group">
-        <button class="btn second" data-question-edit="${item.id}">編輯</button>
-        ${item.source ? `<button class="btn second" data-question-reimport="${item.id}">以來源重新匯入</button>` : ''}
-        ${item.status !== 'published' && Object.hasOwn(questionTypeNames, item.question_type) ? `<button class="btn" data-question-status="${item.id}" data-status="published">發布</button>` : `<button class="btn second" data-question-status="${item.id}" data-status="draft">退回草稿</button>`}
-        ${item.status !== 'disabled' ? `<button class="btn second" data-question-disable="${item.id}">停用</button>` : ''}
-        <button class="btn red" data-question-delete="${item.id}">刪除</button>
-    </div>
-    </article>`).join('') || '<div class="empty">目前沒有題目。</div>'
+    const visibleIds = new Set(visibleQuestions.map(item => item.id));
+    // 批次操作只保留畫面可見的勾選項目，避免搜尋後誤改隱藏題目。
+    selectedQuestionIds.forEach(id => {
+        if (!visibleIds.has(id)) selectedQuestionIds.delete(id);
+    });
+    const editingId = Number(questionForm.elements.id.value);
+    questionList.innerHTML = visibleQuestions.map(item => `<tr data-question-row="${item.id}" class="${item.status === 'published' ? '' : 'inactive'} ${item.id === editingId ? 'selected' : ''}" aria-selected="${item.id === editingId}">
+        <td><input type="checkbox" data-question-select="${item.id}" aria-label="勾選題目 ${item.id}" ${selectedQuestionIds.has(item.id) ? 'checked' : ''}></td>
+        <td>${item.id}</td>
+        <td class="question-text-cell"><button class="text-action" data-question-edit="${item.id}" type="button">${esc(item.question)}</button>
+            <small>${item.domain === 'practical' ? '術科' : '學科'}${item.admin_locked ? ' · 管理員保護' : ''}${item.parse_warnings?.length ? ` · ${item.parse_warnings.length} 項解析警告` : ''}</small></td>
+        <td>${esc(item.subject || '未分類')}</td>
+        <td>${esc(item.chapter || item.category || '未分類')}</td>
+        <td>${esc(questionTypeNames[item.question_type] || '已停用題型')}</td>
+        <td><span class="employment-status ${item.status === 'published' ? 'active' : 'inactive'}">${esc(questionStatusNames[item.status] || item.status)}</span></td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">目前沒有符合條件的題目。</td></tr>';
+    document.querySelector('#questionCount').textContent = `${visibleQuestions.length} / ${complianceQuestions.length} 題`;
+    updateQuestionControls();
 }
 questionSearch.oninput = renderQuestions;
 questionStatusFilter.onchange = renderQuestions;
@@ -353,82 +457,71 @@ trainingDocumentList.onclick = async event => {
     operationsManuals = await request('/api/admin/manuals/documents');
     renderTrainingDocuments()
 };
-questionList.onclick = async event => {
-    const deleteButton = event.target.closest('[data-question-delete]');
-    if (deleteButton) {
-        const id = Number(deleteButton.dataset.questionDelete);
-        const item = complianceQuestions.find(row => row.id === id);
-        if (!item || !confirm(`確定刪除此題目？\n\n${item.question}\n\n刪除後將從題庫移除，既有作答紀錄會保留。`)) return;
-        deleteButton.disabled = true;
-        try {
-            await request('/api/admin/compliance/question', {
-                method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-                body: JSON.stringify({ id })
-            });
-            complianceQuestions = complianceQuestions.filter(row => row.id !== id);
-            if (Number(questionForm.elements.id.value) === id) {
-                questionForm.reset();
-                questionForm.elements.id.value = '';
-                setQuestionType('single_choice');
-            }
-            renderQuestions();
-            questionStatus.className = 'success-note';
-            questionStatus.textContent = '題目已刪除。';
-        } catch (error) {
-            deleteButton.disabled = false;
-            questionStatus.className = 'error-note';
-            questionStatus.textContent = error.message;
-        }
-        return;
-    }
-    const edit = event.target.closest('[data-question-edit]'),
-        disable = event.target.closest('[data-question-disable]'),
-        reimport = event.target.closest('[data-question-reimport]');
-    if (edit) {
-        const item = complianceQuestions.find(row => row.id === Number(edit.dataset.questionEdit));
-        if (item) {
-            questionForm.elements.id.value = item.id;
-            questionForm.elements.document_id.value = item.document_id || '';
-            questionForm.elements.subject_id.value = item.subject_id || '';
-            renderQuestionChapters();
-            questionForm.elements.chapter_id.value = item.chapter_id || '';
-            questionForm.elements.domain.value = item.domain;
-            questionForm.elements.status.value = item.status;
-            setQuestionType(item.question_type);
-            questionForm.elements.question.value = item.question;
-            questionForm.elements.passage.value = item.passage || '';
-            questionForm.elements.options.value = item.options.join('\n');
-            const supported = Object.hasOwn(questionTypeNames, item.question_type);
-            questionForm.elements.answers.value = supported ? item.answers.map(value => value + 1).join(',') : '';
-            questionStatus.className = supported ? '' : 'error-note';
-            questionStatus.textContent = supported ? '' : '原題型已停用，請重新設定題型、選項與正確答案後儲存。';
-            questionForm.elements.explanation.value = item.explanation;
-            questionForm.elements.question.focus()
-        }
-    }
-    const statusButton = event.target.closest('[data-question-status]');
-    if (statusButton) {
-        await request('/api/admin/training/question/status', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-            body: JSON.stringify({ id: Number(statusButton.dataset.questionStatus), status: statusButton.dataset.status })
+questionList.onclick = event => {
+    if (questionBusy || event.target.closest('[data-question-select]')) return;
+    const row = event.target.closest('[data-question-row]');
+    const item = complianceQuestions.find(item => item.id === Number(row?.dataset.questionRow));
+    if (item) editQuestion(item);
+};
+questionList.onchange = event => {
+    const input = event.target.closest('[data-question-select]');
+    if (!input || questionBusy) return;
+    const id = Number(input.dataset.questionSelect);
+    if (input.checked) selectedQuestionIds.add(id);
+    else selectedQuestionIds.delete(id);
+    updateQuestionControls();
+};
+selectAllQuestions.onchange = () => {
+    questionList.querySelectorAll('[data-question-select]').forEach(input => {
+        input.checked = selectAllQuestions.checked;
+        const id = Number(input.dataset.questionSelect);
+        if (input.checked) selectedQuestionIds.add(id);
+        else selectedQuestionIds.delete(id);
+    });
+    updateQuestionControls();
+};
+document.querySelector('#refreshQuestions').onclick = () => runQuestionAction(async () => {
+    await reloadQuestions();
+    showQuestionSuccess('題庫已重新讀取。');
+});
+document.querySelector('#deleteQuestion').onclick = () => {
+    const item = currentQuestion();
+    if (!item || !confirm(`確定刪除此題目？\n\n${item.question}\n\n刪除後將從題庫移除，既有作答紀錄會保留。`)) return;
+    runQuestionAction(async () => {
+        await request('/api/admin/compliance/question', {
+            method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ id: item.id })
         });
-        complianceQuestions = await request('/api/admin/compliance/questions'); renderQuestions()
-    }
-    if (reimport && confirm('此操作會解除管理員保護，並重新解析來源。\n\n將覆寫：題幹、選項、正解、解析、分類、來源位置與解析警告。\n\n確定繼續？')) {
+        complianceQuestions = complianceQuestions.filter(row => row.id !== item.id);
+        resetQuestionEditor();
+        showQuestionSuccess('題目已刪除。');
+    });
+};
+for (const [buttonId, status] of [['publishQuestion', 'published'], ['draftQuestion', 'draft'], ['disableQuestion', 'disabled']]) {
+    document.getElementById(buttonId).onclick = () => {
+        const item = currentQuestion();
+        if (!item || (status === 'disabled' && !confirm('確定停用此題目？'))) return;
+        runQuestionAction(async () => {
+            await request('/api/admin/training/question/status', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                body: JSON.stringify({ id: item.id, status })
+            });
+            await reloadQuestions();
+            showQuestionSuccess(`題目已變更為${questionStatusNames[status]}。`);
+        });
+    };
+}
+document.querySelector('#reimportQuestion').onclick = () => {
+    const item = currentQuestion();
+    if (!item?.source || !confirm('此操作會解除管理員保護，並重新解析來源。\n\n將覆寫：題幹、選項、正解、解析、分類、來源位置與解析警告。\n\n確定繼續？')) return;
+    runQuestionAction(async () => {
         await request('/api/admin/training/question/reimport', {
             method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-            body: JSON.stringify({ question_id: Number(reimport.dataset.questionReimport) })
+            body: JSON.stringify({ question_id: item.id })
         });
-        complianceQuestions = await request('/api/admin/compliance/questions'); renderQuestions()
-    }
-    if (disable && confirm('確定停用此題目？')) {
-        await request('/api/admin/training/question/status', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-            body: JSON.stringify({ id: Number(disable.dataset.questionDisable), status: 'disabled' })
-        });
-        complianceQuestions = await request('/api/admin/compliance/questions');
-        renderQuestions()
-    }
+        await reloadQuestions();
+        showQuestionSuccess('題目已從來源重新匯入。');
+    });
 };
 questionForm.onsubmit = async event => {
     event.preventDefault();
@@ -445,43 +538,39 @@ questionForm.onsubmit = async event => {
         passage: values.passage || '',
         explanation: essay ? '' : values.explanation
     };
-    questionStatus.textContent = '儲存中…';
-    try {
+    await runQuestionAction(async () => {
         await request('/api/admin/compliance/question', {
             method: 'POST', headers: {
                 'Content-Type': 'application/json', 'X-CSRF-Token': csrf
             },
             body: JSON.stringify(payload)
         });
-        questionForm.reset();
-        questionForm.elements.id.value = '';
-        setQuestionType('single_choice');
         complianceQuestions = await request('/api/admin/compliance/questions');
-        renderQuestions();
-        questionStatus.className = 'success-note';
-        questionStatus.textContent = '題目已儲存。'
-    } catch (error) {
-        questionStatus.className = 'error-note';
-        questionStatus.textContent = error.message
-    }
+        resetQuestionEditor();
+        showQuestionSuccess('題目已儲存。');
+    });
 };
 resetQuestion.onclick = () => {
-    questionForm.reset();
-    questionForm.elements.id.value = '';
-    setQuestionType('single_choice');
-    questionStatus.textContent = '';
+    resetQuestionEditor();
     questionForm.elements.question.focus()
 };
-document.querySelector('#applyQuestionBulk').onclick = async () => {
-    const ids = [...questionList.querySelectorAll('[data-question-select]:checked')].map(item => Number(item.dataset.questionSelect));
+applyQuestionBulk.onclick = async () => {
+    const ids = [...selectedQuestionIds];
     if (!ids.length) return alert('請先勾選題目。');
     if (bulkSubject.value && !bulkChapter.value) return alert('變更分類時請同時選擇章節。');
-    await request('/api/admin/training/questions/bulk', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({
-            ids, subject_id: Number(bulkSubject.value || 0) || null, chapter_id: Number(bulkChapter.value || 0) || null, status: bulkStatus.value
-        })
+    if (!bulkSubject.value && !bulkChapter.value && !bulkStatus.value) return alert('請選擇要變更的科目章節或狀態。');
+    const payload = {
+        ids, subject_id: Number(bulkSubject.value || 0) || null,
+        chapter_id: Number(bulkChapter.value || 0) || null, status: bulkStatus.value
+    };
+    await runQuestionAction(async () => {
+        await request('/api/admin/training/questions/bulk', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify(payload)
+        });
+        await reloadQuestions();
+        showQuestionSuccess(`已套用至 ${ids.length} 題。`);
     });
-    complianceQuestions = await request('/api/admin/compliance/questions'); renderQuestions()
 };
 function renderEssayAnswers() {
     essayAnswerList.innerHTML = essayAnswers.length ? essayAnswers.map(item => `<article class="submission-card essay-answer-card">
