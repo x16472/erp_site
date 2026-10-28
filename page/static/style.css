@@ -19,6 +19,7 @@
     --line: #cdd6e1;
     --button-bg: #0879a6;
     --button-hover: #066086;
+    --button-red-hover: #ff9090;
     --secondary-bg: #e6ecf2;
     --info-surface: #e5f3fc;
     --success-surface: #e6f5ed;
@@ -75,6 +76,7 @@
     --line: #3a4c62;
     --button-bg: #086c96;
     --button-hover: #08577a;
+    --button-red-hover: #790000;
     --secondary-bg: #2b3d52;
     --info-surface: #17394f;
     --success-surface: #173c30;
@@ -3057,6 +3059,10 @@ button {
 
 .btn:hover {
     background: var(--button-hover);
+}
+
+.btn.red:hover {
+    background: var(--button-red-hover);
 }
 
 .btn.second,
