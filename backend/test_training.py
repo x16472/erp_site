@@ -10,6 +10,14 @@ from backend import input as user_input
 """用於辨識答案專區"""
 
 class TrainingDocumentParserTests(unittest.TestCase):
+    def test_matching_question_is_not_imported_as_choice(self) -> None:
+        result = doc._parse_question_block(
+            "01 (A) 請將資料類型移至右側完成配對。\nA. int\nB. str",
+            number="01", answer_marker="A", source=Path("questions.pdf"),
+            page_number=1, chapter_code="CH01", chapter_name="資料型態",
+        )
+        self.assertIsNone(result)
+
     def test_choice_question_is_split_into_structured_fields(self) -> None:
         block = """
 01 (C) 下列哪一個函式可讀取使用者輸入？
@@ -72,6 +80,17 @@ B. 第二項
 
 
 class TrainingInputTests(unittest.TestCase):
+    def test_matching_type_cannot_be_selected_or_saved(self) -> None:
+        with self.assertRaises(user_input.InputError):
+            user_input.validate_training_start({
+                "subject_id": 1, "question_types": ["matching"],
+            })
+        with self.assertRaises(user_input.InputError):
+            user_input.validate_compliance_question({
+                "subject_id": 1, "chapter_id": 1, "question_type": "matching",
+                "question": "測試題目", "options": [], "answers": [],
+            })
+
     def test_removed_fill_blank_type_is_rejected(self) -> None:
         with self.assertRaises(user_input.InputError):
             user_input.validate_training_start({
@@ -85,7 +104,7 @@ class TrainingInputTests(unittest.TestCase):
             "question_count": 0,
             "chapter_ids": [2, 2],
             "source_ids": [],
-            "question_types": ["single_choice", "matching"],
+            "question_types": ["single_choice", "multiple_choice"],
         })
         self.assertEqual(result["question_count"], 0)
         self.assertEqual(result["chapter_ids"], [2])
@@ -130,6 +149,13 @@ class TrainingResponseTests(unittest.TestCase):
 
 
 class TrainingQuestionDeletionTests(unittest.TestCase):
+    def test_matching_question_cannot_be_published(self) -> None:
+        with mock.patch.object(data, "_fetch", return_value=[{"question_type": "matching"}]), \
+             mock.patch.object(data, "connect") as connect, \
+             self.assertRaisesRegex(ValueError, "此題型已不支援"):
+            data.set_training_question_status(7, "published")
+        connect.assert_not_called()
+
     def make_handler(self) -> app.Handler:
         handler = object.__new__(app.Handler)
         handler.path = "/api/admin/compliance/question"

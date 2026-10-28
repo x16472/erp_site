@@ -562,10 +562,10 @@ def _parse_question_block(
     explanation = explanation_match.group(1).strip()[:4000] if explanation_match else ""
     warnings: list[str] = []
 
-    is_matching = any(keyword in block for keyword in ("移至右側", "配對", "每種資料類型可能"))
-    if is_matching:
-        question_type = "matching"
-    elif len(answers) > 1:
+    # 配對題不再納入題庫，避免將無法自動判讀的配對關係誤當成選擇題。
+    if any(keyword in block for keyword in ("移至右側", "配對", "每種資料類型可能")):
+        return None
+    if len(answers) > 1:
         question_type = "multiple_choice"
     else:
         question_type = "single_choice"
@@ -576,8 +576,6 @@ def _parse_question_block(
         warnings.append("未可靠辨識正確答案")
     if not explanation:
         warnings.append("來源未提供明確解析")
-    if question_type == "matching":
-        warnings.append("配對項目需由管理員確認")
 
     subject = "ITS Python" if "python" in source.name.casefold() else _category(source.name)
     source_key = f"{source.name}:{page_number}:{number}"
@@ -602,7 +600,7 @@ def _parse_question_block(
         "question": stem[:500],
         "options": options,
         "answers": answers,
-        "structure": {"matching_pairs": []},
+        "structure": {},
         "explanation": explanation,
         "parse_confidence": round(min(confidence, 0.99), 2),
         "parse_warnings": warnings,

@@ -1393,7 +1393,7 @@ def _published_question_rows(
     document_ids: list[int] | None = None,
     question_types: list[str] | None = None,
 ) -> list[dict[str, Any]]:
-    conditions = ["q.subject_id=?", "q.domain=N'academic'", "q.status=N'published'", "q.is_active=1", "q.question_type<>N'essay'"]
+    conditions = ["q.subject_id=?", "q.domain=N'academic'", "q.status=N'published'", "q.is_active=1", "q.question_type IN (N'single_choice',N'multiple_choice',N'reading')"]
     params: list[Any] = [subject_id]
     for column, values in (
         ("q.chapter_id", chapter_ids or []),
@@ -1421,7 +1421,8 @@ def training_catalog(employee_id: str) -> dict[str, Any]:
     subjects = _fetch("""
         SELECT s.subject_id AS id,s.domain,s.subject_name AS name,
                s.mock_question_count,s.mock_duration_minutes,s.mock_pass_score,
-               COUNT(CASE WHEN q.status=N'published' AND q.is_active=1 THEN 1 END) AS question_count
+               COUNT(CASE WHEN q.status=N'published' AND q.is_active=1
+                   AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay') THEN 1 END) AS question_count
         FROM dbo.Company_TrainingSubject s
         LEFT JOIN dbo.Company_TrainingQuestion q ON q.subject_id=s.subject_id
         WHERE s.is_active=1
@@ -1431,7 +1432,8 @@ def training_catalog(employee_id: str) -> dict[str, Any]:
     """)
     chapters = _fetch("""
         SELECT c.chapter_id AS id,c.subject_id,c.chapter_code AS code,c.chapter_name AS name,
-               COUNT(CASE WHEN q.status=N'published' AND q.is_active=1 THEN 1 END) AS question_count
+               COUNT(CASE WHEN q.status=N'published' AND q.is_active=1
+                   AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay') THEN 1 END) AS question_count
         FROM dbo.Company_TrainingChapter c
         LEFT JOIN dbo.Company_TrainingQuestion q ON q.chapter_id=c.chapter_id
         WHERE c.is_active=1
@@ -1446,6 +1448,7 @@ def training_catalog(employee_id: str) -> dict[str, Any]:
         JOIN dbo.Company_TrainingSessionQuestion sq ON sq.session_id=s.session_id
         JOIN dbo.Company_TrainingQuestion q ON q.question_id=sq.question_id
         WHERE s.employee_id=? AND s.status=N'submitted' AND q.chapter_id IS NOT NULL AND q.deleted_at IS NULL
+          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')
         GROUP BY q.chapter_id
     """, (employee_id,))
     progress_by_chapter = {row["chapter_id"]: row for row in progress_rows}
@@ -1462,6 +1465,7 @@ def training_catalog(employee_id: str) -> dict[str, Any]:
         FROM dbo.Company_TrainingDocument d
         JOIN dbo.Company_TrainingQuestion q ON q.document_id=d.document_id
         WHERE d.is_active=1 AND q.status=N'published' AND q.is_active=1
+          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')
         ORDER BY d.title
     """)
     resumable = _fetch("""
@@ -1474,6 +1478,7 @@ def training_catalog(employee_id: str) -> dict[str, Any]:
         SELECT COUNT(*) AS [count] FROM dbo.Company_TrainingWrongQuestion w
         JOIN dbo.Company_TrainingQuestion q ON q.question_id=w.question_id
         WHERE w.employee_id=? AND w.removed_at IS NULL AND q.deleted_at IS NULL
+          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')
     """, (employee_id,))[0]["count"]
     return {
         "subjects": subjects,
@@ -1720,6 +1725,7 @@ def training_wrong_questions(employee_id: str) -> list[dict[str, Any]]:
         LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id
         LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id
         WHERE w.employee_id=? AND w.removed_at IS NULL AND q.deleted_at IS NULL
+          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')
         ORDER BY w.added_at DESC
     """, (employee_id,))
     return [{**_question_snapshot(row), "added_at": row["added_at"]} for row in rows]
@@ -1745,6 +1751,7 @@ def compliance_questions() -> list[dict[str, Any]]:
                q.options_json,q.passage,q.content_json,q.structure_json
         FROM dbo.Company_TrainingQuestion q
         WHERE q.status=N'published' AND q.is_active=1 AND q.domain=N'academic'
+          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading')
         ORDER BY q.question_id
     """)
     for row in rows:
@@ -2078,6 +2085,7 @@ def grade_compliance_answer(item: dict[str, Any], employee_id: str) -> dict[str,
     rows = _fetch("""
         SELECT question_id AS id,question_type,options_json,answer_json,explanation
         FROM dbo.Company_TrainingQuestion WHERE question_id=? AND is_active=1 AND status=N'published'
+          AND question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')
     """, (item["question_id"],))
     if not rows:
         raise ValueError("找不到指定題目")
@@ -2202,18 +2210,15 @@ def set_training_question_status(question_id: int, status: str) -> dict[str, Any
     if not rows:
         raise ValueError("找不到指定題目")
     row = rows[0]
-    if status == "published" and row["question_type"] not in {"single_choice", "multiple_choice", "reading", "matching", "essay"}:
+    if status == "published" and row["question_type"] not in {"single_choice", "multiple_choice", "reading", "essay"}:
         raise ValueError("此題型已不支援，請先編輯為支援的題型")
     if status == "published" and row["question_type"] != "essay":
         answers = _loads_json(row["answer_json"], [])
         options = _loads_json(row["options_json"], [])
-        structure = _loads_json(row["structure_json"], {})
         if not answers or not row["explanation"]:
             raise ValueError("發布前必須完成正確答案與解析")
         if row["question_type"] in {"single_choice", "multiple_choice", "reading"} and len(options) < 2:
             raise ValueError("發布前必須完成至少兩個選項")
-        if row["question_type"] == "matching" and not structure:
-            raise ValueError("發布前必須完成題型結構")
     try:
         with connect(read_only=False) as db:
             db.cursor().execute("""

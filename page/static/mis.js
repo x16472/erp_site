@@ -56,7 +56,6 @@ const trainingDocumentList = document.querySelector('#trainingDocumentList'),
     passageField = document.querySelector('#passageField'),
     optionsField = document.querySelector('#optionsField'),
     answersField = document.querySelector('#answersField'),
-    structureField = document.querySelector('#structureField'),
     explanationField = document.querySelector('#explanationField'),
     essayHint = document.querySelector('#essayHint'),
     essayAnswerList = document.querySelector('#essayAnswerList');
@@ -296,23 +295,22 @@ function renderTrainingDocuments() {
 }
 /* 渲染商業規範與工安檢核題目。 */
 const questionTypeNames = {
-    single_choice: '單選題', multiple_choice: '多選題', reading: '閱讀測驗',
-    matching: '配對題', essay: '申論題'
+    single_choice: '單選題', multiple_choice: '多選題', reading: '閱讀測驗', essay: '申論題'
 };
 function setQuestionType(type) {
+    type = Object.hasOwn(questionTypeNames, type) ? type : 'single_choice';
     questionForm.elements.question_type.value = type;
     questionTypeTabs.querySelectorAll('[data-question-type]').forEach(button =>
         button.classList.toggle('active', button.dataset.questionType === type));
-    const essay = type === 'essay', reading = type === 'reading', structured = type === 'matching';
+    const essay = type === 'essay', reading = type === 'reading';
     passageField.hidden = !reading;
-    optionsField.hidden = essay || structured;
+    optionsField.hidden = essay;
     answersField.hidden = essay;
-    structureField.hidden = !structured;
     explanationField.hidden = essay;
     essayHint.hidden = !essay;
     questionDomain.value = essay ? 'practical' : 'academic';
     questionForm.elements.passage.required = reading;
-    questionForm.elements.options.required = !essay && !structured;
+    questionForm.elements.options.required = !essay;
     questionForm.elements.answers.required = !essay;
     questionForm.elements.explanation.required = !essay && questionForm.elements.status.value === 'published'
 }
@@ -328,12 +326,12 @@ function renderQuestions() {
     <input type="checkbox" data-question-select="${item.id}" aria-label="選取題目 ${item.id}">
     <div>
         <b class="question-title" title="${esc(item.subject)}｜${esc(item.chapter)}｜${esc(item.question)}">${esc(item.subject || '未分類')}｜${esc(item.chapter || item.category)}｜${esc(item.question)}</b>
-        <small>${item.domain === 'practical' ? '術科' : '學科'} · ${esc(questionTypeNames[item.question_type] || item.question_type)} · ${esc(item.status)}${item.admin_locked ? ' · 管理員保護' : ''}${item.parse_warnings?.length ? ` · ${item.parse_warnings.length} 項解析警告` : ''}</small>
+        <small>${item.domain === 'practical' ? '術科' : '學科'} · ${esc(questionTypeNames[item.question_type] || '已停用題型')} · ${esc(item.status)}${item.admin_locked ? ' · 管理員保護' : ''}${item.parse_warnings?.length ? ` · ${item.parse_warnings.length} 項解析警告` : ''}</small>
     </div>
     <div class="btn-group">
         <button class="btn second" data-question-edit="${item.id}">編輯</button>
         ${item.source ? `<button class="btn second" data-question-reimport="${item.id}">以來源重新匯入</button>` : ''}
-        ${item.status !== 'published' ? `<button class="btn" data-question-status="${item.id}" data-status="published">發布</button>` : `<button class="btn second" data-question-status="${item.id}" data-status="draft">退回草稿</button>`}
+        ${item.status !== 'published' && Object.hasOwn(questionTypeNames, item.question_type) ? `<button class="btn" data-question-status="${item.id}" data-status="published">發布</button>` : `<button class="btn second" data-question-status="${item.id}" data-status="draft">退回草稿</button>`}
         ${item.status !== 'disabled' ? `<button class="btn second" data-question-disable="${item.id}">停用</button>` : ''}
         <button class="btn red" data-question-delete="${item.id}">刪除</button>
     </div>
@@ -400,9 +398,10 @@ questionList.onclick = async event => {
             questionForm.elements.question.value = item.question;
             questionForm.elements.passage.value = item.passage || '';
             questionForm.elements.options.value = item.options.join('\n');
-            questionForm.elements.answers.value = item.answers.map(value => value + 1).join(',');
-            if (item.question_type === 'matching') questionForm.elements.answers.value = item.answers.join('\n');
-            questionForm.elements.structure.value = JSON.stringify(item.structure || {}, null, 2);
+            const supported = Object.hasOwn(questionTypeNames, item.question_type);
+            questionForm.elements.answers.value = supported ? item.answers.map(value => value + 1).join(',') : '';
+            questionStatus.className = supported ? '' : 'error-note';
+            questionStatus.textContent = supported ? '' : '原題型已停用，請重新設定題型、選項與正確答案後儲存。';
             questionForm.elements.explanation.value = item.explanation;
             questionForm.elements.question.focus()
         }
@@ -415,7 +414,7 @@ questionList.onclick = async event => {
         });
         complianceQuestions = await request('/api/admin/compliance/questions'); renderQuestions()
     }
-    if (reimport && confirm('此操作會解除管理員保護，並重新解析來源。\n\n將覆寫：題幹、選項或配對資料、正解、解析、分類、來源位置與解析警告。\n\n確定繼續？')) {
+    if (reimport && confirm('此操作會解除管理員保護，並重新解析來源。\n\n將覆寫：題幹、選項、正解、解析、分類、來源位置與解析警告。\n\n確定繼續？')) {
         await request('/api/admin/training/question/reimport', {
             method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
             body: JSON.stringify({ question_id: Number(reimport.dataset.questionReimport) })
@@ -435,17 +434,14 @@ questionForm.onsubmit = async event => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(questionForm));
     const essay = values.question_type === 'essay';
-    const structured = values.question_type === 'matching';
-    let structure = {};
-    try { structure = values.structure ? JSON.parse(values.structure) : {} } catch (_) { questionStatus.className = 'error-note'; questionStatus.textContent = '題型結構必須是有效 JSON。'; return }
     const payload = {
         ...values, id: Number(values.id || 0),
         document_id: Number(values.document_id || 0) || null,
         subject_id: Number(values.subject_id), chapter_id: Number(values.chapter_id),
         chapter_name: questionChapter.selectedOptions[0]?.textContent || '',
-        options: essay || structured ? [] : values.options.split(/\r?\n/).map(value => value.trim()).filter(Boolean),
-        answers: essay ? [] : structured ? values.answers.split(/\r?\n/).map(value => value.trim()).filter(Boolean) : values.answers.split(/[,，、\s]+/).filter(Boolean).map(value => Number(value) - 1),
-        content_blocks: [{ type: 'text', content: values.question }], structure,
+        options: essay ? [] : values.options.split(/\r?\n/).map(value => value.trim()).filter(Boolean),
+        answers: essay ? [] : values.answers.split(/[,，、\s]+/).filter(Boolean).map(value => Number(value) - 1),
+        content_blocks: [{ type: 'text', content: values.question }],
         passage: values.passage || '',
         explanation: essay ? '' : values.explanation
     };

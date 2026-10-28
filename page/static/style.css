@@ -2819,13 +2819,6 @@ footer a {
     margin-top: 4px;
 }
 
-.match-row {
-    display: grid;
-    grid-template-columns: minmax(160px, 1fr) minmax(180px, 1fr);
-    gap: 12px;
-    margin: 10px 0;
-}
-
 .session-actions {
     margin-top: 22px;
 }
@@ -3820,10 +3813,6 @@ textarea::placeholder {
 
     .session-actions .btn {
         flex: 1 1 calc(50% - 9px);
-    }
-
-    .match-row {
-        grid-template-columns: 1fr;
     }
 
     .staff-directory-toolbar,

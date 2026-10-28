@@ -21,7 +21,7 @@ ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
 ALLOWED_ACCESS_MODES = {"CLOCK_IN", "ACCESS_ONLY"}
 ALLOWED_GENDERS = {"男", "女", "其他"}
 ALLOWED_OPERATION_REVIEW_STATUSES = {"要求補件", "審核通過", "已退回"}
-ALLOWED_QUESTION_TYPES = {"single_choice", "multiple_choice", "reading", "matching", "essay"}
+ALLOWED_QUESTION_TYPES = {"single_choice", "multiple_choice", "reading", "essay"}
 ALLOWED_QUESTION_DOMAINS = {"academic", "practical"}
 ALLOWED_QUESTION_STATUSES = {"draft", "published", "disabled"}
 ALLOWED_TRAINING_MODES = {"practice", "mock"}
@@ -207,24 +207,6 @@ def _validate_reading(passage: str, status: str) -> None:
     _require_published(status, bool(passage), "閱讀測驗必須提供閱讀文章")
 
 
-def _validate_structure(
-    question_type: str,
-    structure: dict,
-    answers: list,
-    status: str,
-) -> None:
-    if question_type == "matching":
-        key = "left"
-    else:
-        return
-
-    _require_published(
-        status,
-        bool(structure.get(key)) and bool(answers),
-        "發布前必須完成題型結構與正確答案",
-    )
-
-
 def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
     # --- 基本 ID 與必要欄位 ---
     try:
@@ -304,8 +286,6 @@ def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
     structure = payload.get("structure") or {}
     if not isinstance(structure, dict):
         raise InputError("題型結構不正確")
-
-    _validate_structure(question_type, structure, answers, status)
 
     return {
         "id": question_id,
