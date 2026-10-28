@@ -3,6 +3,11 @@ const dz = $('drop-zone'), fi = $('fi');
 const showErr = msg => { $('err').textContent = msg; $('err').hidden = !msg; }
 
 dz.onclick = () => fi.click();
+dz.onkeydown = event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    fi.click();
+};
 dz.ondragover = e => e.preventDefault();
 dz.ondrop = e => { e.preventDefault(); load(e.dataTransfer.files[0]); };
 fi.onchange = e => {
@@ -14,6 +19,7 @@ async function load(f) {
     $('result').hidden = true;
     if (!f || f.type !== 'image/png') return showErr('僅支援 PNG 格式');
     $('img-prev').src = URL.createObjectURL(f);
+    $('img-prev').hidden = false;
     const buf = await f.arrayBuffer(), v = new DataView(buf), dec = new TextDecoder('utf-8');
     if (v.getUint32(0) !== 0x89504E47) return showErr('無效的 PNG');
     // 逐一走訪 PNG chunk，找出 tEXt 內以 "parameters" 開頭的內容

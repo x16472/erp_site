@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>企業宣導中心｜銀盾共同體營運中心</title>
+    <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
     <link rel="icon" href="./static/ico/Sinem-File-Movies.ico" type="image/x-icon">
 </head>
@@ -38,6 +39,7 @@
                     <button data-panel="tiktok">Tiktok</button>
                 </nav>
                 <span class="api-state ok" id="playerState">播放器就緒</span>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
             </header>
             <div class="portal-content">
                 <!-- 第一YouTube -->
@@ -61,7 +63,7 @@
                         </form>
                         <p class="hint" id="youtubeStatus" aria-live="polite">正在確認測試影片並取得標題…</p>
                         <div class="youtube-player">
-                            <iframe id="youtubePlayer" frameborder="0" allow="accelerometer;
+                            <iframe id="youtubePlayer" allow="accelerometer;
                             autoplay; clipboard-write; encrypted-media; gyroscope;
                             picture-in-picture;
                             web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -268,10 +270,8 @@
             </div>
         </main>
     </div>
+    <script type="module" src="./static/panel.js"></script>
+    <script type="module" src="./static/game.js"></script>
+    <script type="module" src="./static/youtube_thumbnail.js"></script>
 </body>
-<footer></footer>
-<script type="module" src="./static/panel.js"></script>
-<script type="module" src="./static/game.js"></script>
-<script type="module" src="./static/youtube_thumbnail.js"></script>
-
 </html>

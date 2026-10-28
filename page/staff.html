@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>員工管理｜銀盾共同體營運中心</title>
+    <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
     <link rel="icon" href="./static/ico/calc_calculator_10824.ico" type="image/x-icon">
 </head>
@@ -36,6 +37,7 @@
                     <button data-panel="attendancePanel">打卡紀錄</button>
                 </nav>
                 <span class="api-state" id="apiState">檢查登入狀態</span>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
             </header>
             <section class="login-shell" id="loginShell">
                 <form class="login-card" id="loginForm">
@@ -49,7 +51,7 @@
                         <span>密碼</span>
                         <input name="password" type="password" autocomplete="current-password" required>
                     </label>
-                    <button class="btn" type="submit" style="width:100%;margin-top:20px">登入</button>
+                    <button class="btn login-submit" type="submit">登入</button>
                     <p id="loginStatus" aria-live="polite"></p>
                 </form>
             </section>
@@ -62,7 +64,7 @@
                     <button class="btn second" id="logoutButton">登出</button>
                 </div>
                 <section class="admin-panel active" id="staffPanel">
-                    <div class="staff-manager-workspace">
+                    <div class="staff-manager-workspace workspace-layout">
                         <aside class="organization-pane" aria-label="公司組織架構">
                             <div class="organization-head">
                                 <div>
@@ -179,7 +181,7 @@
                     </div>
                 </section>
                 <section class="admin-panel" id="departmentPanel">
-                    <div class="portal-grid staff-maintenance">
+                    <div class="portal-grid workspace-layout staff-maintenance">
                         <form class="portal-card narrow" id="departmentForm">
                             <div class="card-head">
                                 <div><span class="eyebrow">DEPARTMENT</span>
@@ -260,8 +262,6 @@
             </section>
         </main>
     </div>
+    <script type="module" src="./static/staff.js"></script>
 </body>
-<footer></footer>
-<script type="module" src="./static/staff.js"></script>
-
 </html>

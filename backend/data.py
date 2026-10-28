@@ -10,7 +10,7 @@ import sys
 import threading
 import uuid
 from contextlib import contextmanager
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from time import monotonic
@@ -1186,7 +1186,7 @@ def attendance_records(day: str = "", employee_id: str = "") -> list[dict[str, A
 
 
 def add_operation(item: dict[str, Any], employee_id: str) -> dict[str, Any]:
-    submission_id = f"OPS-{datetime.now(tz=timezone.utc):%Y%m%d%H%M%S}-{uuid.uuid4().hex[:6].upper()}"
+    submission_id = f"OPS-{datetime.now(tz=UTC):%Y%m%d%H%M%S}-{uuid.uuid4().hex[:6].upper()}"
     try:
         with connect(read_only=False, autocommit=False) as db:
             cursor = db.cursor()
@@ -1575,8 +1575,8 @@ def training_session(session_id: str, employee_id: str) -> dict[str, Any]:
     if session["status"] == "in_progress" and session.get("expires_at"):
         expires = datetime.fromisoformat(session["expires_at"])
         if expires.tzinfo is None:
-            expires = expires.replace(tzinfo=timezone.utc)
-        if expires <= datetime.now(timezone.utc):
+            expires = expires.replace(tzinfo=UTC)
+        if expires <= datetime.now(UTC):
             return submit_training_session(session_id, employee_id)
     rows = _fetch("""
         SELECT question_order,snapshot_json,response_json,is_flagged,is_correct
@@ -1632,8 +1632,8 @@ def save_training_answer(item: dict[str, Any], employee_id: str) -> dict[str, An
     if row.get("expires_at"):
         expires = datetime.fromisoformat(row["expires_at"])
         if expires.tzinfo is None:
-            expires = expires.replace(tzinfo=timezone.utc)
-        if expires <= datetime.now(timezone.utc):
+            expires = expires.replace(tzinfo=UTC)
+        if expires <= datetime.now(UTC):
             submit_training_session(item["session_id"], employee_id)
             raise ValueError("模擬考時間已到，系統已自動交卷")
     snapshot = _loads_json(row["snapshot_json"], {})
@@ -1703,7 +1703,7 @@ def submit_training_session(session_id: str, employee_id: str) -> dict[str, Any]
                     WHERE session_id=? AND employee_id=?
                 """, score, session_id, employee_id)
                 db.commit()
-            session.update({"status": "submitted", "score": score, "submitted_at": datetime.now(timezone.utc).isoformat()})
+            session.update({"status": "submitted", "score": score, "submitted_at": datetime.now(UTC).isoformat()})
         except mssql_python.Error as exc:
             raise DatabaseUnavailable("交卷失敗。") from exc
     return _public_session_payload(session, rows, include_review=True)

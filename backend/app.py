@@ -23,16 +23,15 @@ from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import Request, urlopen
 
 try:
-    from . import data
-    from . import media
+    from . import data, media
     from . import doc as operations_manuals
     from . import input as user_input
 except ImportError:  # 支援直接執行 backend/app.py
     import doc as operations_manuals
     import input as user_input
+    import media
 
     import data
-    import media
 
 BACKEND_ROOT = Path(__file__).parent.resolve()
 PROJECT_ROOT = BACKEND_ROOT.parent

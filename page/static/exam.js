@@ -39,7 +39,7 @@ function renderCatalog() {
     subjectGrid.innerHTML = subjects.length ? subjects.map(subject => {
         const chapters = catalog.chapters.filter(item => item.subject_id === subject.id);
         return `<article class="subject-card"><span class="eyebrow">ACADEMIC</span><h3>${esc(subject.name)}</h3><p>${subject.question_count} 題已發布 · ${subject.mock_question_count} 題模擬考</p><div class="subject-progress">${chapters.map(chapter => `<div><span>${esc(chapter.name)}
-    <small>${chapter.attempted_count}/${chapter.question_count} 題</small></span><div class="progress-track"><i style="width:${chapter.progress_percent}%"></i></div></div>`).join('') || '<small>尚未建立章節</small>'}</div><button class="btn" data-subject="${subject.id}">選擇科目</button></article>`
+    <small>${chapter.attempted_count}/${chapter.question_count} 題</small></span><progress class="progress-track" max="100" value="${Number(chapter.progress_percent) || 0}" aria-label="${esc(chapter.name)}練習進度"></progress></div>`).join('') || '<small>尚未建立章節</small>'}</div><button class="btn" data-subject="${subject.id}">選擇科目</button></article>`
     }).join('') : '<div class="empty">目前沒有已啟用的學科科目。</div>';
 
 }
@@ -75,7 +75,7 @@ function renderQuestion() {
     if (!question) return;
     $('#sessionMode').textContent = activeSession.mode === 'mock' ? '模擬考' : '分類練習';
     $('#sessionTitle').textContent = `${question.subject}｜${question.chapter}`;
-    sessionProgress.style.width = `${(questionIndex + 1) / activeSession.questions.length * 100}%`;
+    sessionProgress.value = (questionIndex + 1) / activeSession.questions.length * 100;
     questionContent.innerHTML = `<p class="hint">第 ${questionIndex + 1} 題，共 ${activeSession.questions.length} 題 · ${esc(question.source || '人工建立')} ${esc(question.source_locator || '')}</p>${question.passage ? `<article class="reading-passage">${esc(question.passage).replace(/\n/g, '<br>')}</article>` : ''}${renderBlocks(question.content_blocks)}`;
     renderAnswerArea(question); answerFeedback.textContent = '';
     $('#previousQuestion').disabled = questionIndex === 0;

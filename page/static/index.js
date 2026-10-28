@@ -13,7 +13,23 @@ const menuButton = document.querySelector('#menuButton'),
     staffGrid = document.querySelector('#staffGrid'),
     departmentFilter = document.querySelector('#departmentFilter'),
     teamCount = document.querySelector('#teamCount');
-menuButton.onclick = () => publicNav.classList.toggle('open');
+function closeMenu() {
+    publicNav.classList.remove('open');
+    menuButton.setAttribute('aria-expanded', 'false');
+}
+menuButton.onclick = () => {
+    const open = publicNav.classList.toggle('open');
+    menuButton.setAttribute('aria-expanded', String(open));
+};
+publicNav.addEventListener('click', event => {
+    if (event.target.closest('a')) closeMenu();
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && publicNav.classList.contains('open')) {
+        closeMenu();
+        menuButton.focus();
+    }
+});
 apiData('/api/public').then(data => {
     const settings = data.settings;
     document.body.dataset.theme = settings.theme;

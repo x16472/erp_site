@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>題庫練習｜銀盾共同體營運中心</title>
+    <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
     <link rel="icon" href="./static/ico/Github-Octicons-Cache-16.ico" type="image/x-icon">
 </head>
@@ -35,6 +36,7 @@
                     <button data-domain="practical">術科申論</button>
                 </nav>
                 <span class="api-state" id="apiState">載入題庫資料</span>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
             </header>
             <div class="portal-content">
                 <section id="academicPanel">
@@ -131,8 +133,8 @@
                                 <strong id="countdown">--:--</strong>
                             </div>
                         </header>
-                        <div class="progress"><span id="sessionProgress"></span></div>
-                        <div class="session-layout">
+                        <progress class="progress" id="sessionProgress" value="0" max="100" aria-label="題組作答進度"></progress>
+                        <div class="session-layout workspace-layout">
                             <aside class="question-navigator" id="questionNavigator" aria-label="題號導覽"></aside>
                             <article class="portal-card question-stage">
                                 <div id="questionContent"></div>
@@ -176,8 +178,6 @@
             </div>
         </main>
     </div>
+    <script type="module" src="./static/exam.js"></script>
 </body>
-<footer></footer>
-<script type="module" src="./static/exam.js"></script>
-
 </html>

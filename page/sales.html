@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>營運資料蒐集｜銀盾共同體營運中心</title>
+    <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
     <link rel="icon" href="./static/ico/calc_calculator_10824.ico" type="image/x-icon">
 </head>
@@ -32,10 +33,11 @@
                 <span class="top-kicker">Operation&nbsp;&amp;&nbsp;Collection</span>
                 <h1>營運日報</h1>
                 <span class="api-state" id="apiState">準備填報</span>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
             </header>
             <div class="portal-content">
                 <section class="admin-panel active">
-                    <div class="portal-grid">
+                    <div class="portal-grid workspace-layout">
                         <section class="portal-card wide">
                             <div class="card-head">
                                 <h2>新增營運日報</h2>
@@ -120,8 +122,6 @@
         </main>
     </div>
     <div class="toast" id="toast" role="status"></div>
+    <script type="module" src="./static/sales.js"></script>
 </body>
-<footer></footer>
-<script type="module" src="./static/sales.js"></script>
-
 </html>

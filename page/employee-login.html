@@ -5,40 +5,48 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>員工相關入口｜營運中心</title>
+    <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
     <link rel="icon" href="./static/ico/Graphicloads-100-Flat-2-Pen.ico" type="image/x-icon">
 </head>
 
 <body class="employee-access-page">
-    <main class="employee-access-shell">
-        <section class="employee-access-brand">
+    <div class="portal-shell">
+        <aside class="portal-sidebar employee-access-brand">
             <img src="./static/appicon.png" alt="銀盾共同體標誌">
             <span class="top-kicker">Company&nbsp;Operations</span>
             <h1>員工相關入口</h1>
             <p>匯聚你工作所需一切，通往事業與福利的入口。</p>
             <a class="btn" href="index.html">返回官方網站</a>
-        </section>
-        <section class="employee-access-card">
-            <div class="live-clock access-time">
-                <small>目前時間</small>
-                <strong id="accessClock">--:--:--</strong>
+        </aside>
+        <main class="portal-main">
+            <header class="portal-topbar">
+                <span class="top-kicker">Employee Access</span>
+                <h1>員工登入</h1>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
+            </header>
+            <div class="portal-content employee-access-content">
+                <section class="portal-card employee-access-card">
+                    <div class="live-clock access-time">
+                        <small>目前時間</small>
+                        <strong id="accessClock">--:--:--</strong>
+                    </div>
+                    <form id="accessForm">
+                        <label class="field">
+                            <span>員工編號</span>
+                            <input name="employee_id" autocomplete="username" maxlength="20" pattern="[A-Za-z0-9_-]+"
+                                placeholder="例如 K001" required autofocus>
+                        </label>
+                        <div class="clock-actions">
+                            <button class="btn" name="mode" value="CLOCK_IN" type="submit">上班打卡並進入</button>
+                            <button class="btn second" name="mode" value="ACCESS_ONLY" type="submit">不打卡進入系統</button>
+                        </div>
+                        <p id="accessStatus" aria-live="polite">若本日已打卡，可直接進入；系統會提示最近一次打卡時間。</p>
+                    </form>
+                </section>
             </div>
-            <form id="accessForm">
-                <label class="field">
-                    <span>員工編號</span>
-                    <input name="employee_id" autocomplete="username" maxlength="20" pattern="[A-Za-z0-9_-]+"
-                        placeholder="例如 K001" required autofocus>
-                </label>
-                <div class="clock-actions">
-                    <button class="btn" name="mode" value="CLOCK_IN" type="submit">上班打卡並進入</button>
-                    <button class="btn second" name="mode" value="ACCESS_ONLY" type="submit">不打卡進入系統</button>
-                </div>
-                <p id="accessStatus" aria-live="polite">若本日已打卡，可直接進入；系統會提示最近一次打卡時間。</p>
-            </form>
-        </section>
-    </main>
+        </main>
+    </div>
+    <script type="module" src="./static/employee-login.js"></script>
 </body>
-<footer></footer>
-<script type="module" src="./static/employee-login.js"></script>
-
 </html>

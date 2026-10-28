@@ -6,194 +6,200 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>企業入口網站&nbsp;Silver&nbsp;Shield</title>
     <meta name="description" content="銀盾共同體以家族為核心，以誠信與慷慨連結商務、製造、服務與資源產業。">
+    <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
     <link rel="icon" href="./static/ico/Business-Company-building.ico" type="image/x-icon">
 </head>
 
 <body class="public-body" data-theme="shield">
-    <header class="public-header">
-        <a class="public-logo" href="/">
-            <img src="static/appicon.png" alt="銀盾共同體標誌">
-            <span>
-                <b>SILVER&nbsp;SHIELD</b>
-            </span>
-        </a>
-        <button class="mobile-menu" id="menuButton" aria-label="開啟選單">☰</button>
-        <nav class="public-nav" id="publicNav">
-            <a href="#about">企業宗旨</a>
-            <a href="#industries">產業據點</a>
-            <a href="#team">專業團隊</a>
-            <a href="#visit">商務合作</a>
-            <a href="home.html">員工入口</a>
-            <a href="#visit">預約服務</a>
-        </nav>
-    </header>
-    <main>
-        <section class="public-hero">
-            <div class="hero-copy-public">
-                <span class="eyebrow">企業形象網站</span>
-                <h1 id="heroTitle">銀盾共同體</h1>
-                <p id="heroSubtitle">以家族為核心、誠信與慷慨為本，整合行政、商務、生產與資源服務，讓成員共享成果並拓展事業。</p>
-                <div class="actions">
-                    <a class="btn red" href="#visit">商務合作</a>
-                    <a class="btn second" href="#industries">探索旗下產業</a>
-                </div>
-
-                <p class="announcement" id="announcement"></p>
-            </div>
-            <div class="hero-stage">
-                <nav class="hero-card">
-                    <div class="public-nav">
-                        <h2>LIVE&nbsp;AND&nbsp;LET&nbsp;LIVE.</h2>
-                        <small>誠信經營&nbsp;利益共享&nbsp;永續共生</small>
-                    </div>
+    <div class="portal-shell public-shell">
+        <main class="portal-main public-main">
+            <header class="portal-topbar public-header">
+                <a class="public-logo" href="/">
+                    <img src="static/appicon.png" alt="銀盾共同體標誌">
+                    <span>
+                        <b>SILVER&nbsp;SHIELD</b>
+                    </span>
+                </a>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
+                <button class="mobile-menu" id="menuButton" aria-label="開啟選單" aria-controls="publicNav" aria-expanded="false">☰</button>
+                <nav class="public-nav" id="publicNav">
+                    <a href="#about">企業宗旨</a>
+                    <a href="#industries">產業據點</a>
+                    <a href="#team">專業團隊</a>
+                    <a href="#visit">商務合作</a>
+                    <a href="home.html">員工入口</a>
+                    <a href="#visit">預約服務</a>
                 </nav>
-                <div class="floating-note">
-                    <small>共生不是口號，而是長期承諾&nbsp;專業團隊支撐每一項事業</small>
-                </div>
+            </header>
+            <div class="portal-content public-content">
+                <section class="public-hero">
+                    <div class="hero-copy-public">
+                        <span class="eyebrow">企業形象網站</span>
+                        <h1 id="heroTitle">銀盾共同體</h1>
+                        <p id="heroSubtitle">以家族為核心、誠信與慷慨為本，整合行政、商務、生產與資源服務，讓成員共享成果並拓展事業。</p>
+                        <div class="actions">
+                            <a class="btn red" href="#visit">商務合作</a>
+                            <a class="btn second" href="#industries">探索旗下產業</a>
+                        </div>
+
+                        <p class="announcement" id="announcement"></p>
+                    </div>
+                    <div class="hero-stage">
+                        <nav class="hero-card">
+                            <div class="public-nav">
+                                <h2>LIVE&nbsp;AND&nbsp;LET&nbsp;LIVE.</h2>
+                                <small>誠信經營&nbsp;利益共享&nbsp;永續共生</small>
+                            </div>
+                        </nav>
+                        <div class="floating-note">
+                            <small>共生不是口號，而是長期承諾&nbsp;專業團隊支撐每一項事業</small>
+                        </div>
+                    </div>
+                </section>
+                <section id="about">
+                    <span class="eyebrow">01&nbsp;·&nbsp;ABOUT</span>
+                    <div class="section-number">
+                        <div class="public-stats" id="campus">
+                            <div class="public-stat">專業成員</div>
+                            <div class="public-stat">營運部門</div>
+                            <div class="public-stat">營運流程</div>
+                        </div>
+                    </div>
+                    <div class="section-intro">
+                        <div>
+                            <span class="eyebrow">OUR&nbsp;PHILOSOPHY</span>
+                            <h2>誠信連結每一份事業</h2>
+                            <h4>我們重視成員間的連結、承諾與公平分配，鼓勵每一位成員發展專長、建立事業，並在共同體的資源與信任中穩健成長。</h4>
+                        </div>
+                    </div>
+                    <div class="philosophy-grid">
+                        <article class="philosophy-card">
+                            <span>01</span>
+                            <h3>多樣化產業營運</h3>
+                            <p>涵蓋行政管理、商業零售、工藝製造與資源開發，建立跨產業協作網絡。</p>
+                        </article>
+                        <article class="philosophy-card">
+                            <span>02</span>
+                            <h3>成員獨立與權益共享</h3>
+                            <p>鼓勵成員自創事業並注重利益分配。</p>
+                        </article>
+                        <article class="philosophy-card">
+                            <span>03</span>
+                            <h3>誠信經營與永續發展</h3>
+                            <p>以透明決策、可靠交付與長期責任建立信任，讓商業成果與共同體價值同步成長。</p>
+                        </article>
+                    </div>
+                </section>
+                <section class="day-section" id="industries">
+                    <div>
+                        <div class="section-intro">
+                            <span class="eyebrow">OPERATIONS&amp;INDUSTRIES</span>
+                            <h2>四大產業據點，共構完整營運鏈</h2>
+                            <p>從共同體治理、顧客服務、生產製造到原料取得，各據點彼此支援並共享專業資源。</p>
+                        </div>
+                        <div class="day-grid">
+                            <article class="day-item sector-card">
+                                <img src="./static/png/company/01_羅瓦德莊園.png">
+                                <a href="https://home.gamer.com.tw/artwork.php?sn=2902203">
+                                    <h3>羅瓦德莊園</h3>
+                                </a>
+                                <p>共同體根據地、住宅與管理總部，承擔行政決策、成員服務及跨事業資源協調。</p>
+                                <time>01&nbsp;·&nbsp;Roawdon Manor</time>
+                            </article>
+
+                            <article class="day-item sector-card">
+                                <img src="./static/png/company/02_可可藝術沙龍.png">
+                                <a href="https://home.gamer.com.tw/artwork.php?sn=3100618">
+                                    <h3>可可藝術沙龍</h3>
+                                </a>
+                                <p>對外營運的藝術、餐飲與高端甜品事業，提供精緻商品及完整顧客體驗。</p>
+                                <time>02&nbsp;·&nbsp;CocoaArtSalon</time>
+                            </article>
+                            <article class="day-item sector-card">
+                                <img src="./static/png/company/03_聯合工匠街.png">
+                                <a href="https://home.gamer.com.tw/artwork.php?sn=3096117">
+                                    <h3>聯合工匠街</h3>
+                                </a>
+                                <p>整合鍛造、裁縫、抄錄與客製生產，以製程標準和工藝能力支援多元訂單。</p>
+                                <time>03&nbsp;·&nbsp;CRAFT&nbsp;&amp;&nbsp;MANUFACTURING</time>
+                            </article>
+                            <article class="day-item sector-card">
+                                <img src="./static/png/company/04_地下堅石礦場.png">
+                                <a href="https://home.gamer.com.tw/artwork.php?sn=3108124">
+                                    <h3>地下堅石礦場</h3>
+                                </a>
+                                <p>負責原物料採集、地下探勘與重機具營運，以工安制度支撐穩定的資源供應。</p>
+                                <time>04&nbsp;·&nbsp;RESOURCES&nbsp;&amp;&nbsp;INFRASTRUCTURE</time>
+                            </article>
+
+                        </div>
+                    </div>
+                </section>
+                <section id="team">
+                    <div class="section-intro">
+                        <span class="eyebrow">MEET&nbsp;OUR&nbsp;TEAM</span>
+                        <h2>專業後勤團隊，成為客戶最強力的支柱</h2>
+                        <p>各領域的夥伴將會以專業能力支援客戶。</p>
+                    </div>
+                    <div class="team-toolbar">
+                        <label class="field">
+                            <span>依部門查看</span>
+                            <select id="departmentFilter">
+                                <option value="">全部部門</option>
+                            </select>
+                        </label>
+                        <span id="teamCount">正在整理團隊資料</span>
+                    </div>
+                    <div class="staff-grid" id="staffGrid">
+                        <div class="empty">正在載入專業團隊…</div>
+                    </div>
+                </section>
+                <section id="visit">
+                    <div class="cta-banner">
+                        <div>
+                            <span class="eyebrow">COME AND SEE</span>
+                            <h2>讓專業團隊成為您的可靠後盾</h2>
+                            <h4>北門─羅瓦德運河大橋區</h4>
+                            <p>歡迎商業夥伴提出採購、製造、場域、技術或長期合作需求，由營運團隊安排專責窗口。</p>
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3618.040033650518!2d121.16941751164306!3d24.930706077791232!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34682361c065cbe9%3A0xc24080034849b3e3!2z5Yue5YuV6YOo5Yue5YuV5Yqb55m85bGV572y5qGD56u56IuX5YiG572y5bm8542F6IG35qWt6KiT57e05aC0!5e0!3m2!1szh-TW!2stw!4v1786915477769!5m2!1szh-TW!2stw"
+                                width="1250" height="350" class="location-map" allowfullscreen="" loading="lazy"
+                                referrerpolicy="strict-origin-when-cross-origin">
+                            </iframe>
+
+                        </div>
+
+                    </div>
+                </section>
             </div>
-        </section>
-        <section id="about">
-            <span class="eyebrow">01&nbsp;·&nbsp;ABOUT</span>
-            <div class="section-number">
-                <div class="public-stats" id="campus">
-                    <div class="public-stat">專業成員</div>
-                    <div class="public-stat">營運部門</div>
-                    <div class="public-stat">營運流程</div>
-                </div>
-            </div>
-            <div class="section-intro">
+            <footer class="public-footer">
                 <div>
-                    <span class="eyebrow">OUR&nbsp;PHILOSOPHY</span>
-                    <h2>誠信連結每一份事業</h2>
-                    <h4>我們重視成員間的連結、承諾與公平分配，鼓勵每一位成員發展專長、建立事業，並在共同體的資源與信任中穩健成長。</h4>
+                    <h3>銀盾共同體</h3>
+                    <p>以誠信、慷慨與專業連結每一份事業。</p>
+                    <p>北門｜羅瓦德運河大橋區</p>
                 </div>
-            </div>
-            <div class="philosophy-grid">
-                <article class="philosophy-card">
-                    <span>01</span>
-                    <h3>多樣化產業營運</h3>
-                    <p>涵蓋行政管理、商業零售、工藝製造與資源開發，建立跨產業協作網絡。</p>
-                </article>
-                <article class="philosophy-card">
-                    <span>02</span>
-                    <h3>成員獨立與權益共享</h3>
-                    <p>鼓勵成員自創事業並注重利益分配。</p>
-                </article>
-                <article class="philosophy-card">
-                    <span>03</span>
-                    <h3>誠信經營與永續發展</h3>
-                    <p>以透明決策、可靠交付與長期責任建立信任，讓商業成果與共同體價值同步成長。</p>
-                </article>
-            </div>
-        </section>
-        <section class="day-section" id="industries">
-            <div>
-                <div class="section-intro">
-                    <span class="eyebrow">OPERATIONS&amp;INDUSTRIES</span>
-                    <h2>四大產業據點，共構完整營運鏈</h2>
-                    <p>從共同體治理、顧客服務、生產製造到原料取得，各據點彼此支援並共享專業資源。</p>
-                </div>
-                <div class="day-grid">
-                    <article class="day-item sector-card">
-                        <img src="./static/png/company/01_羅瓦德莊園.png">
-                        <a href="https://home.gamer.com.tw/artwork.php?sn=2902203">
-                            <h3>羅瓦德莊園</h3>
-                        </a>
-                        <p>共同體根據地、住宅與管理總部，承擔行政決策、成員服務及跨事業資源協調。</p>
-                        <time>01&nbsp;·&nbsp;Roawdon Manor</time>
-                    </article>
-
-                    <article class="day-item sector-card">
-                        <img src="./static/png/company/02_可可藝術沙龍.png">
-                        <a href="https://home.gamer.com.tw/artwork.php?sn=3100618">
-                            <h3>可可藝術沙龍</h3>
-                        </a>
-                        <p>對外營運的藝術、餐飲與高端甜品事業，提供精緻商品及完整顧客體驗。</p>
-                        <time>02&nbsp;·&nbsp;CocoaArtSalon</time>
-                    </article>
-                    <article class="day-item sector-card">
-                        <img src="./static/png/company/03_聯合工匠街.png">
-                        <a href="https://home.gamer.com.tw/artwork.php?sn=3096117">
-                            <h3>聯合工匠街</h3>
-                        </a>
-                        <p>整合鍛造、裁縫、抄錄與客製生產，以製程標準和工藝能力支援多元訂單。</p>
-                        <time>03&nbsp;·&nbsp;CRAFT&nbsp;&amp;&nbsp;MANUFACTURING</time>
-                    </article>
-                    <article class="day-item sector-card">
-                        <img src="./static/png/company/04_地下堅石礦場.png">
-                        <a href="https://home.gamer.com.tw/artwork.php?sn=3108124">
-                            <h3>地下堅石礦場</h3>
-                        </a>
-                        <p>負責原物料採集、地下探勘與重機具營運，以工安制度支撐穩定的資源供應。</p>
-                        <time>04&nbsp;·&nbsp;RESOURCES&nbsp;&amp;&nbsp;INFRASTRUCTURE</time>
-                    </article>
-
-                </div>
-            </div>
-        </section>
-        <section id="team">
-            <div class="section-intro">
-                <span class="eyebrow">MEET&nbsp;OUR&nbsp;TEAM</span>
-                <h2>專業後勤團隊，成為客戶最強力的支柱</h2>
-                <p>各領域的夥伴將會以專業能力支援客戶。</p>
-            </div>
-            <div class="team-toolbar">
-                <label class="field">
-                    <span>依部門查看</span>
-                    <select id="departmentFilter">
-                        <option value="">全部部門</option>
-                    </select>
-                </label>
-                <span id="teamCount">正在整理團隊資料</span>
-            </div>
-            <div class="staff-grid" id="staffGrid">
-                <div class="empty">正在載入專業團隊…</div>
-            </div>
-        </section>
-        <section id="visit">
-            <div class="cta-banner">
                 <div>
-                    <span class="eyebrow">COME AND SEE</span>
-                    <h2>讓專業團隊成為您的可靠後盾</h2>
-                    <h4>北門─羅瓦德運河大橋區</h4>
-                    <p>歡迎商業夥伴提出採購、製造、場域、技術或長期合作需求，由營運團隊安排專責窗口。</p>
-                    <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3618.040033650518!2d121.16941751164306!3d24.930706077791232!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34682361c065cbe9%3A0xc24080034849b3e3!2z5Yue5YuV6YOo5Yue5YuV5Yqb55m85bGV572y5qGD56u56IuX5YiG572y5bm8542F6IG35qWt6KiT57e05aC0!5e0!3m2!1szh-TW!2stw!4v1786915477769!5m2!1szh-TW!2stw"
-                        width="1250" height="350" style="border:0;" allowfullscreen="" loading="lazy"
-                        referrerpolicy="strict-origin-when-cross-origin">
-                    </iframe>
-
+                    <h3>快速連結</h3>
+                    <a href="#about">企業宗旨</a>
+                    <a href="#industries">旗下產業</a>
+                    <a href="#visit">商務合作</a>
+                    <a href="#industries">查看產業據點</a>
                 </div>
+                <div>
+                    <h3>內部系統</h3>
+                    <a href="home.html">員工入口</a>
+                    <a href="mis.html">後台管理區</a>
+                </div>
+                <div>
+                    <h3>聯繫我們</h3>
+                    <a href="mailto:dog0830430@gmail.com">dog0830430@gmail.com</a>
+                    <a href="tel:+88673450306">07-345-0306</a>
+                </div>
+            </footer>
+        </main>
+    </div>
 
-            </div>
-        </section>
-    </main>
-    <footer>
-        <div>
-            <h3>銀盾共同體</h3>
-            <p>以誠信、慷慨與專業連結每一份事業。</p>
-            <p>北門｜羅瓦德運河大橋區</p>
-        </div>
-        <div>
-            <h3>快速連結</h3>
-            <a href="#about">企業宗旨</a>
-            <a href="#industries">旗下產業</a>
-            <a href="#visit">商務合作</a>
-            <a href="#industries">查看產業據點</a>
-        </div>
-        <div>
-            <h3>內部系統</h3>
-            <a href="home.html">員工入口</a>
-            <a href="mis.html">後台管理區</a>
-        </div>
-        <div>
-            <h3>聯繫我們</h3>
-            <a href="mailto:dog0830430@gmail.com">dog0830430@gmail.com</a>
-            <a href="tel:+88673450306">07-345-0306</a>
-        </div>
-    </footer>
+    <script type="module" src="./static/index.js" defer></script>
 </body>
-<script type="module" src="./static/index.js" defer></script>
-
 </html>

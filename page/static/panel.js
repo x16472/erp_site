@@ -46,7 +46,8 @@ const StaffTabs = {
     showPanel(panelId) {
         document.querySelectorAll(this.selectors.panels)
             .forEach(panel => {
-                panel.style.display = panel.id === panelId ? 'block' : 'none';
+                panel.classList.toggle('active', panel.id === panelId);
+                panel.hidden = panel.id !== panelId;
             });
     },
     /** 根據目前有 active 的按鈕，顯示對應 panel（頁面載入時用） */
