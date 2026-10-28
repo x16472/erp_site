@@ -59,16 +59,12 @@ function openSetup(subjectId) {
 }
 function sessionQuestion() { return activeSession.questions[questionIndex] }
 function answerValues(question) {
-    if (question.question_type === 'fill_blank') return [...answerArea.querySelectorAll('[data-blank]')].map(input => input.value);
     if (question.question_type === 'matching') return [...answerArea.querySelectorAll('[data-match]')].map(select => select.value);
     return [...answerArea.querySelectorAll('[name="answer"]:checked')].map(input => Number(input.value))
 }
 function renderAnswerArea(question) {
     const saved = question.response?.answers || [];
-    if (question.question_type === 'fill_blank') {
-        const blanks = question.structure?.blanks || [];
-        answerArea.innerHTML = blanks.length ? blanks.map((blank, index) => `<label class="field"><span>${esc(blank.label || `空格 ${index + 1}`)}</span><select data-blank><option value="">請選擇</option>${(blank.options || []).map(option => `<option ${saved[index] === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select></label>`).join('') : '<div class="error-note">此填空題尚未完成結構設定，請通知管理員。</div>'; return
-    } if (question.question_type === 'matching') {
+    if (question.question_type === 'matching') {
         const left = question.structure?.left || [], right = question.structure?.right || [];
         answerArea.innerHTML = left.length && right.length ? left.map((item, index) => `<label class="field match-row"><span>${esc(item)}</span><select data-match><option value="">請選擇配對</option>${right.map(option => `<option ${saved[index] === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select></label>`).join('') : '<div class="error-note">此配對題尚未完成結構設定，請通知管理員。</div>'; return
     } const multiple = question.question_type === 'multiple_choice'; answerArea.innerHTML = (question.options || []).map((option, index) => `<label class="quiz-option answer-label"><input name="answer" type="${multiple ? 'checkbox' : 'radio'}" value="${index}" ${saved.includes(index) ? 'checked' : ''}><span>${String.fromCharCode(65 + index)}. ${esc(option)}</span></label>`).join('')

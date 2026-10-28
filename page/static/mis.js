@@ -297,13 +297,13 @@ function renderTrainingDocuments() {
 /* 渲染商業規範與工安檢核題目。 */
 const questionTypeNames = {
     single_choice: '單選題', multiple_choice: '多選題', reading: '閱讀測驗',
-    fill_blank: '程式碼填空', matching: '配對題', essay: '申論題'
+    matching: '配對題', essay: '申論題'
 };
 function setQuestionType(type) {
     questionForm.elements.question_type.value = type;
     questionTypeTabs.querySelectorAll('[data-question-type]').forEach(button =>
         button.classList.toggle('active', button.dataset.questionType === type));
-    const essay = type === 'essay', reading = type === 'reading', structured = ['fill_blank', 'matching'].includes(type);
+    const essay = type === 'essay', reading = type === 'reading', structured = type === 'matching';
     passageField.hidden = !reading;
     optionsField.hidden = essay || structured;
     answersField.hidden = essay;
@@ -335,6 +335,7 @@ function renderQuestions() {
         ${item.source ? `<button class="btn second" data-question-reimport="${item.id}">以來源重新匯入</button>` : ''}
         ${item.status !== 'published' ? `<button class="btn" data-question-status="${item.id}" data-status="published">發布</button>` : `<button class="btn second" data-question-status="${item.id}" data-status="draft">退回草稿</button>`}
         ${item.status !== 'disabled' ? `<button class="btn second" data-question-disable="${item.id}">停用</button>` : ''}
+        <button class="btn red" data-question-delete="${item.id}">刪除</button>
     </div>
     </article>`).join('') || '<div class="empty">目前沒有題目。</div>'
 }
@@ -355,6 +356,33 @@ trainingDocumentList.onclick = async event => {
     renderTrainingDocuments()
 };
 questionList.onclick = async event => {
+    const deleteButton = event.target.closest('[data-question-delete]');
+    if (deleteButton) {
+        const id = Number(deleteButton.dataset.questionDelete);
+        const item = complianceQuestions.find(row => row.id === id);
+        if (!item || !confirm(`確定刪除此題目？\n\n${item.question}\n\n刪除後將從題庫移除，既有作答紀錄會保留。`)) return;
+        deleteButton.disabled = true;
+        try {
+            await request('/api/admin/compliance/question', {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                body: JSON.stringify({ id })
+            });
+            complianceQuestions = complianceQuestions.filter(row => row.id !== id);
+            if (Number(questionForm.elements.id.value) === id) {
+                questionForm.reset();
+                questionForm.elements.id.value = '';
+                setQuestionType('single_choice');
+            }
+            renderQuestions();
+            questionStatus.className = 'success-note';
+            questionStatus.textContent = '題目已刪除。';
+        } catch (error) {
+            deleteButton.disabled = false;
+            questionStatus.className = 'error-note';
+            questionStatus.textContent = error.message;
+        }
+        return;
+    }
     const edit = event.target.closest('[data-question-edit]'),
         disable = event.target.closest('[data-question-disable]'),
         reimport = event.target.closest('[data-question-reimport]');
@@ -373,7 +401,7 @@ questionList.onclick = async event => {
             questionForm.elements.passage.value = item.passage || '';
             questionForm.elements.options.value = item.options.join('\n');
             questionForm.elements.answers.value = item.answers.map(value => value + 1).join(',');
-            if (['fill_blank', 'matching'].includes(item.question_type)) questionForm.elements.answers.value = item.answers.join('\n');
+            if (item.question_type === 'matching') questionForm.elements.answers.value = item.answers.join('\n');
             questionForm.elements.structure.value = JSON.stringify(item.structure || {}, null, 2);
             questionForm.elements.explanation.value = item.explanation;
             questionForm.elements.question.focus()
@@ -395,9 +423,9 @@ questionList.onclick = async event => {
         complianceQuestions = await request('/api/admin/compliance/questions'); renderQuestions()
     }
     if (disable && confirm('確定停用此題目？')) {
-        await request('/api/admin/compliance/question', {
-            method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-            body: JSON.stringify({ id: Number(disable.dataset.questionDisable) })
+        await request('/api/admin/training/question/status', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ id: Number(disable.dataset.questionDisable), status: 'disabled' })
         });
         complianceQuestions = await request('/api/admin/compliance/questions');
         renderQuestions()
@@ -407,7 +435,7 @@ questionForm.onsubmit = async event => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(questionForm));
     const essay = values.question_type === 'essay';
-    const structured = ['fill_blank', 'matching'].includes(values.question_type);
+    const structured = values.question_type === 'matching';
     let structure = {};
     try { structure = values.structure ? JSON.parse(values.structure) : {} } catch (_) { questionStatus.className = 'error-note'; questionStatus.textContent = '題型結構必須是有效 JSON。'; return }
     const payload = {
@@ -430,6 +458,7 @@ questionForm.onsubmit = async event => {
             body: JSON.stringify(payload)
         });
         questionForm.reset();
+        questionForm.elements.id.value = '';
         setQuestionType('single_choice');
         complianceQuestions = await request('/api/admin/compliance/questions');
         renderQuestions();
@@ -442,6 +471,7 @@ questionForm.onsubmit = async event => {
 };
 resetQuestion.onclick = () => {
     questionForm.reset();
+    questionForm.elements.id.value = '';
     setQuestionType('single_choice');
     questionStatus.textContent = '';
     questionForm.elements.question.focus()

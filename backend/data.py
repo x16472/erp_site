@@ -708,6 +708,8 @@ def ensure_application_schema() -> dict[str, Any]:
         ALTER TABLE dbo.Company_TrainingQuestion ADD admin_locked bit NOT NULL CONSTRAINT DF_Company_TrainingQuestion_AdminLocked DEFAULT 0 WITH VALUES""",
         """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'updated_at') IS NULL
         ALTER TABLE dbo.Company_TrainingQuestion ADD updated_at datetime2 NOT NULL CONSTRAINT DF_Company_TrainingQuestion_UpdatedAt DEFAULT SYSDATETIME() WITH VALUES""",
+        """IF COL_LENGTH(N'dbo.Company_TrainingQuestion', N'deleted_at') IS NULL
+        ALTER TABLE dbo.Company_TrainingQuestion ADD deleted_at datetime2 NULL""",
         """IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_Company_TrainingQuestion_Subject')
         ALTER TABLE dbo.Company_TrainingQuestion ADD CONSTRAINT FK_Company_TrainingQuestion_Subject
         FOREIGN KEY (subject_id) REFERENCES dbo.Company_TrainingSubject(subject_id)""",
@@ -1443,7 +1445,7 @@ def training_catalog(employee_id: str) -> dict[str, Any]:
         FROM dbo.Company_TrainingSession s
         JOIN dbo.Company_TrainingSessionQuestion sq ON sq.session_id=s.session_id
         JOIN dbo.Company_TrainingQuestion q ON q.question_id=sq.question_id
-        WHERE s.employee_id=? AND s.status=N'submitted' AND q.chapter_id IS NOT NULL
+        WHERE s.employee_id=? AND s.status=N'submitted' AND q.chapter_id IS NOT NULL AND q.deleted_at IS NULL
         GROUP BY q.chapter_id
     """, (employee_id,))
     progress_by_chapter = {row["chapter_id"]: row for row in progress_rows}
@@ -1469,8 +1471,9 @@ def training_catalog(employee_id: str) -> dict[str, Any]:
         ORDER BY started_at DESC
     """, (employee_id,))
     wrong_count = _fetch("""
-        SELECT COUNT(*) AS [count] FROM dbo.Company_TrainingWrongQuestion
-        WHERE employee_id=? AND removed_at IS NULL
+        SELECT COUNT(*) AS [count] FROM dbo.Company_TrainingWrongQuestion w
+        JOIN dbo.Company_TrainingQuestion q ON q.question_id=w.question_id
+        WHERE w.employee_id=? AND w.removed_at IS NULL AND q.deleted_at IS NULL
     """, (employee_id,))[0]["count"]
     return {
         "subjects": subjects,
@@ -1591,6 +1594,7 @@ def _grade_snapshot(snapshot: dict[str, Any], response: dict[str, Any]) -> bool:
             return sorted({int(value) for value in supplied}) == sorted({int(value) for value in expected})
         except (TypeError, ValueError):
             return False
+    # 舊題組使用建立時的快照評分，保留已移除題型的歷史作答相容性。
     if question_type == "fill_blank":
         normalized = [str(value).strip() for value in supplied]
         return normalized == [str(value).strip() for value in expected]
@@ -1715,7 +1719,7 @@ def training_wrong_questions(employee_id: str) -> list[dict[str, Any]]:
         JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id
         LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id
         LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id
-        WHERE w.employee_id=? AND w.removed_at IS NULL
+        WHERE w.employee_id=? AND w.removed_at IS NULL AND q.deleted_at IS NULL
         ORDER BY w.added_at DESC
     """, (employee_id,))
     return [{**_question_snapshot(row), "added_at": row["added_at"]} for row in rows]
@@ -1855,12 +1859,12 @@ def import_training_question_drafts(
                 subject_id, chapter_id = classification_cache[classification]
                 document_id = documents.get(draft.get("source_document"))
                 previous = cursor.execute("""
-                    SELECT question_id,admin_locked FROM dbo.Company_TrainingQuestion
+                    SELECT question_id,admin_locked,deleted_at FROM dbo.Company_TrainingQuestion
                     WHERE source_fingerprint=? OR
                           (document_id=? AND source_question_key=?)
                     ORDER BY CASE WHEN source_fingerprint=? THEN 0 ELSE 1 END
                 """, fingerprint, document_id, draft.get("source_question_key"), fingerprint).fetchone()
-                if previous and previous[1]:
+                if previous and (previous[1] or previous[2] is not None):
                     result["locked"] += 1
                     continue
                 values = (
@@ -1890,7 +1894,7 @@ def import_training_question_drafts(
                         content_json=?,structure_json=?,source_locator=?,source_question_key=?,
                         source_fingerprint=?,parse_confidence=?,parse_warnings_json=?,
                         status=N'draft',is_active=0,updated_at=SYSDATETIME()
-                    WHERE question_id=? AND admin_locked=0
+                    WHERE question_id=? AND admin_locked=0 AND deleted_at IS NULL
                 """, question_updates)
             if question_inserts:
                 cursor.executemany("""
@@ -2016,6 +2020,7 @@ def compliance_questions_admin() -> list[dict[str, Any]]:
         LEFT JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id
         LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id
         LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id
+        WHERE q.deleted_at IS NULL
         ORDER BY CASE q.status WHEN N'draft' THEN 0 WHEN N'published' THEN 1 ELSE 2 END,q.question_id
     """)
     for row in rows:
@@ -2045,7 +2050,7 @@ def save_compliance_question(item: dict[str, Any]) -> dict[str, Any]:
                         options_json=?,correct_index=?,explanation=?,question_type=?,answer_json=?,
                         content_json=?,structure_json=?,passage=?,status=?,is_active=?,
                         admin_locked=1,updated_at=SYSDATETIME()
-                    WHERE question_id=?
+                    WHERE question_id=? AND deleted_at IS NULL
                 """, item["document_id"], item["subject_id"], item["chapter_id"], item["domain"],
                      category, item["question"], options_json, correct_index, item["explanation"],
                      item["question_type"], answer_json, content_json, structure_json,
@@ -2154,12 +2159,30 @@ def review_compliance_essay(item: dict[str, Any], reviewer_id: str) -> dict[str,
         raise DatabaseUnavailable("申論答案審核失敗。") from exc
 
 
+def delete_compliance_question(question_id: int) -> dict[str, Any]:
+    # 保留題目關聯與來源指紋，避免破壞歷史作答或讓同步重新建立已刪除的題目。
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                UPDATE dbo.Company_TrainingQuestion
+                SET deleted_at=SYSUTCDATETIME(),is_active=0,status=N'disabled',
+                    admin_locked=1,updated_at=SYSDATETIME()
+                WHERE question_id=? AND deleted_at IS NULL
+            """, question_id)
+            if cursor.rowcount == 0:
+                raise ValueError("找不到指定題目，或題目已刪除")
+        return {"id": question_id, "deleted": True}
+    except mssql_python.Error as exc:
+        raise DatabaseUnavailable("題庫題目刪除失敗。") from exc
+
+
 def deactivate_compliance_question(question_id: int) -> dict[str, Any]:
     try:
         with connect(read_only=False) as db:
             cursor = db.cursor()
             cursor.execute(
-                "UPDATE dbo.Company_TrainingQuestion SET is_active=0,status=N'disabled',admin_locked=1,updated_at=SYSDATETIME() WHERE question_id=?",
+                "UPDATE dbo.Company_TrainingQuestion SET is_active=0,status=N'disabled',admin_locked=1,updated_at=SYSDATETIME() WHERE question_id=? AND deleted_at IS NULL",
                 question_id,
             )
             if cursor.rowcount == 0:
@@ -2174,11 +2197,13 @@ def set_training_question_status(question_id: int, status: str) -> dict[str, Any
         raise ValueError("題目狀態不正確")
     rows = _fetch("""
         SELECT question_type,options_json,answer_json,structure_json,explanation
-        FROM dbo.Company_TrainingQuestion WHERE question_id=?
+        FROM dbo.Company_TrainingQuestion WHERE question_id=? AND deleted_at IS NULL
     """, (question_id,))
     if not rows:
         raise ValueError("找不到指定題目")
     row = rows[0]
+    if status == "published" and row["question_type"] not in {"single_choice", "multiple_choice", "reading", "matching", "essay"}:
+        raise ValueError("此題型已不支援，請先編輯為支援的題型")
     if status == "published" and row["question_type"] != "essay":
         answers = _loads_json(row["answer_json"], [])
         options = _loads_json(row["options_json"], [])
@@ -2187,14 +2212,14 @@ def set_training_question_status(question_id: int, status: str) -> dict[str, Any
             raise ValueError("發布前必須完成正確答案與解析")
         if row["question_type"] in {"single_choice", "multiple_choice", "reading"} and len(options) < 2:
             raise ValueError("發布前必須完成至少兩個選項")
-        if row["question_type"] in {"fill_blank", "matching"} and not structure:
+        if row["question_type"] == "matching" and not structure:
             raise ValueError("發布前必須完成題型結構")
     try:
         with connect(read_only=False) as db:
             db.cursor().execute("""
                 UPDATE dbo.Company_TrainingQuestion
                 SET status=?,is_active=?,admin_locked=1,updated_at=SYSDATETIME()
-                WHERE question_id=?
+                WHERE question_id=? AND deleted_at IS NULL
             """, status, int(status == "published"), question_id)
         return {"id": question_id, "status": status, "is_active": status == "published"}
     except mssql_python.Error as exc:
@@ -2209,7 +2234,7 @@ def unlock_training_question_import(question_id: int) -> dict[str, Any]:
             cursor.execute("""
                 UPDATE dbo.Company_TrainingQuestion
                 SET admin_locked=0,status=N'draft',is_active=0,updated_at=SYSDATETIME()
-                WHERE question_id=? AND source_fingerprint IS NOT NULL
+                WHERE question_id=? AND deleted_at IS NULL AND source_fingerprint IS NOT NULL
             """, question_id)
             if cursor.rowcount == 0:
                 raise ValueError("此題目沒有可重新匯入的來源")
@@ -2232,7 +2257,7 @@ def update_training_questions_bulk(item: dict[str, Any]) -> dict[str, Any]:
                 db.cursor().execute(f"""
                     UPDATE dbo.Company_TrainingQuestion
                     SET subject_id=?,chapter_id=?,admin_locked=1,updated_at=SYSDATETIME()
-                    WHERE question_id IN ({placeholders})
+                    WHERE deleted_at IS NULL AND question_id IN ({placeholders})
                 """, item["subject_id"], item["chapter_id"], *item["ids"])
         if item["status"]:
             for question_id in item["ids"]:

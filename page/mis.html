@@ -270,7 +270,6 @@
                                     <button class="active" data-question-type="single_choice" type="button">單選題</button>
                                     <button data-question-type="multiple_choice" type="button">多選題</button>
                                     <button data-question-type="reading" type="button">閱讀測驗</button>
-                                    <button data-question-type="fill_blank" type="button">程式碼填空</button>
                                     <button data-question-type="matching" type="button">配對題</button>
                                     <button data-question-type="essay" type="button">申論題</button>
                                 </nav>
@@ -306,7 +305,7 @@
                                 </label>
                                 <label class="field" id="structureField" hidden><span>題型結構 JSON</span>
                                     <textarea name="structure" rows="8"
-                                        placeholder='填空：{"blanks":[{"label":"空格 1","options":["int","str"]}]}&#10;配對：{"left":["int"],"right":["整數"]}'></textarea>
+                                        placeholder='{"left":["int"],"right":["整數"]}'></textarea>
                                 </label>
                                 <label class="field" id="explanationField"><span>答案解說</span>
                                     <textarea name="explanation" maxlength="1000" required></textarea>

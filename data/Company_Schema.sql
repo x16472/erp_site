@@ -348,6 +348,7 @@ ALTER TABLE [dbo].[Company_TrainingQuestion] ADD
 	[parse_warnings_json] [nvarchar](max) NULL,
 	[status] [nvarchar](20) NOT NULL DEFAULT (N'published'),
 	[admin_locked] [bit] NOT NULL DEFAULT ((0)),
+	[deleted_at] [datetime2](7) NULL,
 	[updated_at] [datetime2](7) NOT NULL DEFAULT (sysdatetime()),
 	CONSTRAINT [FK_Company_TrainingQuestion_Subject] FOREIGN KEY([subject_id]) REFERENCES [dbo].[Company_TrainingSubject]([subject_id]),
 	CONSTRAINT [FK_Company_TrainingQuestion_Chapter] FOREIGN KEY([chapter_id]) REFERENCES [dbo].[Company_TrainingChapter]([chapter_id])

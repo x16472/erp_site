@@ -510,11 +510,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise user_input.InputError("部門編號不正確") from exc
                 result = data.deactivate_department(department_id, session["username"])
             else:
-                try:
-                    question_id = int(payload.get("id"))
-                except (TypeError, ValueError) as exc:
-                    raise user_input.InputError("題目編號不正確") from exc
-                result = data.deactivate_compliance_question(question_id)
+                question_id = user_input.validate_training_wrong_remove({"question_id": payload.get("id")})
+                result = data.delete_compliance_question(question_id)
             return self.send_json({"data": result})
         except user_input.InputError as exc:
             return self.send_json({"error": str(exc), "code": "INVALID_INPUT"}, 400)

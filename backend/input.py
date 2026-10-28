@@ -21,7 +21,7 @@ ALLOWED_CLOCK_ACTIONS = {"CLOCK_IN", "CLOCK_OUT"}
 ALLOWED_ACCESS_MODES = {"CLOCK_IN", "ACCESS_ONLY"}
 ALLOWED_GENDERS = {"男", "女", "其他"}
 ALLOWED_OPERATION_REVIEW_STATUSES = {"要求補件", "審核通過", "已退回"}
-ALLOWED_QUESTION_TYPES = {"single_choice", "multiple_choice", "reading", "fill_blank", "matching", "essay"}
+ALLOWED_QUESTION_TYPES = {"single_choice", "multiple_choice", "reading", "matching", "essay"}
 ALLOWED_QUESTION_DOMAINS = {"academic", "practical"}
 ALLOWED_QUESTION_STATUSES = {"draft", "published", "disabled"}
 ALLOWED_TRAINING_MODES = {"practice", "mock"}
@@ -213,9 +213,7 @@ def _validate_structure(
     answers: list,
     status: str,
 ) -> None:
-    if question_type == "fill_blank":
-        key = "blanks"
-    elif question_type == "matching":
+    if question_type == "matching":
         key = "left"
     else:
         return

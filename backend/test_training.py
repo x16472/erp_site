@@ -72,6 +72,12 @@ B. 第二項
 
 
 class TrainingInputTests(unittest.TestCase):
+    def test_removed_fill_blank_type_is_rejected(self) -> None:
+        with self.assertRaises(user_input.InputError):
+            user_input.validate_training_start({
+                "subject_id": 1, "question_types": ["fill_blank"],
+            })
+
     def test_training_start_accepts_all_question_count(self) -> None:
         result = user_input.validate_training_start({
             "subject_id": 7,
@@ -121,6 +127,75 @@ class TrainingResponseTests(unittest.TestCase):
         payload = data._public_session_payload(session, rows)
         self.assertNotIn("answers", payload["questions"][0])
         self.assertNotIn("explanation", payload["questions"][0])
+
+
+class TrainingQuestionDeletionTests(unittest.TestCase):
+    def make_handler(self) -> app.Handler:
+        handler = object.__new__(app.Handler)
+        handler.path = "/api/admin/compliance/question"
+        handler.require_employee = mock.Mock(return_value={"employee_id": "TEST"})
+        handler.require_admin = mock.Mock(return_value={"csrf": "token"})
+        handler.require_csrf = mock.Mock(return_value=True)
+        handler.read_json = mock.Mock(return_value={"id": 7})
+        handler.send_json = mock.Mock()
+        return handler
+
+    def test_delete_requires_admin_and_csrf(self) -> None:
+        for admin, csrf in [(None, True), ({"csrf": "token"}, False)]:
+            with self.subTest(admin=admin, csrf=csrf):
+                handler = self.make_handler()
+                handler.require_admin.return_value = admin
+                handler.require_csrf.return_value = csrf
+                with mock.patch.object(data, "delete_compliance_question") as delete:
+                    handler.do_DELETE()
+                delete.assert_not_called()
+                handler.read_json.assert_not_called()
+
+    def test_delete_route_removes_question_instead_of_disabling(self) -> None:
+        handler = self.make_handler()
+        result = {"id": 7, "deleted": True}
+        with mock.patch.object(data, "delete_compliance_question", return_value=result) as delete:
+            handler.do_DELETE()
+        delete.assert_called_once_with(7)
+        handler.send_json.assert_called_once_with({"data": result})
+
+    def test_delete_rejects_invalid_id(self) -> None:
+        handler = self.make_handler()
+        handler.read_json.return_value = {"id": -1}
+        with mock.patch.object(data, "delete_compliance_question") as delete:
+            handler.do_DELETE()
+        delete.assert_not_called()
+        self.assertEqual(handler.send_json.call_args.args[1], 400)
+
+    def test_missing_or_deleted_question_is_not_reported_as_deleted(self) -> None:
+        connection = mock.MagicMock()
+        connection.__enter__.return_value = connection
+        connection.cursor.return_value.rowcount = 0
+        with mock.patch.object(data, "connect", return_value=connection), \
+             self.assertRaises(ValueError):
+            data.delete_compliance_question(7)
+
+    def test_deleted_source_question_is_not_reimported(self) -> None:
+        connection = mock.MagicMock()
+        connection.__enter__.return_value = connection
+        cursor = connection.cursor.return_value
+        cursor.execute.return_value.fetchall.return_value = []
+        cursor.execute.return_value.fetchone.return_value = (7, False, "2026-10-28")
+        with mock.patch.object(data, "connect", return_value=connection), \
+             mock.patch.object(data, "_ensure_training_classification", return_value=(1, 2)):
+            result = data.import_training_question_drafts([{
+                "source_document": "questions.pdf", "source_fingerprint": "fingerprint",
+            }])
+        self.assertEqual(result["locked"], 1)
+        self.assertEqual(result["created"], 0)
+        self.assertEqual(result["updated"], 0)
+
+    def test_deleted_question_cannot_be_republished(self) -> None:
+        with mock.patch.object(data, "_fetch", return_value=[]), \
+             mock.patch.object(data, "connect") as connect, \
+             self.assertRaises(ValueError):
+            data.set_training_question_status(7, "published")
+        connect.assert_not_called()
 
 
 class DatabaseConnectionTests(unittest.TestCase):
