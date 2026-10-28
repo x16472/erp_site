@@ -36,6 +36,7 @@
                     <button data-panel="queuePanel">待審佇列</button>
                     <button data-panel="freeQuetionPanel">申論題審核</button>
                     <button data-panel="trainingPanel">文件管理</button>
+                    <button data-panel="partPanel">題庫科目</button>
                     <button data-panel="questionPanel">題庫維護</button>
                     <button data-panel="dataPanel">資料表查閱</button>
                 </nav>
@@ -217,8 +218,18 @@
                             <button class="btn" id="syncTraining" type="button">同步文件與題目草稿</button>
                         </div>
                         <p id="syncStatus" aria-live="polite"></p>
-                        <div class="portal-grid workspace-layout training-taxonomy-admin">
-                            <form class="portal-card narrow" id="subjectForm">
+
+                        <section class="portal-card">
+                            <h3>目前分類</h3>
+                            <div class="staff-admin-list" id="taxonomyList"></div>
+                        </section>
+                        <form class="staff-admin-list" id="trainingDocumentList">
+                            <div class="empty">載入中…</div>
+                        </form>
+                    </section>
+                    <section class="admin-panel" id="partPanel">
+                        <div class="portal-grid workspace-layout">
+                            <form class="portal-card" id="subjectForm">
                                 <input name="id" type="hidden">
                                 <h3>科目與模考設定</h3>
                                 <label class="field">
@@ -250,7 +261,7 @@
                                     <button class="btn second" id="resetSubject" type="button">新增</button>
                                 </div>
                             </form>
-                            <form class="portal-card narrow" id="chapterForm">
+                            <form class="portal-card" id="chapterForm">
                                 <input name="id" type="hidden">
                                 <h3>章節設定</h3>
                                 <label class="field">
@@ -269,13 +280,6 @@
                                         class="btn second" id="resetChapter" type="button">新增</button></div>
                             </form>
                         </div>
-                        <section class="portal-card">
-                            <h3>目前分類</h3>
-                            <div class="staff-admin-list" id="taxonomyList"></div>
-                        </section>
-                        <form class="staff-admin-list" id="trainingDocumentList">
-                            <div class="empty">載入中…</div>
-                        </form>
                     </section>
                     <section class="admin-panel" id="questionPanel">
                         <div class="portal-grid workspace-layout staff-maintenance">
