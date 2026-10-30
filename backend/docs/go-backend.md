@@ -1,6 +1,6 @@
 # Go 後端與 Python gRPC
 
-`backend/cmd/erp/main.go` 是唯一服務入口，`page/tools/go-playground/main.go` 僅供瀏覽器 WASM 工具。舊 backend/app.py 的 HTTP 服務由 Go 取代；API 業務轉移至 backend/src/erp/api.py、domain.py，其他文件／影音／輸入模組一併搬到 backend/src/erp。backend/data.py 的 SQL 驅動與 DDL 已由 database/data.go 與 Database 腳本取代。
+`backend/cmd/erp/main.go` 是唯一服務入口，`page/tools/go-playground/playground_js_wasm.go` 僅供瀏覽器 WASM 工具。舊 backend/app.py 的 HTTP 服務由 Go 取代；API 業務轉移至 backend/src/erp/api.py、domain.py，其他文件／影音／輸入模組一併搬到 backend/src/erp。backend/data.py 的 SQL 驅動與 DDL 已由 database/data.go 與 database 腳本取代。
 
 Go 提供頁面白名單、靜態檔案邊界檢查、HTTP 限流、請求大小與期限；API 的方法、路徑、標頭與本文透過 protobuf 傳給 Python。重複 Set-Cookie 逐筆保留。GET、POST、DELETE 沿用既有契約，工作階段與 CSRF 驗證仍由 Python 業務層執行。
 

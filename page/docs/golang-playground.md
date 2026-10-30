@@ -26,7 +26,11 @@
 - `page/static/golang-worker.js`：載入 WASM、瀏覽器快取、輸出緩衝與每次輸出上限。
 - `page/static/golang-runtime/`：壓縮 WASM、配對的官方 `wasm_exec.js` 與 Go／Yaegi 授權文件，部署時須一併包含。
 - `page/static/python.css`：Python 與 Go 共用排版，以各自的根元素限定範圍，沿用 `style.css` 的元件與色彩。
-- `page/tools/go-playground/`：僅用於建置前端 WASM 的原始碼、固定依賴與建置腳本；不提供伺服器功能。
+- `page/tools/go-playground/`：僅用於建置前端 WASM 的原始碼、固定依賴與建置腳本；不提供伺服器功能。來源檔為 `playground_js_wasm.go`，與網站入口 `backend/cmd/erp/main.go` 區分；頁面編輯器中的 `main.go` 是使用者練習檔名。
+
+## VS Code 平台辨識
+
+附屬程式 `playground_js_wasm.go` 使用 `//go:build js && wasm`，因為 `syscall/js` 僅適用瀏覽器 WASM。gopls v0.15.0 以上可依檔案的建置限制建立對應的平台範圍；後端維持主機原生平台。若更新後仍顯示舊診斷，可執行 VS Code 的 `Go: Restart Language Server`；較舊版本需先更新 Go 語言伺服器。參考 [gopls 工作區說明](https://go.dev/gopls/workspace)。
 
 ## 重新建置
 

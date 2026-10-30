@@ -12,7 +12,7 @@
 
 ## 技術與資料邊界
 
-- 後端由 Go 主導：入口 backend/cmd/erp/main.go，可重用邏輯置 backend/internal/；database/data.go 統一管理 SQL Server。page/tools/go-playground/main.go 僅為瀏覽器工具。
+- 後端由 Go 主導：入口 backend/cmd/erp/main.go，可重用邏輯置 backend/internal/；database/data.go 統一管理 SQL Server。page/tools/go-playground/playground_js_wasm.go 僅為瀏覽器工具。
 - Python 3.11 業務以 gRPC 連接 Go，模組放 backend/src/erp，不自行開 HTTP 或直接連 SQL Server。遵循 GO.md、PYTHON.md、DATABASE.md。
 - Go Modules 與 requirements.txt 管理相依套件。新原始／處理資料使用 data/raw、data/processed 並排除版控；既有 exam 文件入口維持相容；員工資料以新規範資料表維護，不保留執行期 CSV 相依。
 - `.env` 沿用實際設定，不公開或另建 `.env.example`；只有明確要求切換主要資料庫時才修改 DatabaseName，其餘欄位保留；MIS 使用 BackendWebAdminUser／BackendWebAdminPassword，由後端驗證。

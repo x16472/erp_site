@@ -71,11 +71,11 @@ erp_site/
 └─ dockerfile、docker-compose.yml # Windows IIS 容器
 ```
 
-資料庫實體表遵循 [DATABASE.md](agents/DATABASE.md)，既有 API 使用的 Company_* 名稱由相容檢視表提供。資料庫搬移、回復、盤點及演練工具已移除；建表與初始資料保留於 database/。
+資料庫實體表遵循*專案內*`DATABASE.md`的開發規範，既有`API`使用的`Company_*`名稱由相容檢視表提供。資料庫重新建置，搬移、回復、盤點及演練工具已移除；建表與初始資料保留於 database/。
 
 ## 環境設定
 
-目前主要資料庫為 Company，員工與部門由新資料表維護；初始資料為 22 位員工及 6 個部門，之後透過員工管理新增、修改及停用。
+目前主要資料庫為`Company`，員工與部門由新資料表維護；初始資料為 22 位員工及 6 個部門，之後透過員工管理新增、修改及停用。
 
 各種執行方式都需要可連線的 SQL Server，以及專案根目錄的 `.env`。設定欄位如下，請自行填入實際值：
 
@@ -188,7 +188,7 @@ go build -trimpath -o bin/erp-site.exe ./backend/cmd/erp
 
 員工管理採組織架構、員工清單與員工明細三區介面，提供搜尋與停用員工篩選。員工照片支援 JPEG、PNG 與 WebP，單張上限為 5 MB。
 
-工作面板可由側邊導覽及員工工作台的快捷入口開啟。包含 [Python Playground](page/docs/python-playground.md) 與 [Go Playground](page/docs/golang-playground.md)。兩者在瀏覽器執行，套件安裝／快取不會修改後端環境；Go WASM 工具與本次 Go 網站後端分開建置。
+工作面板可由側邊導覽及員工工作台的快捷入口開啟。包含 [Python Playground](page/docs/python-playground.md) 與 [Go Playground](page/docs/golang-playground.md)。兩者在瀏覽器執行，套件安裝／快取不會修改後端環境；Go WASM 為附屬程式，來源檔是 `page/tools/go-playground/playground_js_wasm.go`，與網站入口 `backend/cmd/erp/main.go` 分開建置。
 
 ### 多平台宣導影音
 

@@ -196,3 +196,15 @@ Phoenix 要求開始處理先前備妥的資料庫遷移，隨後指示「先把
 清理審查：最初合併搬移與刪除遭自動核准審查拒絕；之後先於忽略版控的 .deps/cleanup-20261031 保留可回復備份，核對引用及檔案雜湊，再分開完成搬移與指定檔案刪除。沒有繞過審查或刪除實際資料庫／備份。
 
 未完成／暫緩：本輪分類與清理已完成。未重新執行真實 SQL 或完整 CRUD；舊搬移／副本驗收相關待辦已依新指示停止續作，不再保留其工具。OMV 連線仍依既有指示暫停。
+
+## 2026-10-31｜修正 Go Playground 的 WASM 平台辨識
+
+依 Phoenix 提供的 VS Code 截圖，page/tools/go-playground/main.go 的 syscall/js 顯示診斷。該檔案原先沒有平台限制，補上 //go:build js && wasm，讓檔案僅屬於瀏覽器 WASM 目標，並讓 gopls v0.15.0 以上依限制辨識平台；未將整個專案的 GOOS／GOARCH 改成 WASM。
+
+使用既有 Go 1.22.12、Yaegi 依賴與 js/wasm 目標實際編譯通過，輸出僅放忽略版控的 .deps/go-playground/editor-check.wasm。前端已部署的 WASM 資源與後端功能未變更。同步 page/docs/golang-playground.md；VS Code 畫面未實際操作，若仍有舊診斷需重新啟動 Go Language Server，舊版 gopls 需更新。本筆紀錄附加於末端，保留既有內容。
+
+## 2026-10-31｜Go Playground 明確改為附屬程式命名
+
+依 Phoenix 說明，保留已建置的 Go Playground 功能，將其原始檔 page/tools/go-playground/main.go 改名為 playground_js_wasm.go，避免與網站入口 backend/cmd/erp/main.go 混淆。此為瀏覽器 WASM 附屬程式，保留必要的 package main／func main 與 js/wasm 建置限制；建置腳本以套件目錄編譯，不依賴舊檔名。頁面內供使用者練習的 main.go 檔名保留。
+
+重新以固定 Go 1.22.12、js/wasm 目標編譯通過；未變更已部署 WASM 與網站後端行為。README、前後端說明及 agent 指引同步更新，紀錄僅附加於末端。
