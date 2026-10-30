@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package erp.v1;
+option go_package = "erp-site/backend/rpc;rpc";
+
+// Go 是唯一 HTTP 入口；Python 僅接收經過驗證的內部呼叫。
+service PythonWorker {
+  rpc Handle(HttpRequest) returns (HttpResponse);
+  rpc Control(ControlRequest) returns (ControlResponse);
+}
+
+// SQL 連線、交易與型別轉換由 Go 管理，不對外提供這個服務。
+service Database {
+  rpc Execute(DatabaseRequest) returns (DatabaseResponse);
+}
+
+message Header {
+  string name = 1;
+  string value = 2;
+}
+message HttpRequest {
+  string method = 1;
+  string target = 2;
+  repeated Header headers = 3;
+  bytes body = 4;
+  string remote_address = 5;
+  string request_id = 6;
+}
+message HttpResponse {
+  int32 status = 1;
+  repeated Header headers = 2;
+  bytes body = 3;
+}
+message ControlRequest {
+  string action = 1;
+  bool skip_doc_sync = 2;
+}
+message ControlResponse {
+  string status = 1;
+}
+message DatabaseRequest {
+  string operation = 1;
+  string session_id = 2;
+  string query = 3; // Go 內部已登錄的查詢代碼，禁止任意 SQL。
+  bytes parameters_json = 4;
+  bool read_only = 5;
+  bool autocommit = 6;
+  string request_id = 7;
+  bytes options_json = 8;
+}
+message DatabaseResponse {
+  string session_id = 1;
+  repeated string columns = 2;
+  bytes rows_json = 3;
+  int64 row_count = 4;
+  string error_code = 5;
+  string error_message = 6;
+}

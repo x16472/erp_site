@@ -6,7 +6,12 @@ services:
     image: erp-site:servercore-ltsc2022
     container_name: ERP_Site # 在這裡直接固定 Container 的名稱
     restart: unless-stopped
+    stop_grace_period: 30s
     environment:
       NAME: ERP_Site   # 同時帶入容器內部的環境變數
+      WEB_HOST: '127.0.0.1'
+      WEB_PORT: '8000'
+      ERP_PYTHON: 'C:\inetpub\wwwroot\.venv\Scripts\python.exe'
+      ERP_SKIP_DOC_SYNC: '0'
     ports:
       - "80:80"

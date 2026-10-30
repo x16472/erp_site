@@ -79,7 +79,7 @@
 
 ## 技術與資料邊界
 
-前端使用原生 HTML、CSS、ES Modules，後端以 Python HTTP 服務提供同來源頁面、靜態資源與 API，業務資料存於 SQL Server。員工 CSV 為批次同步來源，照片與來源文件存於檔案系統。
+前端使用原生 HTML、CSS、ES Modules，後端以 Go HTTP 服務（Python 業務透過 gRPC 執行）提供同來源頁面、靜態資源與 API，業務資料存於 SQL Server。員工 CSV 為批次同步來源，照片與來源文件存於檔案系統。
 
 支援 Windows 本機啟動與 Windows Server Core LTSC 2022 容器。容器使用 IIS／ARR／URL Rewrite 代理至 Python；不將 Docker 建置成功或舊測試紀錄視為本次部署已驗收。
 

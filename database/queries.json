@@ -1,0 +1,697 @@
+{
+  "domain._resolve_table.1": {
+    "sql": "SELECT TABLE_SCHEMA AS [schema_name], TABLE_NAME AS [table_name]\n        FROM INFORMATION_SCHEMA.TABLES\n        WHERE TABLE_TYPE IN ('BASE TABLE','VIEW') AND TABLE_NAME = ?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.table_catalog.1": {
+    "sql": "SELECT s.name AS [schema], t.name AS [name],\n       COALESCE(p.[row_count],0) AS [row_count], COALESCE(c.[column_count],0) AS [column_count]\nFROM sys.objects t\nJOIN sys.schemas s ON s.schema_id=t.schema_id\nOUTER APPLY (\n    SELECT TOP(1) referenced_id FROM sys.sql_expression_dependencies\n    WHERE referencing_id=t.object_id AND referenced_id IS NOT NULL\n) dependency\nOUTER APPLY (\n    SELECT SUM(rows) AS [row_count] FROM sys.partitions\n    WHERE object_id=COALESCE(dependency.referenced_id,t.object_id) AND index_id IN (0,1)\n) p\nOUTER APPLY (SELECT COUNT(*) AS [column_count] FROM sys.columns WHERE object_id=t.object_id) c\nWHERE t.type IN ('U','V')\nORDER BY t.name",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.table_data.1": {
+    "sql": "SELECT COLUMN_NAME AS [name], DATA_TYPE AS [type],\n               CASE WHEN IS_NULLABLE = 'YES' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS [nullable]\n        FROM INFORMATION_SCHEMA.COLUMNS\n        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?\n        ORDER BY ORDINAL_POSITION",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.table_data.2": {
+    "sql": "SELECT {{0}} FROM {{1}} ORDER BY (SELECT NULL) OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
+    "dynamic": 2,
+    "read_only": true
+  },
+  "domain.table_data.3": {
+    "sql": "SELECT COUNT_BIG(*) AS [count] FROM {{0}}",
+    "dynamic": 1,
+    "read_only": true
+  },
+  "domain._count.1": {
+    "sql": "SELECT COUNT_BIG(*) AS [筆數] FROM dbo.[{{0}}]",
+    "dynamic": 1,
+    "read_only": true
+  },
+  "domain.health.1": {
+    "sql": "SELECT DB_NAME() AS [資料庫]",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.site_settings.1": {
+    "sql": "SELECT CASE WHEN OBJECT_ID(N'dbo.Company_WebSettings') IS NULL THEN 0 ELSE 1 END AS [exists]",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.site_settings.2": {
+    "sql": "SELECT TOP (1) [theme], [hero_title], [hero_subtitle], [announcement] FROM dbo.Company_WebSettings WHERE [id] = 1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_site_settings.1": {
+    "sql": "MERGE dbo.Company_WebSettings AS target\n                USING (SELECT 1 AS id) AS source ON target.id = source.id\n                WHEN MATCHED THEN UPDATE SET theme=?, hero_title=?, hero_subtitle=?, announcement=?, updated_by=?, updated_at=SYSDATETIME()\n                WHEN NOT MATCHED THEN INSERT (id,theme,hero_title,hero_subtitle,announcement,updated_by)\n                VALUES (1,?,?,?,?,?);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.public_overview.1": {
+    "sql": "SELECT COUNT_BIG(*) AS [count] FROM dbo.Company_Staff WHERE is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.public_overview.2": {
+    "sql": "SELECT COUNT_BIG(*) AS [count] FROM dbo.Company_Department WHERE is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.public_overview.3": {
+    "sql": "SELECT COUNT_BIG(*) AS [count] FROM dbo.Company_TrainingDocument WHERE is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.dashboard.1": {
+    "sql": "SELECT COUNT_BIG(*) AS [count] FROM dbo.Company_Staff WHERE is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.dashboard.2": {
+    "sql": "SELECT COUNT_BIG(*) AS [count] FROM dbo.Company_Attendance WHERE work_date=CONVERT(date,SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time')",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.dashboard.3": {
+    "sql": "SELECT COUNT_BIG(*) AS [count] FROM dbo.Company_OperationSubmission WHERE status=N'待審核'",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.dashboard.4": {
+    "sql": "SELECT COUNT_BIG(*) AS [count] FROM dbo.Company_TrainingDocument WHERE is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.departments.1": {
+    "sql": "SELECT d.department_name AS [name],COUNT_BIG(s.employee_id) AS [count]\n        FROM dbo.Company_Department d\n        LEFT JOIN dbo.Company_Staff s ON s.department=d.department_name AND s.is_active=1\n        WHERE d.is_active=1\n        GROUP BY d.department_name\n        ORDER BY [count] DESC,[name]",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.branches.1": {
+    "sql": "WITH campuses AS (\n            SELECT * FROM (VALUES\n                (N'MANOR',N'羅瓦德莊園',1),\n                (N'SALON',N'可可藝術沙龍',2),\n                (N'CRAFT',N'聯合工匠街',3),\n                (N'MINE',N'地下堅石礦場',4)\n            ) AS source(code,name,display_order)\n        )\n        SELECT c.code,c.name,COUNT_BIG(s.submission_id) AS [headcount]\n        FROM campuses c\n        LEFT JOIN dbo.Company_OperationSubmission s ON s.campus_code=c.code\n        GROUP BY c.code,c.name,c.display_order\n        ORDER BY c.display_order",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.operations_process.1": {
+    "sql": "SELECT CONCAT(N'OP-',RIGHT(N'00'+CONVERT(nvarchar(2),c.display_order),2)) AS id,\n               c.category_code AS stage,N'Company_OperationSubmission' AS [table],\n               COUNT_BIG(s.submission_id) AS [count],\n               N'依營運分類彙整待審與已填報日報。' AS [description]\n        FROM dbo.Company_OperationCategory c\n        LEFT JOIN dbo.Company_OperationSubmission s ON s.category_code=c.category_code\n        GROUP BY c.category_code,c.display_order\n        ORDER BY c.display_order",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain._migrate_business_seed_data.1": {
+    "sql": "UPDATE dbo.Company_OperationCategory SET display_order=display_order+100 WHERE display_order<100",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._migrate_business_seed_data.2": {
+    "sql": "IF NOT EXISTS (SELECT 1 FROM dbo.Company_OperationCategory WHERE category_code=?) INSERT dbo.Company_OperationCategory (category_code,display_order) VALUES (?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._migrate_business_seed_data.3": {
+    "sql": "UPDATE dbo.Company_OperationCategory SET display_order=? WHERE category_code=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._migrate_business_seed_data.4": {
+    "sql": "DELETE dbo.Company_OperationCategory WHERE display_order>=100",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._migrate_business_seed_data.5": {
+    "sql": "UPDATE dbo.Company_WebSettings\n           SET theme=CASE theme\n               WHEN N'ocean' THEN N'shield'\n               WHEN N'sunrise' THEN N'medal'\n               WHEN N'steel' THEN N'steel'\n               WHEN N'white' THEN N'white'\n               ELSE theme END\n           WHERE theme IN (N'ocean',N'sunrise',N'steel',N'white')",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._normalize_company_departments.1": {
+    "sql": "IF NOT EXISTS (SELECT 1 FROM dbo.Company_Department WHERE department_name=?)\n               INSERT dbo.Company_Department (department_name,updated_by) VALUES (?,N'prd-migration')",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._normalize_company_departments.2": {
+    "sql": "UPDATE d SET is_active=CASE WHEN EXISTS (\n                   SELECT 1 FROM dbo.Company_Staff s WHERE s.department=d.department_name AND s.is_active=1\n               ) THEN 1 ELSE 0 END,\n               updated_by=N'prd-migration',updated_at=SYSDATETIME()\n           FROM dbo.Company_Department d",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.1": {
+    "sql": "MERGE dbo.Company_TrainingSubject AS target\n                USING (VALUES\n                    (N'academic',N'通用知識',40,45,70),\n                    (N'practical',N'術科申論',0,0,0)\n                ) AS source(domain,subject_name,question_count,duration_minutes,pass_score)\n                ON target.domain=source.domain AND target.subject_name=source.subject_name\n                WHEN MATCHED THEN UPDATE SET is_active=1\n                WHEN NOT MATCHED THEN INSERT\n                    (domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score,is_active)\n                    VALUES (source.domain,source.subject_name,source.question_count,source.duration_minutes,source.pass_score,1);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.2": {
+    "sql": "SELECT subject_id FROM dbo.Company_TrainingSubject WHERE domain=N'academic' AND subject_name=N'通用知識'",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.ensure_application_schema.3": {
+    "sql": "SELECT subject_id FROM dbo.Company_TrainingSubject WHERE domain=N'practical' AND subject_name=N'術科申論'",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.ensure_application_schema.4": {
+    "sql": "IF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=N'UNSORTED')\n                    INSERT dbo.Company_TrainingChapter (subject_id,chapter_code,chapter_name,display_order)\n                    VALUES (?,N'UNSORTED',N'未分類',999)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.5": {
+    "sql": "SELECT COUNT(*) FROM dbo.Company_TrainingQuestion",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.ensure_application_schema.6": {
+    "sql": "INSERT dbo.Company_TrainingQuestion\n                        (category,question,options_json,correct_index,explanation,question_type,answer_json)\n                        VALUES (?,?,?,?,?,N'single_choice',?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.7": {
+    "sql": "SELECT chapter_id FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=N'UNSORTED'",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.ensure_application_schema.8": {
+    "sql": "SELECT chapter_id FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=N'UNSORTED'",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.ensure_application_schema.9": {
+    "sql": "UPDATE dbo.Company_TrainingQuestion\n                SET domain=CASE WHEN question_type=N'essay' THEN N'practical' ELSE N'academic' END,\n                    subject_id=CASE WHEN question_type=N'essay' THEN ? ELSE ? END,\n                    chapter_id=CASE WHEN question_type=N'essay' THEN ? ELSE ? END,\n                    status=CASE WHEN is_active=1 THEN N'published' ELSE N'disabled' END,\n                    content_json=COALESCE(content_json,CONCAT(N'[{\"type\":\"text\",\"content\":',\n                        N'\"',STRING_ESCAPE(question,'json'),N'\"}]')),\n                    structure_json=COALESCE(structure_json,N'{}'),\n                    parse_warnings_json=COALESCE(parse_warnings_json,N'[]')\n                WHERE subject_id IS NULL OR chapter_id IS NULL OR content_json IS NULL",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.10": {
+    "sql": "INSERT dbo.Company_Department (department_name,updated_by)\n                SELECT DISTINCT s.department,N'schema-sync'\n                FROM dbo.Company_Staff s\n                WHERE s.department<>N''\n                  AND NOT EXISTS (\n                      SELECT 1 FROM dbo.Company_Department d WHERE d.department_name=s.department\n                  )",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.public_staff.1": {
+    "sql": "SELECT display_name, department, position, traits, photo_file\n        FROM dbo.Company_Staff\n        WHERE is_active=1 AND (?=N'' OR department=?)\n        ORDER BY employee_id",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.public_staff_departments.1": {
+    "sql": "SELECT department,COUNT(*) AS staff_count\n        FROM dbo.Company_Staff\n        WHERE is_active=1 AND department<>N''\n        GROUP BY department\n        ORDER BY MIN(employee_id)",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.attendance_staff_options.1": {
+    "sql": "SELECT employee_id, display_name, department, position\n        FROM dbo.Company_Staff\n        WHERE is_active=1\n        ORDER BY {{0}}",
+    "dynamic": 1,
+    "read_only": true
+  },
+  "domain.staff_records.1": {
+    "sql": "SELECT employee_id,display_name,gender,age,department,position,traits,biography,photo_file,is_active,updated_by,updated_at\n        FROM dbo.Company_Staff ORDER BY is_active DESC, employee_id",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.employee_identity.1": {
+    "sql": "SELECT employee_id,display_name,department,position\n        FROM dbo.Company_Staff WHERE employee_id=? AND is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.attendance_status.1": {
+    "sql": "SELECT TOP (1) employee_id,action,\n               CONVERT(nvarchar(33),CONVERT(datetime2,clocked_at_utc AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time'),126)+N'+08:00' AS clocked_at\n        FROM dbo.Company_Attendance\n        WHERE employee_id=? AND work_date=CONVERT(date,SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time')\n        ORDER BY clocked_at DESC,attendance_id DESC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.admin_departments.1": {
+    "sql": "SELECT d.department_id AS id,d.department_name AS name,d.is_active,\n               COUNT(s.employee_id) AS staff_count,d.updated_by,d.updated_at\n        FROM dbo.Company_Department d\n        LEFT JOIN dbo.Company_Staff s ON s.department=d.department_name AND s.is_active=1\n        GROUP BY d.department_id,d.department_name,d.is_active,d.updated_by,d.updated_at\n        ORDER BY d.is_active DESC,d.department_id",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_department.1": {
+    "sql": "SELECT department_name FROM dbo.Company_Department WHERE department_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_department.2": {
+    "sql": "UPDATE dbo.Company_Department\n                    SET department_name=?,is_active=1,updated_by=?,updated_at=SYSDATETIME()\n                    WHERE department_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_department.3": {
+    "sql": "UPDATE dbo.Company_Staff SET department=?,updated_by=?,updated_at=SYSDATETIME() WHERE department=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_department.4": {
+    "sql": "SELECT department_id FROM dbo.Company_Department WHERE department_name=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_department.5": {
+    "sql": "UPDATE dbo.Company_Department SET is_active=1,updated_by=?,updated_at=SYSDATETIME()\n                        WHERE department_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_department.6": {
+    "sql": "INSERT dbo.Company_Department (department_name,updated_by)\n                        OUTPUT inserted.department_id VALUES (?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.deactivate_department.1": {
+    "sql": "SELECT d.department_name,COUNT(s.employee_id)\n                FROM dbo.Company_Department d\n                LEFT JOIN dbo.Company_Staff s ON s.department=d.department_name AND s.is_active=1\n                WHERE d.department_id=? GROUP BY d.department_name",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.deactivate_department.2": {
+    "sql": "UPDATE dbo.Company_Department SET is_active=0,updated_by=?,updated_at=SYSDATETIME()\n                WHERE department_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_staff.1": {
+    "sql": "SELECT 1 FROM dbo.Company_Department WHERE department_name=? AND is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_staff.2": {
+    "sql": "SELECT photo_file FROM dbo.Company_Staff WHERE employee_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_staff.3": {
+    "sql": "MERGE dbo.Company_Staff AS target\n                USING (SELECT ? AS employee_id) AS source ON target.employee_id=source.employee_id\n                WHEN MATCHED THEN UPDATE SET display_name=?,gender=?,age=?,department=?,position=?,traits=?,biography=?,photo_file=?,is_active=1,updated_by=?,updated_at=SYSDATETIME()\n                WHEN NOT MATCHED THEN INSERT (employee_id,display_name,gender,age,department,position,traits,biography,photo_file,updated_by)\n                VALUES (?,?,?,?,?,?,?,?,?,?);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.deactivate_staff.1": {
+    "sql": "UPDATE dbo.Company_Staff SET is_active=0,updated_by=?,updated_at=SYSDATETIME() WHERE employee_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.clock_attendance.1": {
+    "sql": "SELECT 1 FROM dbo.Company_Staff WITH (UPDLOCK, HOLDLOCK)\n                WHERE employee_id=? AND is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.clock_attendance.2": {
+    "sql": "SELECT TOP (1) action\n                FROM dbo.Company_Attendance\n                WHERE employee_id=? AND work_date=?\n                ORDER BY clocked_at DESC, attendance_id DESC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.clock_attendance.3": {
+    "sql": "INSERT dbo.Company_Attendance (employee_id,action,clocked_at,clocked_at_utc,work_date,source_ip)\n                VALUES (?,?,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.attendance_records.1": {
+    "sql": "SELECT a.attendance_id,a.employee_id,s.display_name,s.department,s.position,a.action,\n               CONVERT(nvarchar(33),CONVERT(datetime2,a.clocked_at_utc AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time'),126)+N'+08:00' AS clocked_at\n        FROM dbo.Company_Attendance a\n        JOIN dbo.Company_Staff s ON s.employee_id=a.employee_id\n        WHERE (?=N'' OR a.work_date=CONVERT(date,?))\n          AND (?=N'' OR a.employee_id=?)\n        ORDER BY a.clocked_at DESC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.add_operation.1": {
+    "sql": "INSERT dbo.Company_OperationSubmission\n                (submission_id,operation_date,campus_code,category_code,quantity,note,submitted_by)\n                OUTPUT inserted.submitted_at\n                VALUES (?,?,?,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.add_operation.2": {
+    "sql": "INSERT dbo.Company_OperationActivity\n                (submission_id,action_type,message,actor_employee_id,actor_role)\n                VALUES (?,N'SUBMITTED',NULL,?,N'employee')",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._operation_submissions.1": {
+    "sql": "SELECT o.submission_id AS id,o.operation_date AS [date],o.campus_code AS campus,\n               o.category_code AS category,o.quantity AS [count],o.note,o.status,o.submitted_at,\n               o.submitted_by,s.display_name AS submitted_by_name,s.department AS submitted_by_department\n        FROM dbo.Company_OperationSubmission o\n        LEFT JOIN dbo.Company_Staff s ON s.employee_id=o.submitted_by\n        WHERE (?=N'' OR o.submitted_by=?)\n        ORDER BY o.submitted_at DESC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain._operation_submissions.2": {
+    "sql": "SELECT a.activity_id AS id,a.submission_id,a.action_type,a.message,a.actor_role,\n               a.actor_employee_id,s.display_name AS actor_name,a.created_at\n        FROM dbo.Company_OperationActivity a\n        LEFT JOIN dbo.Company_Staff s ON s.employee_id=a.actor_employee_id\n        WHERE (?=N'' OR EXISTS (\n            SELECT 1 FROM dbo.Company_OperationSubmission o\n            WHERE o.submission_id=a.submission_id AND o.submitted_by=?\n        ))\n        ORDER BY a.created_at,a.activity_id",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.review_operation.1": {
+    "sql": "SELECT submission_id FROM dbo.Company_OperationSubmission WITH (UPDLOCK,HOLDLOCK)\n                WHERE submission_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.review_operation.2": {
+    "sql": "UPDATE dbo.Company_OperationSubmission SET status=? WHERE submission_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.review_operation.3": {
+    "sql": "INSERT dbo.Company_OperationActivity\n                (submission_id,action_type,message,actor_employee_id,actor_role)\n                VALUES (?,?,?,?,N'admin')",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.reply_operation.1": {
+    "sql": "SELECT status FROM dbo.Company_OperationSubmission WITH (UPDLOCK,HOLDLOCK)\n                WHERE submission_id=? AND submitted_by=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.reply_operation.2": {
+    "sql": "UPDATE dbo.Company_OperationSubmission SET status=N'員工已回覆' WHERE submission_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.reply_operation.3": {
+    "sql": "INSERT dbo.Company_OperationActivity\n                (submission_id,action_type,message,actor_employee_id,actor_role)\n                VALUES (?,N'EMPLOYEE_REPLY',?,?,N'employee')",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.upsert_operations_manuals.1": {
+    "sql": "SELECT file_name,document_id,source_size,source_modified FROM dbo.Company_TrainingDocument",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.upsert_operations_manuals.2": {
+    "sql": "UPDATE dbo.Company_TrainingDocument SET is_active=0",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.upsert_operations_manuals.3": {
+    "sql": "UPDATE dbo.Company_TrainingDocument SET is_active=1 WHERE document_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.upsert_operations_manuals.4": {
+    "sql": "MERGE dbo.Company_TrainingDocument AS target\n                    USING (SELECT ? AS file_name) AS source ON target.file_name=source.file_name\n                    WHEN MATCHED THEN UPDATE SET title=?,role_category=?,source_size=?,source_modified=?,is_active=1,imported_at=SYSDATETIME()\n                    WHEN NOT MATCHED THEN INSERT (file_name,title,role_category,source_size,source_modified,is_active)\n                    VALUES (?,?,?,?,?,1);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.upsert_operations_manuals.5": {
+    "sql": "SELECT document_id FROM dbo.Company_TrainingDocument WHERE file_name=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.upsert_operations_manuals.6": {
+    "sql": "DELETE FROM dbo.Company_TrainingSection WHERE document_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.upsert_operations_manuals.7": {
+    "sql": "INSERT dbo.Company_TrainingSection (document_id,section_order,heading,content)\n                        VALUES (?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.operations_manual_catalog.1": {
+    "sql": "SELECT d.document_id AS id,d.title,d.role_category AS category,d.file_name,\n               COUNT(s.section_id) AS section_count,d.imported_at\n        FROM dbo.Company_TrainingDocument d\n        LEFT JOIN dbo.Company_TrainingSection s ON s.document_id=d.document_id\n        WHERE d.is_active=1\n        GROUP BY d.document_id,d.title,d.role_category,d.file_name,d.imported_at\n        ORDER BY d.role_category,d.title",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.operations_manual_document.1": {
+    "sql": "SELECT document_id AS id,title,role_category AS category,file_name\n        FROM dbo.Company_TrainingDocument WHERE document_id=? AND is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.operations_manual_document.2": {
+    "sql": "SELECT section_order AS [order],heading,content\n        FROM dbo.Company_TrainingSection WHERE document_id=? ORDER BY section_order",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain._published_question_rows.1": {
+    "sql": "SELECT q.question_id AS id,q.domain,s.subject_name AS subject,\n               c.chapter_name AS chapter,d.file_name AS source,q.source_locator,\n               q.question_type,q.question,q.content_json,q.options_json,q.answer_json,\n               q.structure_json,q.passage,q.explanation\n        FROM dbo.Company_TrainingQuestion q\n        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id\n        WHERE {{0}}\n        ORDER BY q.question_id",
+    "dynamic": 1,
+    "read_only": true
+  },
+  "domain.training_catalog.1": {
+    "sql": "SELECT s.subject_id AS id,s.domain,s.subject_name AS name,\n               s.mock_question_count,s.mock_duration_minutes,s.mock_pass_score,\n               COUNT(CASE WHEN q.status=N'published' AND q.is_active=1\n                   AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay') THEN 1 END) AS question_count\n        FROM dbo.Company_TrainingSubject s\n        LEFT JOIN dbo.Company_TrainingQuestion q ON q.subject_id=s.subject_id\n        WHERE s.is_active=1\n        GROUP BY s.subject_id,s.domain,s.subject_name,s.mock_question_count,\n                 s.mock_duration_minutes,s.mock_pass_score\n        ORDER BY CASE WHEN s.domain=N'academic' THEN 0 ELSE 1 END,s.subject_name",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.training_catalog.2": {
+    "sql": "SELECT c.chapter_id AS id,c.subject_id,c.chapter_code AS code,c.chapter_name AS name,\n               COUNT(CASE WHEN q.status=N'published' AND q.is_active=1\n                   AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay') THEN 1 END) AS question_count\n        FROM dbo.Company_TrainingChapter c\n        LEFT JOIN dbo.Company_TrainingQuestion q ON q.chapter_id=c.chapter_id\n        WHERE c.is_active=1\n        GROUP BY c.chapter_id,c.subject_id,c.chapter_code,c.chapter_name,c.display_order\n        ORDER BY c.subject_id,c.display_order,c.chapter_code",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.training_catalog.3": {
+    "sql": "SELECT q.chapter_id,\n               COUNT(DISTINCT sq.question_id) AS attempted_count,\n               COUNT(DISTINCT CASE WHEN sq.is_correct=1 THEN sq.question_id END) AS correct_count\n        FROM dbo.Company_TrainingSession s\n        JOIN dbo.Company_TrainingSessionQuestion sq ON sq.session_id=s.session_id\n        JOIN dbo.Company_TrainingQuestion q ON q.question_id=sq.question_id\n        WHERE s.employee_id=? AND s.status=N'submitted' AND q.chapter_id IS NOT NULL AND q.deleted_at IS NULL\n          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')\n        GROUP BY q.chapter_id",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.training_catalog.4": {
+    "sql": "SELECT DISTINCT d.document_id AS id,d.title,d.file_name,q.subject_id\n        FROM dbo.Company_TrainingDocument d\n        JOIN dbo.Company_TrainingQuestion q ON q.document_id=d.document_id\n        WHERE d.is_active=1 AND q.status=N'published' AND q.is_active=1\n          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')\n        ORDER BY d.title",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.training_catalog.5": {
+    "sql": "SELECT TOP 1 CONVERT(nvarchar(36),session_id) AS id,mode,subject_id,started_at,expires_at\n        FROM dbo.Company_TrainingSession\n        WHERE employee_id=? AND status=N'in_progress'\n        ORDER BY started_at DESC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.training_catalog.6": {
+    "sql": "SELECT COUNT(*) AS [count] FROM dbo.Company_TrainingWrongQuestion w\n        JOIN dbo.Company_TrainingQuestion q ON q.question_id=w.question_id\n        WHERE w.employee_id=? AND w.removed_at IS NULL AND q.deleted_at IS NULL\n          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.start_training_session.1": {
+    "sql": "SELECT subject_id AS id,domain,mock_question_count,mock_duration_minutes,mock_pass_score\n        FROM dbo.Company_TrainingSubject WHERE subject_id=? AND is_active=1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.start_training_session.2": {
+    "sql": "INSERT dbo.Company_TrainingSession\n                (session_id,employee_id,subject_id,mode,status,config_json,expires_at)\n                VALUES (?,?,?, ?,N'in_progress',?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.start_training_session.3": {
+    "sql": "INSERT dbo.Company_TrainingSessionQuestion\n                    (session_id,question_id,question_order,snapshot_json)\n                    VALUES (?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.training_session.1": {
+    "sql": "SELECT CONVERT(nvarchar(36),session_id) AS id,mode,status,subject_id,\n               config_json,started_at,expires_at,submitted_at,score\n        FROM dbo.Company_TrainingSession WHERE session_id=? AND employee_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.training_session.2": {
+    "sql": "SELECT question_order,snapshot_json,response_json,is_flagged,is_correct\n        FROM dbo.Company_TrainingSessionQuestion WHERE session_id=? ORDER BY question_order",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain._record_wrong_many.1": {
+    "sql": "MERGE dbo.Company_TrainingWrongQuestion AS target\n        USING (SELECT ? AS employee_id,? AS question_id) AS source\n        ON target.employee_id=source.employee_id AND target.question_id=source.question_id\n        WHEN MATCHED THEN UPDATE SET removed_at=NULL,added_at=SYSUTCDATETIME()\n        WHEN NOT MATCHED THEN INSERT (employee_id,question_id) VALUES (source.employee_id,source.question_id);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_training_answer.1": {
+    "sql": "SELECT s.mode,s.status,s.expires_at,sq.question_id,sq.snapshot_json\n        FROM dbo.Company_TrainingSession s\n        JOIN dbo.Company_TrainingSessionQuestion sq ON sq.session_id=s.session_id\n        WHERE s.session_id=? AND s.employee_id=? AND sq.question_order=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_training_answer.2": {
+    "sql": "UPDATE dbo.Company_TrainingSessionQuestion\n                SET response_json=?,is_flagged=?,is_correct=?,answered_at=SYSUTCDATETIME()\n                WHERE session_id=? AND question_order=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.submit_training_session.1": {
+    "sql": "SELECT CONVERT(nvarchar(36),session_id) AS id,mode,status,subject_id,\n               config_json,started_at,expires_at,submitted_at,score\n        FROM dbo.Company_TrainingSession WHERE session_id=? AND employee_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.submit_training_session.2": {
+    "sql": "SELECT sq.question_order,sq.question_id,sq.snapshot_json,sq.response_json,sq.is_flagged,sq.is_correct\n        FROM dbo.Company_TrainingSessionQuestion sq WHERE sq.session_id=? ORDER BY sq.question_order",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.submit_training_session.3": {
+    "sql": "UPDATE dbo.Company_TrainingSessionQuestion SET is_correct=?\n                        WHERE session_id=? AND question_order=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.submit_training_session.4": {
+    "sql": "UPDATE dbo.Company_TrainingSession\n                    SET status=N'submitted',submitted_at=SYSUTCDATETIME(),score=?\n                    WHERE session_id=? AND employee_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.training_wrong_questions.1": {
+    "sql": "SELECT q.question_id AS id,q.domain,s.subject_name AS subject,c.chapter_name AS chapter,\n               d.file_name AS source,q.source_locator,q.question_type,q.question,q.content_json,\n               q.options_json,q.answer_json,q.structure_json,q.passage,q.explanation,w.added_at\n        FROM dbo.Company_TrainingWrongQuestion w\n        JOIN dbo.Company_TrainingQuestion q ON q.question_id=w.question_id\n        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id\n        WHERE w.employee_id=? AND w.removed_at IS NULL AND q.deleted_at IS NULL\n          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')\n        ORDER BY w.added_at DESC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.remove_training_wrong.1": {
+    "sql": "UPDATE dbo.Company_TrainingWrongQuestion SET removed_at=SYSUTCDATETIME()\n                WHERE employee_id=? AND question_id=? AND removed_at IS NULL",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.compliance_questions.1": {
+    "sql": "SELECT TOP 20 q.question_id AS id,q.category,q.question,q.question_type,\n               q.options_json,q.passage,q.content_json,q.structure_json\n        FROM dbo.Company_TrainingQuestion q\n        WHERE q.status=N'published' AND q.is_active=1 AND q.domain=N'academic'\n          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading')\n        ORDER BY q.question_id",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.operations_manuals_admin.1": {
+    "sql": "SELECT d.document_id AS id,d.title,d.role_category AS category,d.file_name,\n               d.source_size,d.source_modified,d.source_kind,d.parse_status,d.parse_message,\n               d.is_active,d.imported_at,\n               COUNT(s.section_id) AS section_count\n        FROM dbo.Company_TrainingDocument d\n        LEFT JOIN dbo.Company_TrainingSection s ON s.document_id=d.document_id\n        GROUP BY d.document_id,d.title,d.role_category,d.file_name,d.source_size,\n                 d.source_modified,d.source_kind,d.parse_status,d.parse_message,d.is_active,d.imported_at\n        ORDER BY d.is_active DESC,d.role_category,d.title",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain._ensure_training_classification.1": {
+    "sql": "IF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingSubject WHERE domain=? AND subject_name=?)\n        INSERT dbo.Company_TrainingSubject\n            (domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score)\n        VALUES (?,?,40,45,70)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._ensure_training_classification.2": {
+    "sql": "SELECT subject_id FROM dbo.Company_TrainingSubject WHERE domain=? AND subject_name=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain._ensure_training_classification.3": {
+    "sql": "IF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=?)\n        INSERT dbo.Company_TrainingChapter (subject_id,chapter_code,chapter_name,display_order)\n        VALUES (?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._ensure_training_classification.4": {
+    "sql": "SELECT chapter_id FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.import_training_question_drafts.1": {
+    "sql": "SELECT file_name,document_id FROM dbo.Company_TrainingDocument",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.import_training_question_drafts.2": {
+    "sql": "UPDATE dbo.Company_TrainingDocument\n                    SET source_kind=?,parse_status=?,parse_message=?\n                    WHERE file_name=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.import_training_question_drafts.3": {
+    "sql": "SELECT question_id,admin_locked,deleted_at FROM dbo.Company_TrainingQuestion\n                    WHERE source_fingerprint=? OR\n                          (document_id=? AND source_question_key=?)\n                    ORDER BY CASE WHEN source_fingerprint=? THEN 0 ELSE 1 END",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.import_training_question_drafts.4": {
+    "sql": "UPDATE dbo.Company_TrainingQuestion\n                    SET document_id=?,subject_id=?,chapter_id=?,domain=?,category=?,question=?,\n                        options_json=?,correct_index=?,explanation=?,question_type=?,answer_json=?,\n                        content_json=?,structure_json=?,source_locator=?,source_question_key=?,\n                        source_fingerprint=?,parse_confidence=?,parse_warnings_json=?,\n                        status=N'draft',is_active=0,updated_at=SYSDATETIME()\n                    WHERE question_id=? AND admin_locked=0 AND deleted_at IS NULL",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.import_training_question_drafts.5": {
+    "sql": "INSERT dbo.Company_TrainingQuestion\n                    (document_id,subject_id,chapter_id,domain,category,question,options_json,\n                     correct_index,explanation,question_type,answer_json,content_json,structure_json,\n                     source_locator,source_question_key,source_fingerprint,parse_confidence,\n                     parse_warnings_json,status,is_active,admin_locked)\n                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,N'draft',0,0)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.training_taxonomy_admin.1": {
+    "sql": "SELECT subject_id AS id,domain,subject_name AS name,mock_question_count,\n                   mock_duration_minutes,mock_pass_score,is_active\n            FROM dbo.Company_TrainingSubject ORDER BY domain,subject_name",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.training_taxonomy_admin.2": {
+    "sql": "SELECT chapter_id AS id,subject_id,chapter_code AS code,chapter_name AS name,\n                   display_order,is_active\n            FROM dbo.Company_TrainingChapter ORDER BY subject_id,display_order,chapter_code",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_training_subject.1": {
+    "sql": "SELECT domain FROM dbo.Company_TrainingSubject WHERE subject_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_training_subject.2": {
+    "sql": "SELECT COUNT(*) FROM dbo.Company_TrainingQuestion WHERE subject_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_training_subject.3": {
+    "sql": "UPDATE dbo.Company_TrainingSubject\n                    SET domain=?,subject_name=?,mock_question_count=?,mock_duration_minutes=?,\n                        mock_pass_score=?,is_active=? WHERE subject_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_training_subject.4": {
+    "sql": "INSERT dbo.Company_TrainingSubject\n                    (domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score,is_active)\n                    OUTPUT inserted.subject_id VALUES (?,?,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_training_chapter.1": {
+    "sql": "SELECT subject_id FROM dbo.Company_TrainingChapter WHERE chapter_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_training_chapter.2": {
+    "sql": "SELECT COUNT(*) FROM dbo.Company_TrainingQuestion WHERE chapter_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_training_chapter.3": {
+    "sql": "UPDATE dbo.Company_TrainingChapter\n                    SET subject_id=?,chapter_code=?,chapter_name=?,display_order=?,is_active=?\n                    WHERE chapter_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_training_chapter.4": {
+    "sql": "INSERT dbo.Company_TrainingChapter\n                    (subject_id,chapter_code,chapter_name,display_order,is_active)\n                    OUTPUT inserted.chapter_id VALUES (?,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.set_operations_manual_state.1": {
+    "sql": "UPDATE dbo.Company_TrainingDocument SET is_active=? WHERE document_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.compliance_questions_admin.1": {
+    "sql": "SELECT q.question_id AS id,q.document_id,q.subject_id,q.chapter_id,q.domain,\n               s.subject_name AS subject,c.chapter_code,c.chapter_name AS chapter,\n               d.file_name AS source,q.category,q.question,q.question_type,\n               q.options_json,q.answer_json,q.content_json,q.structure_json,q.passage,\n               q.explanation,q.source_locator,q.parse_confidence,q.parse_warnings_json,\n               q.status,q.admin_locked,q.is_active\n        FROM dbo.Company_TrainingQuestion q\n        LEFT JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id\n        WHERE q.deleted_at IS NULL\n        ORDER BY CASE q.status WHEN N'draft' THEN 0 WHEN N'published' THEN 1 ELSE 2 END,q.question_id",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.save_compliance_question.1": {
+    "sql": "UPDATE dbo.Company_TrainingQuestion\n                    SET document_id=?,subject_id=?,chapter_id=?,domain=?,category=?,question=?,\n                        options_json=?,correct_index=?,explanation=?,question_type=?,answer_json=?,\n                        content_json=?,structure_json=?,passage=?,status=?,is_active=?,\n                        admin_locked=1,updated_at=SYSDATETIME()\n                    WHERE question_id=? AND deleted_at IS NULL",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_compliance_question.2": {
+    "sql": "INSERT dbo.Company_TrainingQuestion\n                    (document_id,subject_id,chapter_id,domain,category,question,options_json,\n                     correct_index,explanation,question_type,answer_json,content_json,structure_json,\n                     passage,status,is_active,admin_locked)\n                    OUTPUT inserted.question_id VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.grade_compliance_answer.1": {
+    "sql": "SELECT question_id AS id,question_type,options_json,answer_json,explanation\n        FROM dbo.Company_TrainingQuestion WHERE question_id=? AND is_active=1 AND status=N'published'\n          AND question_type IN (N'single_choice',N'multiple_choice',N'reading',N'essay')",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.grade_compliance_answer.2": {
+    "sql": "INSERT dbo.Company_TrainingAnswer (question_id,employee_id,answer_text)\n                    OUTPUT inserted.answer_id VALUES (?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.practical_questions.1": {
+    "sql": "SELECT q.question_id AS id,s.subject_name AS subject,c.chapter_name AS chapter,\n               q.question,q.content_json,q.source_locator,\n               latest.status AS answer_status,latest.feedback,latest.submitted_at\n        FROM dbo.Company_TrainingQuestion q\n        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        OUTER APPLY (\n            SELECT TOP 1 a.status,a.feedback,a.submitted_at\n            FROM dbo.Company_TrainingAnswer a\n            WHERE a.question_id=q.question_id AND a.employee_id=?\n            ORDER BY a.submitted_at DESC\n        ) latest\n        WHERE q.domain=N'practical' AND q.question_type=N'essay'\n          AND q.status=N'published' AND q.is_active=1\n        ORDER BY q.question_id",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.compliance_essay_answers_admin.1": {
+    "sql": "SELECT a.answer_id AS id,a.question_id,q.category,q.question,a.employee_id,\n               s.display_name AS employee_name,a.answer_text,a.status,a.feedback,\n               a.submitted_at,a.reviewed_by,a.reviewed_at\n        FROM dbo.Company_TrainingAnswer a\n        JOIN dbo.Company_TrainingQuestion q ON q.question_id=a.question_id\n        JOIN dbo.Company_Staff s ON s.employee_id=a.employee_id\n        ORDER BY CASE WHEN a.status=N'待審核' THEN 0 ELSE 1 END,a.submitted_at DESC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.review_compliance_essay.1": {
+    "sql": "UPDATE dbo.Company_TrainingAnswer\n                SET status=?,feedback=?,reviewed_by=?,reviewed_at=SYSDATETIME()\n                WHERE answer_id=?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.delete_compliance_question.1": {
+    "sql": "UPDATE dbo.Company_TrainingQuestion\n                SET deleted_at=SYSUTCDATETIME(),is_active=0,status=N'disabled',\n                    admin_locked=1,updated_at=SYSDATETIME()\n                WHERE question_id=? AND deleted_at IS NULL",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.deactivate_compliance_question.1": {
+    "sql": "UPDATE dbo.Company_TrainingQuestion SET is_active=0,status=N'disabled',admin_locked=1,updated_at=SYSDATETIME() WHERE question_id=? AND deleted_at IS NULL",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.set_training_question_status.1": {
+    "sql": "SELECT question_type,options_json,answer_json,structure_json,explanation\n        FROM dbo.Company_TrainingQuestion WHERE question_id=? AND deleted_at IS NULL",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.set_training_question_status.2": {
+    "sql": "UPDATE dbo.Company_TrainingQuestion\n                SET status=?,is_active=?,admin_locked=1,updated_at=SYSDATETIME()\n                WHERE question_id=? AND deleted_at IS NULL",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.unlock_training_question_import.1": {
+    "sql": "UPDATE dbo.Company_TrainingQuestion\n                SET admin_locked=0,status=N'draft',is_active=0,updated_at=SYSDATETIME()\n                WHERE question_id=? AND deleted_at IS NULL AND source_fingerprint IS NOT NULL",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.update_training_questions_bulk.1": {
+    "sql": "SELECT chapter_id FROM dbo.Company_TrainingChapter\n                WHERE subject_id=? AND chapter_id=?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.update_training_questions_bulk.2": {
+    "sql": "UPDATE dbo.Company_TrainingQuestion\n                    SET subject_id=?,chapter_id=?,admin_locked=1,updated_at=SYSDATETIME()\n                    WHERE deleted_at IS NULL AND question_id IN ({{0}})",
+    "dynamic": 1,
+    "read_only": false
+  },
+  "time_sync.now.1": {
+    "sql": "DECLARE @utc datetime2 = SYSUTCDATETIME();\n        DECLARE @now datetimeoffset = @utc AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time';\n        SELECT\n            CONVERT(nvarchar(33), CONVERT(datetime2, @now), 126) + DATENAME(TZOFFSET, @now) AS offset_time,\n            CONVERT(datetime2, @now) AS local_time,\n            CONVERT(date, @now) AS work_date,\n            CONVERT(nvarchar(33), CONVERT(datetime2, @now), 126) + DATENAME(TZOFFSET, @now) AS iso_time,\n            DATEDIFF_BIG(millisecond, '1970-01-01', @utc) AS unix_ms,\n            @utc AS utc_time",
+    "dynamic": 0,
+    "read_only": true
+  }
+}

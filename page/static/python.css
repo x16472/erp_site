@@ -1,0 +1,66 @@
+/* Python 與 Go 共用編輯器、命令列排版，保持各自的根元素與 ID 隔離。 */
+:is(#python_canvas, #golang_canvas) {
+    min-width: 0;
+}
+
+:is(#python_canvas, #golang_canvas) .card-head,
+:is(#python_canvas, #golang_canvas) .card-actions {
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+:is(#python_canvas, #golang_canvas) textarea,
+:is(#python-output, #golang-output),
+:is(#python-command-form, #golang-command-form) {
+    font-family: Consolas, "Cascadia Code", monospace;
+    font-size: 14px;
+    line-height: 1.65;
+    tab-size: 4;
+}
+
+:is(#python_canvas, #golang_canvas) textarea {
+    width: 100%;
+    resize: vertical;
+}
+
+:is(#python-code, #golang-code) {
+    white-space: pre;
+    overflow-wrap: normal;
+}
+
+:is(#python_canvas, #golang_canvas) :is(#python-stdin, #golang-stdin) {
+    min-height: 90px;
+}
+
+:is(#python-output, #golang-output) {
+    height: 260px;
+    overflow: auto;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-subtle);
+    color: var(--ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+:is(#python-output, #golang-output) :is(.python-error, .golang-error) {
+    color: var(--danger-text);
+}
+
+:is(#python-command-form, #golang-command-form) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+:is(#python-command, #golang-command) {
+    flex: 1;
+    width: 0;
+}
+
+:is(#python_canvas, #golang_canvas) button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}

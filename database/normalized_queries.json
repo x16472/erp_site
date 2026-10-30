@@ -1,0 +1,92 @@
+{
+  "domain._normalize_company_departments.1": {
+    "sql": "IF NOT EXISTS (SELECT 1 FROM dbo.Company_Department WHERE department_name=?)\n               INSERT dbo.Company_Department (is_active,department_name,updated_by) VALUES (1,?,N'prd-migration')",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.1": {
+    "sql": "IF NOT EXISTS(SELECT 1 FROM dbo.Company_TrainingSubject WHERE domain=N'academic' AND subject_name=N'通用知識') INSERT dbo.Company_TrainingSubject(subject_id,domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score,is_active) VALUES(CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingSubjectsNumbers),N'academic',N'通用知識',40,45,70,1);\nIF NOT EXISTS(SELECT 1 FROM dbo.Company_TrainingSubject WHERE domain=N'practical' AND subject_name=N'術科申論') INSERT dbo.Company_TrainingSubject(subject_id,domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score,is_active) VALUES(CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingSubjectsNumbers),N'practical',N'術科申論',0,0,0,1);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.4": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingChaptersNumbers);\nIF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=N'UNSORTED')\n                    INSERT dbo.Company_TrainingChapter (is_active,chapter_id,subject_id,chapter_code,chapter_name,display_order)\n                    VALUES (1,@erp_no,?,N'UNSORTED',N'未分類',999)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.6": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingQuestionsNumbers);\nINSERT dbo.Company_TrainingQuestion\n                        (question_id,category,question,options_json,correct_index,explanation,question_type,answer_json)\n                        VALUES (@erp_no,?,?,?,?,?,N'single_choice',?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.ensure_application_schema.10": {
+    "sql": "INSERT dbo.Company_Department (is_active,department_name,updated_by)\n                SELECT DISTINCT 1,s.department,N'schema-sync'\n                FROM dbo.Company_Staff s\n                WHERE s.department<>N''\n                  AND NOT EXISTS (\n                      SELECT 1 FROM dbo.Company_Department d WHERE d.department_name=s.department\n                  )",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_department.6": {
+    "sql": "INSERT dbo.Company_Department (is_active,department_name,updated_by)\n                        OUTPUT inserted.department_id VALUES (1,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_staff.3": {
+    "sql": "MERGE dbo.Company_Staff AS target\n                USING (SELECT ? AS employee_id) AS source ON target.employee_id=source.employee_id\n                WHEN MATCHED THEN UPDATE SET display_name=?,gender=?,age=?,department=?,position=?,traits=?,biography=?,photo_file=?,is_active=1,updated_by=?,updated_at=SYSDATETIME()\n                WHEN NOT MATCHED THEN INSERT (is_active,employee_id,display_name,gender,age,department,position,traits,biography,photo_file,updated_by)\n                VALUES (1,?,?,?,?,?,?,?,?,?,?);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.add_operation.1": {
+    "sql": "INSERT dbo.Company_OperationSubmission\n                (status,submission_id,operation_date,campus_code,category_code,quantity,note,submitted_by)\n                OUTPUT inserted.submitted_at\n                VALUES (N'待審核',?,?,?,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.upsert_operations_manuals.4": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingDocumentsNumbers);\nMERGE dbo.Company_TrainingDocument AS target\n                    USING (SELECT ? AS file_name) AS source ON target.file_name=source.file_name\n                    WHEN MATCHED THEN UPDATE SET title=?,role_category=?,source_size=?,source_modified=?,is_active=1,imported_at=SYSDATETIME()\n                    WHEN NOT MATCHED THEN INSERT (source_kind,document_id,file_name,title,role_category,source_size,source_modified,is_active)\n                    VALUES (N'manual',@erp_no,?,?,?,?,?,1);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.start_training_session.2": {
+    "sql": "INSERT dbo.Company_TrainingSession\n                (score,session_id,employee_id,subject_id,mode,status,config_json,expires_at)\n                VALUES (NULL,?,?,?, ?,N'in_progress',?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.start_training_session.3": {
+    "sql": "INSERT dbo.Company_TrainingSessionQuestion\n                    (is_correct,session_id,question_id,question_order,snapshot_json)\n                    VALUES (NULL,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._ensure_training_classification.1": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingSubjectsNumbers);\nIF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingSubject WHERE domain=? AND subject_name=?)\n        INSERT dbo.Company_TrainingSubject\n            (is_active,subject_id,domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score)\n        VALUES (1,@erp_no,?,?,40,45,70)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain._ensure_training_classification.3": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingChaptersNumbers);\nIF NOT EXISTS (SELECT 1 FROM dbo.Company_TrainingChapter WHERE subject_id=? AND chapter_code=?)\n        INSERT dbo.Company_TrainingChapter (is_active,chapter_id,subject_id,chapter_code,chapter_name,display_order)\n        VALUES (1,@erp_no,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.import_training_question_drafts.5": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingQuestionsNumbers);\nINSERT dbo.Company_TrainingQuestion\n                    (question_id,document_id,subject_id,chapter_id,domain,category,question,options_json,\n                     correct_index,explanation,question_type,answer_json,content_json,structure_json,\n                     source_locator,source_question_key,source_fingerprint,parse_confidence,\n                     parse_warnings_json,status,is_active,admin_locked)\n                    VALUES (@erp_no,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,N'draft',0,0)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_training_subject.4": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingSubjectsNumbers);\nINSERT dbo.Company_TrainingSubject\n                    (subject_id,domain,subject_name,mock_question_count,mock_duration_minutes,mock_pass_score,is_active)\n                    OUTPUT inserted.subject_id VALUES (@erp_no,?,?,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_training_chapter.4": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingChaptersNumbers);\nINSERT dbo.Company_TrainingChapter\n                    (chapter_id,subject_id,chapter_code,chapter_name,display_order,is_active)\n                    OUTPUT inserted.chapter_id VALUES (@erp_no,?,?,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.save_compliance_question.2": {
+    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingQuestionsNumbers);\nINSERT dbo.Company_TrainingQuestion\n                    (question_id,document_id,subject_id,chapter_id,domain,category,question,options_json,\n                     correct_index,explanation,question_type,answer_json,content_json,structure_json,\n                     passage,status,is_active,admin_locked)\n                    OUTPUT inserted.question_id VALUES (@erp_no,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.grade_compliance_answer.2": {
+    "sql": "INSERT dbo.Company_TrainingAnswer (status,reviewed_by,question_id,employee_id,answer_text)\n                    OUTPUT inserted.answer_id VALUES (N'待審核',NULL,?,?,?)",
+    "dynamic": 0,
+    "read_only": false
+  }
+}

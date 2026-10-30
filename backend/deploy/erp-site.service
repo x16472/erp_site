@@ -1,0 +1,27 @@
+[Unit]
+Description=ERP Site Go HTTP and Python gRPC Service
+Wants=network-online.target
+After=network-online.target docker.service
+RequiresMountsFor=/opt/erp_site
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=erp-site
+Group=erp-site
+WorkingDirectory=/opt/erp_site
+ExecStart=/bin/bash /opt/erp_site/start.sh
+Environment=WEB_HOST=0.0.0.0
+Environment=WEB_PORT=8080
+Restart=on-failure
+RestartSec=10s
+TimeoutStopSec=30s
+KillMode=control-group
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

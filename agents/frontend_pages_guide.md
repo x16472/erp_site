@@ -1,10 +1,10 @@
 # 前端頁面架構與維護指引
 
-更新日期：2026-10-26。依 `page/`、`page/static/` 與 `backend/app.py` 的目前內容整理。本文描述實作，不沿用過往改版指令或未重新驗證的測試結論。
+更新日期：2026-10-26。依 `page/`、`page/static/` 與 `backend/src/erp/api.py` 的目前內容整理。本文描述實作，不沿用過往改版指令或未重新驗證的測試結論。
 
 ## 架構與權限
 
-前端採原生 HTML、JavaScript ES Modules 與共用 CSS，不需要 Node.js 或打包工具。頁面、靜態資源與 API 由同一 Python HTTP 服務提供；容器部署時由 IIS 反向代理。請透過 HTTP 使用，不以直接開啟本機 HTML 作為完整功能驗證。
+前端採原生 HTML、JavaScript ES Modules 與共用 CSS，不需要 Node.js 或打包工具。頁面、靜態資源與 API 由同一 Go HTTP 服務（Python 業務透過 gRPC 執行）提供；容器部署時由 IIS 反向代理。請透過 HTTP 使用，不以直接開啟本機 HTML 作為完整功能驗證。
 
 HTML 路由本身可載入，保護主要由 API 執行。員工頁面透過 `requireEmployee()` 檢查工作階段；員工管理與 MIS 還需管理員工作階段，且管理員身分綁定目前員工。工作面板目前是介面骨架，沒有獨立的完整身分驗證與業務資料流程。
 

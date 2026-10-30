@@ -1,4 +1,6 @@
-.agents/
+agents/
+bin/
+.git/
 .deps/
 .venv/
 .vscode/
@@ -7,5 +9,5 @@ __pycache__/
 data/*.db
 data/*
 data/*.bak
-!data/staff.csv
-!data/Company_Schema.sql
+database/*.db
+database/*.bak

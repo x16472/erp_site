@@ -3435,7 +3435,7 @@ textarea::placeholder {
     color: var(--on-brand-muted);
 }
 
-/* 平板 */
+/*平板版（680px 到 980px 之間）*/
 @media (max-width: 980px) {
     .public-header .public-nav a {
         display: block;
@@ -3697,8 +3697,8 @@ textarea::placeholder {
 
 }
 
-/* 手機 */
-@media (max-width: 680px) {
+/*手機版（679px 以下）*/
+@media (max-width: 679px) {
     .public-hero {
         min-height: auto;
     }

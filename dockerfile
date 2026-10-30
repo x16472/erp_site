@@ -1,18 +1,42 @@
 # escape=`
-# 從 Docker 官方 image 取得 Python，最終基底明確使用 Server Core。
-FROM python:3.13-windowsservercore-ltsc2022 AS python_runtime
+# Go 編譯與最終 Server Core 分階段；Python 使用官方固定版本安裝程式。
+FROM golang:1.23-windowsservercore-ltsc2022 AS go_build
+WORKDIR C:/build
+COPY go.mod go.sum ./
+RUN go mod download
+COPY backend/cmd/ ./backend/cmd/
+COPY backend/internal/ ./backend/internal/
+COPY backend/rpc/ ./backend/rpc/
+COPY database/ ./database/
+RUN go build -trimpath -o C:/build/erp-site.exe ./backend/cmd/erp
+
+FROM mcr.microsoft.com/windows/servercore:ltsc2022 AS runtime_config
+SHELL ["powershell", "-NoLogo", "-NoProfile", "-Command", "$ErrorActionPreference = 'Stop';"]
+COPY .env C:/config/.env
+# 部署帳密只供部署端使用，不進入最終網站 image。
+RUN $lines = Get-Content -LiteralPath C:\config\.env; `
+    $lines | Where-Object { $_ -notmatch '^\s*DokerPublish(Name|Password)\s*=' } | Set-Content -LiteralPath C:\config\.env -Encoding UTF8
+
 FROM mcr.microsoft.com/windows/servercore:ltsc2022
 
 LABEL org.opencontainers.image.authors="dog0830430@gmail.com"
 SHELL ["powershell", "-NoLogo", "-NoProfile", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-COPY --from=python_runtime C:/Python/ C:/Python/
+
+RUN Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile C:\python-installer.exe; `
+    $digest = (Get-FileHash -LiteralPath C:\python-installer.exe -Algorithm SHA256).Hash; `
+    if ($digest -ne '5EE42C4EEE1E6B4464BB23722F90B45303F79442DF63083F05322F1785F5FDDE') { throw 'Python installer checksum mismatch.' }; `
+    $process = Start-Process C:\python-installer.exe -ArgumentList @('/quiet', 'InstallAllUsers=1', 'TargetDir=C:\Python', 'Include_launcher=0', 'Include_test=0', 'Include_doc=0', 'Include_tcltk=0', 'Shortcuts=0', 'AssociateFiles=0') -Wait -WindowStyle Hidden -PassThru; `
+    if ($process.ExitCode -notin @(0, 3010)) { throw ('Python installation failed: ' + $process.ExitCode) }; `
+    Remove-Item -LiteralPath C:\python-installer.exe
 
 ENV NAME="ERP_Site" `
+    WEB_HOST="127.0.0.1" `
+    WEB_PORT="8000" `
     PYTHONUNBUFFERED="1" `
     PYTHONDONTWRITEBYTECODE="1" `
     PYTHONIOENCODING="utf-8"
 
-# IIS 對外接收 HTTP；既有 Python HTTP 後端由 ARR 反向代理。
+# IIS 對外接收 HTTP，ARR 轉送至 Go 主程式。
 RUN $result = Install-WindowsFeature Web-Server; `
     if (-not $result.Success) { throw 'IIS installation failed.' }; `
     Invoke-WebRequest -Uri 'https://download.microsoft.com/download/1/2/8/128E2E22-C1B9-44A4-BE2A-5859ED1D4592/rewrite_amd64_en-US.msi' -OutFile C:\rewrite.msi; `
@@ -39,11 +63,13 @@ RUN Invoke-WebRequest -Uri 'https://aka.ms/vs/17/release/vc_redist.x64.exe' -Out
     Remove-Item -LiteralPath C:\vc_redist.x64.exe
 
 # 明確指定來源，避免把 Git 或本機 .venv 打包進 image。
-COPY backend/ C:/inetpub/wwwroot/backend/
+COPY --from=go_build C:/build/erp-site.exe C:/inetpub/wwwroot/bin/erp-site.exe
+COPY backend/src/ C:/inetpub/wwwroot/backend/src/
+COPY backend/__init__.py C:/inetpub/wwwroot/backend/__init__.py
+COPY database/*.sql C:/inetpub/wwwroot/database/
 COPY page/ C:/inetpub/wwwroot/page/
-COPY data/staff.csv data/Company_Schema.sql C:/inetpub/wwwroot/data/
 COPY start.bat C:/inetpub/wwwroot/start.bat
-COPY .env C:/inetpub/wwwroot/.env
+COPY --from=runtime_config C:/config/.env C:/inetpub/wwwroot/.env
 RUN cmd.exe /S /C 'start.bat --check < NUL'; `
     if ($LASTEXITCODE -ne 0) { throw 'start.bat dependency checks failed.' }; `
     C:\inetpub\wwwroot\.venv\Scripts\python.exe -c 'import pymupdf, PIL, pytesseract'; `
@@ -54,9 +80,10 @@ RUN $result = Install-WindowsFeature Web-Scripting-Tools; `
     if (-not $result.Success) { throw 'IIS scripting tools installation failed.' }; `
     Import-Module WebAdministration; `
     Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter 'system.webServer/proxy' -Name enabled -Value $true; `
+    Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter 'system.webServer/proxy' -Name timeout -Value '00:11:00'; `
     Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter 'system.webServer/proxy' -Name preserveHostHeader -Value $true; `
     Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter 'system.webServer/proxy' -Name reverseRewriteHostInResponseHeaders -Value $false; `
-    Set-Content -LiteralPath C:\inetpub\wwwroot\web.config -Encoding UTF8 -Value '<configuration><system.webServer><rewrite><rules><rule name=''PythonBackend'' stopProcessing=''true''><match url=''(.*)'' /><action type=''Rewrite'' url=''http://127.0.0.1:8000/{R:1}'' appendQueryString=''true'' /></rule></rules></rewrite><httpErrors existingResponse=''PassThrough'' /><caching enabled=''false'' enableKernelCache=''false'' /></system.webServer></configuration>'
+    Set-Content -LiteralPath C:\inetpub\wwwroot\web.config -Encoding UTF8 -Value '<configuration><system.webServer><rewrite><rules><rule name=''GoBackend'' stopProcessing=''true''><match url=''(.*)'' /><action type=''Rewrite'' url=''http://127.0.0.1:8000/{R:1}'' appendQueryString=''true'' /></rule></rules></rewrite><httpErrors existingResponse=''PassThrough'' /><caching enabled=''false'' enableKernelCache=''false'' /></system.webServer></configuration>'
 
 # 沿用 start.bat 的啟動命令，改用回送位址及 8000 埠以避開 IIS。
 # 同時監控後端及 IIS，任一停止即結束容器。
@@ -64,8 +91,8 @@ RUN Set-Content -LiteralPath C:\container-start.ps1 -Encoding UTF8 -Value @(`
     '$ErrorActionPreference = ''Stop''', `
     'if (-not (Test-Path -LiteralPath C:\inetpub\wwwroot\.env -PathType Leaf)) { throw ''Application .env is missing.'' }', `
     '$startInfo = New-Object System.Diagnostics.ProcessStartInfo', `
-    '$startInfo.FileName = ''C:\inetpub\wwwroot\.venv\Scripts\python.exe''', `
-    '$startInfo.Arguments = ''-m backend.app --host 127.0.0.1 --port 8000''', `
+    '$startInfo.FileName = ''C:\inetpub\wwwroot\bin\erp-site.exe''', `
+    '$startInfo.Arguments = ''--root C:\inetpub\wwwroot''', `
     '$startInfo.WorkingDirectory = ''C:\inetpub\wwwroot''', `
     '$startInfo.UseShellExecute = $false', `
     '$startInfo.CreateNoWindow = $true', `
