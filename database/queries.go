@@ -114,6 +114,9 @@ func resolveQuery(catalog map[string]queryDefinition, name string, body []byte, 
 	for i, fragment := range fragments {
 		query = strings.ReplaceAll(query, fmt.Sprintf("{{%d}}", i), fragment)
 	}
+	if name == "domain.table_data.2" && fragments[1] == "[dbo].[Company_TrainingQuestion]" {
+		query = strings.Replace(query, "ORDER BY (SELECT NULL)", "ORDER BY TRY_CONVERT(BIGINT,[question_id]),[question_id]", 1)
+	}
 	return query, nil
 }
 

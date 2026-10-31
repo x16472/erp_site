@@ -1870,6 +1870,18 @@ footer a {
     color: var(--muted);
 }
 
+.question-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 12px 0;
+}
+
+.question-image-preview .question-image {
+    max-height: 320px;
+    object-fit: contain;
+}
+
 .staff-photo-preview {
     display: block;
     width: 130px;

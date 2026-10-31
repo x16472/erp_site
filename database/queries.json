@@ -400,7 +400,7 @@
     "read_only": true
   },
   "domain._published_question_rows.1": {
-    "sql": "SELECT q.question_id AS id,q.domain,s.subject_name AS subject,\n               c.chapter_name AS chapter,d.file_name AS source,q.source_locator,\n               q.question_type,q.question,q.content_json,q.options_json,q.answer_json,\n               q.structure_json,q.passage,q.explanation\n        FROM dbo.Company_TrainingQuestion q\n        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id\n        WHERE {{0}}\n        ORDER BY q.question_id",
+    "sql": "SELECT q.question_id AS id,q.domain,s.subject_name AS subject,\n               c.chapter_name AS chapter,d.file_name AS source,q.source_locator,\n               q.question_type,q.question,q.content_json,q.options_json,q.answer_json,\n               q.structure_json,q.passage,q.explanation\n        FROM dbo.Company_TrainingQuestion q\n        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id\n        WHERE {{0}}\n        ORDER BY TRY_CONVERT(BIGINT,q.question_id),q.question_id",
     "dynamic": 1,
     "read_only": true
   },
@@ -505,7 +505,7 @@
     "read_only": false
   },
   "domain.compliance_questions.1": {
-    "sql": "SELECT TOP 20 q.question_id AS id,q.category,q.question,q.question_type,\n               q.options_json,q.passage,q.content_json,q.structure_json\n        FROM dbo.Company_TrainingQuestion q\n        WHERE q.status=N'published' AND q.is_active=1 AND q.domain=N'academic'\n          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading')\n        ORDER BY q.question_id",
+    "sql": "SELECT TOP 20 q.question_id AS id,q.category,q.question,q.question_type,\n               q.options_json,q.passage,q.content_json,q.structure_json\n        FROM dbo.Company_TrainingQuestion q\n        WHERE q.status=N'published' AND q.is_active=1 AND q.domain=N'academic'\n          AND q.question_type IN (N'single_choice',N'multiple_choice',N'reading')\n        ORDER BY TRY_CONVERT(BIGINT,q.question_id),q.question_id",
     "dynamic": 0,
     "read_only": true
   },
@@ -615,7 +615,7 @@
     "read_only": false
   },
   "domain.compliance_questions_admin.1": {
-    "sql": "SELECT q.question_id AS id,q.document_id,q.subject_id,q.chapter_id,q.domain,\n               s.subject_name AS subject,c.chapter_code,c.chapter_name AS chapter,\n               d.file_name AS source,q.category,q.question,q.question_type,\n               q.options_json,q.answer_json,q.content_json,q.structure_json,q.passage,\n               q.explanation,q.source_locator,q.parse_confidence,q.parse_warnings_json,\n               q.status,q.admin_locked,q.is_active\n        FROM dbo.Company_TrainingQuestion q\n        LEFT JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id\n        WHERE q.deleted_at IS NULL\n        ORDER BY CASE q.status WHEN N'draft' THEN 0 WHEN N'published' THEN 1 ELSE 2 END,q.question_id",
+    "sql": "SELECT q.question_id AS id,q.document_id,q.subject_id,q.chapter_id,q.domain,\n               s.subject_name AS subject,c.chapter_code,c.chapter_name AS chapter,\n               d.file_name AS source,q.category,q.question,q.question_type,\n               q.options_json,q.answer_json,q.content_json,q.structure_json,q.passage,\n               q.explanation,q.source_locator,q.parse_confidence,q.parse_warnings_json,\n               q.status,q.admin_locked,q.is_active\n        FROM dbo.Company_TrainingQuestion q\n        LEFT JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        LEFT JOIN dbo.Company_TrainingDocument d ON d.document_id=q.document_id\n        WHERE q.deleted_at IS NULL\n        ORDER BY TRY_CONVERT(BIGINT,q.question_id),q.question_id",
     "dynamic": 0,
     "read_only": true
   },
@@ -640,7 +640,7 @@
     "read_only": false
   },
   "domain.practical_questions.1": {
-    "sql": "SELECT q.question_id AS id,s.subject_name AS subject,c.chapter_name AS chapter,\n               q.question,q.content_json,q.source_locator,\n               latest.status AS answer_status,latest.feedback,latest.submitted_at\n        FROM dbo.Company_TrainingQuestion q\n        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        OUTER APPLY (\n            SELECT TOP 1 a.status,a.feedback,a.submitted_at\n            FROM dbo.Company_TrainingAnswer a\n            WHERE a.question_id=q.question_id AND a.employee_id=?\n            ORDER BY a.submitted_at DESC\n        ) latest\n        WHERE q.domain=N'practical' AND q.question_type=N'essay'\n          AND q.status=N'published' AND q.is_active=1\n        ORDER BY q.question_id",
+    "sql": "SELECT q.question_id AS id,s.subject_name AS subject,c.chapter_name AS chapter,\n               q.question,q.content_json,q.source_locator,\n               latest.status AS answer_status,latest.feedback,latest.submitted_at\n        FROM dbo.Company_TrainingQuestion q\n        JOIN dbo.Company_TrainingSubject s ON s.subject_id=q.subject_id\n        LEFT JOIN dbo.Company_TrainingChapter c ON c.chapter_id=q.chapter_id\n        OUTER APPLY (\n            SELECT TOP 1 a.status,a.feedback,a.submitted_at\n            FROM dbo.Company_TrainingAnswer a\n            WHERE a.question_id=q.question_id AND a.employee_id=?\n            ORDER BY a.submitted_at DESC\n        ) latest\n        WHERE q.domain=N'practical' AND q.question_type=N'essay'\n          AND q.status=N'published' AND q.is_active=1\n        ORDER BY TRY_CONVERT(BIGINT,q.question_id),q.question_id",
     "dynamic": 0,
     "read_only": true
   },

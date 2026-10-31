@@ -33,7 +33,13 @@ const domainTabs = $('#domainTabs'),
 function showAcademic(view) {
     [academicHome, setupView, sessionView, resultView, wrongView].forEach(item => item.hidden = item !== view)
 }
-function renderBlocks(blocks) { return (blocks || []).map(block => block.type === 'code' ? `<pre class="question-code"><code>${esc(block.content)}</code></pre>` : `<div class="question-text">${esc(block.content).replace(/\n/g, '<br>')}</div>`).join('') }
+function renderBlocks(blocks) {
+    return (blocks || []).map(block => {
+        if (block.type === 'image') return `<img class="question-image" src="/api/training/image?name=${encodeURIComponent(block.content)}" alt="題目附圖" loading="lazy">`;
+        if (block.type === 'code') return `<pre class="question-code"><code>${esc(block.content)}</code></pre>`;
+        return `<div class="question-text">${esc(block.content).replace(/\n/g, '<br>')}</div>`;
+    }).join('');
+}
 function renderCatalog() {
     const subjects = catalog.subjects.filter(item => item.domain === 'academic');
     subjectGrid.innerHTML = subjects.length ? subjects.map(subject => {

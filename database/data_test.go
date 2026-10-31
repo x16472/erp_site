@@ -68,6 +68,48 @@ func TestCatalogRejectsSQLInjectionAndReadOnlyWrites(t *testing.T) {
 	}
 }
 
+func TestQuestionTablePaginationUsesNumericOrder(t *testing.T) {
+	catalog, err := loadQueries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	query, err := resolveQuery(catalog, "domain.table_data.2", []byte(`["[question_id], [question]","[dbo].[Company_TrainingQuestion]"]`), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(query, "ORDER BY TRY_CONVERT(BIGINT,[question_id]),[question_id] OFFSET ? ROWS FETCH NEXT ? ROWS ONLY") {
+		t.Fatalf("題庫分頁必須在取得資料前以數字排序：%s", query)
+	}
+	query, err = resolveQuery(catalog, "domain.table_data.2", []byte(`["[employee_id]","[dbo].[Company_Staff]"]`), true)
+	if err != nil || strings.Contains(query, "question_id") {
+		t.Fatalf("題庫排序不能套用到員工資料：%s, %v", query, err)
+	}
+}
+
+func TestNormalizedQuestionInsertsPreserveParameterContracts(t *testing.T) {
+	base, err := loadQueries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var normalized map[string]queryDefinition
+	if err := json.Unmarshal(normalizedCatalog, &normalized); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"domain.ensure_application_schema.6", "domain.import_training_question_drafts.5", "domain.save_compliance_question.2"} {
+		t.Run(name, func(t *testing.T) {
+			query := normalized[name].SQL
+			if _, err := bindParameters(query, strings.Count(base[name].SQL, "?")); err != nil {
+				t.Fatalf("新取號流程不能改變 Python 呼叫參數：%v", err)
+			}
+			for _, required := range []string{"WITH (TABLOCKX,HOLDLOCK)", "(Id,QuestionNo,", "VALUES (@erp_id,@erp_no,", "ROLLBACK TRANSACTION", "SET IDENTITY_INSERT dbo.TrainingQuestions OFF"} {
+				if !strings.Contains(query, required) {
+					t.Fatalf("題目新增缺少取號或清理步驟：%s", required)
+				}
+			}
+		})
+	}
+}
+
 func testStore(t *testing.T) (*Store, sqlmock.Sqlmock) {
 	t.Helper()
 	db, mock, err := sqlmock.New()

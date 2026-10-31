@@ -288,8 +288,11 @@ def validate_compliance_question(payload: dict[str, Any]) -> dict[str, Any]:
     else:
         content_blocks = []
         for i, block in enumerate(content_blocks_value):
-            if not isinstance(block, dict) or block.get("type") not in {"text", "code"}:
-                raise InputError("題目內容只支援文字與程式碼區塊")
+            if not isinstance(block, dict) or block.get("type") not in {"text", "code", "image"}:
+                raise InputError("題目內容只支援文字、程式碼與圖片區塊")
+            if block["type"] == "image":
+                content_blocks.append({"type": "image", "content": validate_question_image_name(block.get("content"))})
+                continue
             content_blocks.append({
                 "type": block["type"],
                 "content": _text(block.get("content"), f"內容區塊 {i + 1}", 5000),
@@ -524,6 +527,21 @@ def validate_essay_review(payload: dict[str, Any]) -> dict[str, Any]:
         "status": status,
         "feedback": _text(payload.get("feedback"), "審核回饋", 1000, required=status == "需修正"),
     }
+
+
+def validate_question_image_name(value: Any) -> str:
+    """圖片只使用受控檔名，避免任意網址與目錄穿越。"""
+    if not isinstance(value, str) or not re.fullmatch(r"[\w-]{1,100}_[a-f0-9]{24}\.(jpg|png|webp)", value):
+        raise InputError("題庫附圖檔名不正確")
+    return value
+
+
+def validate_question_image(value: Any) -> dict[str, Any] | None:
+    """沿用員工照片的大小與實際檔案格式驗證。"""
+    try:
+        return validate_staff_photo(value)
+    except InputError as exc:
+        raise InputError(str(exc).replace("員工照片", "題庫附圖")) from exc
 
 
 def validate_staff_photo(value: Any) -> dict[str, Any] | None:

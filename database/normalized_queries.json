@@ -15,7 +15,7 @@
     "read_only": false
   },
   "domain.ensure_application_schema.6": {
-    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingQuestionsNumbers);\nINSERT dbo.Company_TrainingQuestion\n                        (question_id,category,question,options_json,correct_index,explanation,question_type,answer_json)\n                        VALUES (@erp_no,?,?,?,?,?,N'single_choice',?)",
+    "sql": "DECLARE @erp_owns_transaction BIT=CASE WHEN @@TRANCOUNT=0 THEN 1 ELSE 0 END;\nBEGIN TRY\n    IF @erp_owns_transaction=1 BEGIN TRANSACTION;\n    DECLARE @erp_id INT;\n    SELECT @erp_id=ISNULL(MAX(Id),0)+1 FROM dbo.TrainingQuestions WITH (TABLOCKX,HOLDLOCK);\n    DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),@erp_id);\n    SET IDENTITY_INSERT dbo.TrainingQuestions ON;\n    INSERT dbo.TrainingQuestions\n                        (Id,QuestionNo,CategoryName,QuestionText,OptionsJson,CorrectIndex,Explanation,QuestionType,AnswerJson)\n                        VALUES (@erp_id,@erp_no,?,?,?,?,?,N'single_choice',?);\n    SET IDENTITY_INSERT dbo.TrainingQuestions OFF;\n    IF @erp_owns_transaction=1 COMMIT TRANSACTION;\nEND TRY\nBEGIN CATCH\n    IF @erp_owns_transaction=1 AND XACT_STATE()<>0 ROLLBACK TRANSACTION;\n    BEGIN TRY\n        SET IDENTITY_INSERT dbo.TrainingQuestions OFF;\n    END TRY\n    BEGIN CATCH\n        PRINT N'題庫編號設定未能還原';\n    END CATCH;\n    THROW;\nEND CATCH",
     "dynamic": 0,
     "read_only": false
   },
@@ -65,7 +65,7 @@
     "read_only": false
   },
   "domain.import_training_question_drafts.5": {
-    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingQuestionsNumbers);\nINSERT dbo.Company_TrainingQuestion\n                    (question_id,document_id,subject_id,chapter_id,domain,category,question,options_json,\n                     correct_index,explanation,question_type,answer_json,content_json,structure_json,\n                     source_locator,source_question_key,source_fingerprint,parse_confidence,\n                     parse_warnings_json,status,is_active,admin_locked)\n                    VALUES (@erp_no,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,N'draft',0,0)",
+    "sql": "DECLARE @erp_owns_transaction BIT=CASE WHEN @@TRANCOUNT=0 THEN 1 ELSE 0 END;\nBEGIN TRY\n    IF @erp_owns_transaction=1 BEGIN TRANSACTION;\n    DECLARE @erp_id INT;\n    SELECT @erp_id=ISNULL(MAX(Id),0)+1 FROM dbo.TrainingQuestions WITH (TABLOCKX,HOLDLOCK);\n    DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),@erp_id);\n    SET IDENTITY_INSERT dbo.TrainingQuestions ON;\n    INSERT dbo.TrainingQuestions\n                    (Id,QuestionNo,DocumentNo,SubjectNo,ChapterNo,TrainingDomain,CategoryName,QuestionText,OptionsJson,\n                     CorrectIndex,Explanation,QuestionType,AnswerJson,ContentJson,StructureJson,\n                     SourceLocator,SourceQuestionKey,SourceFingerprint,ParseConfidence,\n                     ParseWarningsJson,QuestionStatus,IsActive,IsAdminLocked)\n                    VALUES (@erp_id,@erp_no,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,N'draft',0,0);\n    SET IDENTITY_INSERT dbo.TrainingQuestions OFF;\n    IF @erp_owns_transaction=1 COMMIT TRANSACTION;\nEND TRY\nBEGIN CATCH\n    IF @erp_owns_transaction=1 AND XACT_STATE()<>0 ROLLBACK TRANSACTION;\n    BEGIN TRY\n        SET IDENTITY_INSERT dbo.TrainingQuestions OFF;\n    END TRY\n    BEGIN CATCH\n        PRINT N'題庫編號設定未能還原';\n    END CATCH;\n    THROW;\nEND CATCH",
     "dynamic": 0,
     "read_only": false
   },
@@ -80,7 +80,7 @@
     "read_only": false
   },
   "domain.save_compliance_question.2": {
-    "sql": "DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),NEXT VALUE FOR dbo.TrainingQuestionsNumbers);\nINSERT dbo.Company_TrainingQuestion\n                    (question_id,document_id,subject_id,chapter_id,domain,category,question,options_json,\n                     correct_index,explanation,question_type,answer_json,content_json,structure_json,\n                     passage,status,is_active,admin_locked)\n                    OUTPUT inserted.question_id VALUES (@erp_no,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+    "sql": "DECLARE @erp_owns_transaction BIT=CASE WHEN @@TRANCOUNT=0 THEN 1 ELSE 0 END;\nBEGIN TRY\n    IF @erp_owns_transaction=1 BEGIN TRANSACTION;\n    DECLARE @erp_id INT;\n    SELECT @erp_id=ISNULL(MAX(Id),0)+1 FROM dbo.TrainingQuestions WITH (TABLOCKX,HOLDLOCK);\n    DECLARE @erp_no NVARCHAR(50)=CONVERT(NVARCHAR(50),@erp_id);\n    SET IDENTITY_INSERT dbo.TrainingQuestions ON;\n    INSERT dbo.TrainingQuestions\n                    (Id,QuestionNo,DocumentNo,SubjectNo,ChapterNo,TrainingDomain,CategoryName,QuestionText,OptionsJson,\n                     CorrectIndex,Explanation,QuestionType,AnswerJson,ContentJson,StructureJson,\n                     Passage,QuestionStatus,IsActive,IsAdminLocked)\n                    VALUES (@erp_id,@erp_no,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1);\n    SET IDENTITY_INSERT dbo.TrainingQuestions OFF;\n    IF @erp_owns_transaction=1 COMMIT TRANSACTION;\n    SELECT @erp_id AS question_id;\nEND TRY\nBEGIN CATCH\n    IF @erp_owns_transaction=1 AND XACT_STATE()<>0 ROLLBACK TRANSACTION;\n    BEGIN TRY\n        SET IDENTITY_INSERT dbo.TrainingQuestions OFF;\n    END TRY\n    BEGIN CATCH\n        PRINT N'題庫編號設定未能還原';\n    END CATCH;\n    THROW;\nEND CATCH",
     "dynamic": 0,
     "read_only": false
   },

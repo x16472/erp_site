@@ -28,6 +28,7 @@ from io import BytesIO
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PAGE_ROOT = (PROJECT_ROOT / "page").resolve()
 STATIC_ROOT = (PAGE_ROOT / "static").resolve()
+QUESTION_IMAGE_ROOT = PROJECT_ROOT / "data" / "exam" / "images"
 SESSION_TTL = 8 * 60 * 60
 SESSIONS: dict[str, dict] = {}
 EMPLOYEE_SESSIONS: dict[str, dict] = {}
@@ -224,7 +225,9 @@ class Handler:
                 if not session:
                     return
                 query = parse_qs(parsed.query)
-                if parsed.path == "/api/training/catalog":
+                if parsed.path == "/api/training/image":
+                    return self.send_question_image(query.get("name", [""])[0])
+                elif parsed.path == "/api/training/catalog":
                     result = data.training_catalog(session["employee_id"])
                 elif parsed.path == "/api/training/session":
                     result = data.training_session(query.get("id", [""])[0], session["employee_id"])
@@ -439,8 +442,31 @@ class Handler:
                     item = user_input.validate_operations_manual_state(self.read_json())
                     return self.send_json({"data": data.set_operations_manual_state(item["id"], item["is_active"])})
                 if parsed.path == "/api/admin/compliance/question":
-                    item = user_input.validate_compliance_question(self.read_json())
-                    return self.send_json({"data": data.save_compliance_question(item)})
+                    payload = self.read_json(MAX_STAFF_REQUEST_SIZE)
+                    item = user_input.validate_compliance_question(payload)
+                    image = user_input.validate_question_image(payload.get("image"))
+                    image_path = None
+                    try:
+                        if image:
+                            taxonomy = data.training_taxonomy_admin()
+                            subject = next((row for row in taxonomy["subjects"] if row["id"] == item["subject_id"]), None)
+                            if not subject:
+                                raise user_input.InputError("找不到指定科目")
+                            bank_name = subject["name"]
+                            if item["document_id"]:
+                                document = next((row for row in data.operations_manuals_admin() if row["id"] == item["document_id"]), None)
+                                if not document:
+                                    raise user_input.InputError("找不到指定題庫文件")
+                                bank_name = Path(document["file_name"]).stem
+                            image_path = save_question_image(bank_name, image)
+                            item["content_blocks"] = [block for block in item["content_blocks"] if block["type"] != "image"]
+                            item["content_blocks"].append({"type": "image", "content": image_path.name})
+                        result = data.save_compliance_question(item)
+                    except Exception:
+                        if image_path:
+                            image_path.unlink(missing_ok=True)
+                        raise
+                    return self.send_json({"data": result})
                 if parsed.path == "/api/admin/training/question/status":
                     item = user_input.validate_training_question_status(self.read_json())
                     return self.send_json({"data": data.set_training_question_status(item["id"], item["status"])})
@@ -598,6 +624,25 @@ class Handler:
                 SESSIONS.pop(token.value, None)
         return self.send_json({"data": {"authenticated": False}}, headers={"Set-Cookie": "silver_shield_admin=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"})
 
+    def send_question_image(self, name: str) -> None:
+        """附圖沿用員工登入權限，僅讀取圖片專用目錄。"""
+        name = user_input.validate_question_image_name(name)
+        root = QUESTION_IMAGE_ROOT.resolve()
+        target = (root / name).resolve()
+        if target.parent != root or not target.is_file():
+            return self.send_not_found()
+        try:
+            body = target.read_bytes()
+        except OSError:
+            return self.send_not_found()
+        self.send_response(200)
+        self.send_header("Content-Type", {".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}[target.suffix])
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "private, no-store")
+        self.security_headers()
+        self.end_headers()
+        self.wfile.write(body)
+
     def send_not_found(self) -> None:
         """輸出與既有 API 相容的找不到資源回應。"""
         body = ("<!doctype html><html lang=\"zh-TW\"><meta charset=\"utf-8\"><title>找不到頁面</title>"
@@ -636,6 +681,24 @@ def youtube_metadata(item: dict[str, str]) -> dict[str, str]:
     with YOUTUBE_CACHE_LOCK:
         YOUTUBE_CACHE[video_id] = result
     return result
+
+
+def save_question_image(bank_name: str, image: dict[str, Any]) -> Path:
+    """依題庫名稱命名；隨機尾碼避免更換圖片影響既有作答快照。"""
+    name = re.sub(r"[^\w-]", "_", bank_name)[:100].strip("_") or "題庫"
+    root = QUESTION_IMAGE_ROOT.resolve()
+    target = root / f"{name}_{secrets.token_hex(12)}.{image['extension']}"
+    created = False
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+        with target.open("xb") as output:
+            created = True
+            output.write(image["content"])
+    except OSError as exc:
+        if created:
+            target.unlink(missing_ok=True)
+        raise user_input.InputError("題庫附圖儲存失敗") from exc
+    return target
 
 
 def save_staff_photo(employee_id: str, photo: dict[str, Any]) -> str:

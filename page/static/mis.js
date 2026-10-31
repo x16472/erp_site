@@ -1,6 +1,7 @@
 import { apiData, bindAdminAccess, bindImageFallbacks, bindTabs, escapeHtml, formatNumber } from './script.js';
 
 let csrf = '', tables = [], staffItems = [], submissions = [], selectedEmployee = '', selectedCategory = '', selectedTable = '', currentPage = 1, totalRows = 0, pageSize = 20;
+let tableRequestVersion = 0;
 const loginShell = document.querySelector('#loginShell'),
     adminConsole = document.querySelector('#adminConsole'),
     apiState = document.querySelector('#apiState'),
@@ -33,6 +34,39 @@ const loginShell = document.querySelector('#loginShell'),
     syncStatus = document.querySelector('#syncStatus');
 const esc = escapeHtml;
 const number = formatNumber;
+const questionImage = document.querySelector('#questionImage'),
+    questionImagePreview = document.querySelector('#questionImagePreview'),
+    removeQuestionImage = document.querySelector('#removeQuestionImage');
+let questionImageBlocks = [], questionCodeBlocks = [], questionImagePreviewUrl = '';
+function renderQuestionImages() {
+    if (questionImagePreviewUrl) URL.revokeObjectURL(questionImagePreviewUrl);
+    const file = questionImage.files[0];
+    questionImagePreviewUrl = file ? URL.createObjectURL(file) : '';
+    const urls = file ? [questionImagePreviewUrl] : questionImageBlocks.map(block =>
+        `/api/training/image?name=${encodeURIComponent(block.content)}`);
+    questionImagePreview.innerHTML = urls.map(url => `<img class="question-image" src="${esc(url)}" alt="題目附圖預覽">`).join('');
+    removeQuestionImage.hidden = !urls.length;
+}
+questionImage.onchange = () => {
+    const file = questionImage.files[0];
+    if (file && (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+        questionImage.value = '';
+        questionStatus.className = 'error-note';
+        questionStatus.textContent = '附圖須為 JPEG、PNG 或 WebP，且不得超過 5 MB。';
+    }
+    renderQuestionImages();
+};
+removeQuestionImage.onclick = () => {
+    questionImage.value = '';
+    questionImageBlocks = [];
+    renderQuestionImages();
+};
+const readQuestionImage = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ data: reader.result });
+    reader.onerror = () => reject(new Error('題庫附圖讀取失敗'));
+    reader.readAsDataURL(file);
+});
 let operationsManuals = [], complianceQuestions = [], essayAnswers = [], trainingTaxonomy = { subjects: [], chapters: [] };
 const trainingDocumentList = document.querySelector('#trainingDocumentList'),
     subjectForm = document.querySelector('#subjectForm'),
@@ -140,12 +174,19 @@ function renderCatalog() {
     const button = event.target.closest('[data-table]'); if (button) loadTable(button.dataset.table, 1)
 };
 async function loadTable(name, page) {
+    const requestVersion = ++tableRequestVersion;
     selectedTable = name; currentPage = page; renderCatalog();
     const catalogItem = tables.find(item => item.name === name);
     dataTitle.textContent = catalogItem?.display_name || name;//維持現狀的三元判斷式
     dataBody.innerHTML = '<tr><td>查詢中…</td></tr>';
+    dataHead.innerHTML = '';
+    dataMeta.textContent = '';
+    pageInfo.textContent = '';
+    prevPage.disabled = true;
+    nextPage.disabled = true;
     try {
         const result = await request(`/api/admin/table?name=${encodeURIComponent(name)}&page=${page}&page_size=${pageSize}`);
+        if (requestVersion !== tableRequestVersion) return;
         totalRows = result.total;
         dataMeta.textContent = `${result.columns.length} 欄 · ${number(result.total)} 筆 · 唯讀遮罩`;
         dataHead.innerHTML = `<tr>${result.columns.map(column => `<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`;
@@ -156,7 +197,10 @@ async function loadTable(name, page) {
         pageInfo.textContent = `第 ${page} / ${totalPages} 頁`;
         prevPage.disabled = page <= 1;
         nextPage.disabled = page >= totalPages
-    } catch (error) { dataBody.innerHTML = `<tr><td>${esc(error.message)}</td></tr>` }
+    } catch (error) {
+        if (requestVersion !== tableRequestVersion) return;
+        dataBody.innerHTML = `<tr><td>${esc(error.message)}</td></tr>`;
+    }
 }
 prevPage.onclick = () => currentPage > 1 && loadTable(selectedTable, currentPage - 1);
 nextPage.onclick = () => currentPage * pageSize < totalRows && loadTable(selectedTable, currentPage + 1);
@@ -359,6 +403,9 @@ function showQuestionSuccess(message) {
 
 function resetQuestionEditor() {
     questionForm.reset();
+    questionImageBlocks = [];
+    questionCodeBlocks = [];
+    renderQuestionImages();
     questionForm.elements.id.value = '';
     renderQuestionChapters();
     setQuestionType('single_choice');
@@ -368,6 +415,10 @@ function resetQuestionEditor() {
 }
 
 function editQuestion(item) {
+    questionImage.value = '';
+    questionImageBlocks = (item.content_blocks || []).filter(block => block.type === 'image');
+    questionCodeBlocks = (item.content_blocks || []).filter(block => block.type === 'code');
+    renderQuestionImages();
     const values = {
         id: item.id, document_id: item.document_id || '', subject_id: item.subject_id || '',
         status: item.status, question: item.question, passage: item.passage || '',
@@ -421,7 +472,8 @@ questionForm.elements.status.onchange = () => {
 function renderQuestions() {
     const keyword = questionSearch.value.trim().toLowerCase(), statusFilter = questionStatusFilter.value,
         visibleQuestions = complianceQuestions.filter(item => (!statusFilter || item.status === statusFilter) &&
-            (!keyword || `${item.subject} ${item.chapter} ${item.question}`.toLowerCase().includes(keyword)));
+            (!keyword || `${item.subject} ${item.chapter} ${item.question}`.toLowerCase().includes(keyword)))
+            .sort((left, right) => Number(left.id) - Number(right.id));
     const visibleIds = new Set(visibleQuestions.map(item => item.id));
     // 批次操作只保留畫面可見的勾選項目，避免搜尋後誤改隱藏題目。
     selectedQuestionIds.forEach(id => {
@@ -534,11 +586,13 @@ questionForm.onsubmit = async event => {
         chapter_name: questionChapter.selectedOptions[0]?.textContent || '',
         options: essay ? [] : values.options.split(/\r?\n/).map(value => value.trim()).filter(Boolean),
         answers: essay ? [] : values.answers.split(/[,，、\s]+/).filter(Boolean).map(value => Number(value) - 1),
-        content_blocks: [{ type: 'text', content: values.question }],
+        content_blocks: [{ type: 'text', content: values.question }, ...questionCodeBlocks, ...questionImageBlocks],
         passage: values.passage || '',
         explanation: essay ? '' : values.explanation
     };
     await runQuestionAction(async () => {
+        const file = questionImage.files[0];
+        if (file) payload.image = await readQuestionImage(file);
         await request('/api/admin/compliance/question', {
             method: 'POST', headers: {
                 'Content-Type': 'application/json', 'X-CSRF-Token': csrf

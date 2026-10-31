@@ -437,6 +437,13 @@
                                             <span>閱讀文章</span>
                                             <textarea name="passage" rows="5" maxlength="500"></textarea>
                                         </label>
+                                        <div class="field">
+                                            <label for="questionImage">題目附圖（JPEG、PNG、WebP，最多 5 MB）</label>
+                                            <input id="questionImage" type="file" accept="image/jpeg,image/png,image/webp">
+                                            <p class="hint">檔名依關聯文件名稱命名；未指定文件時使用科目名稱。</p>
+                                            <div id="questionImagePreview" class="question-image-preview"></div>
+                                            <button class="btn second" id="removeQuestionImage" type="button" hidden>移除附圖</button>
+                                        </div>
                                         <label class="field" id="optionsField">
                                             <span>選項（每行一個，2 至 6 個）</span>
                                             <textarea name="options" rows="5" required></textarea>
