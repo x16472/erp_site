@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>題庫練習｜銀盾共同體營運中心</title>
     <script src="./static/theme.js"></script>
-    <link rel="stylesheet" href="./static/style.css">
+    <link rel="stylesheet" href="./static/style.css?v=20261101-floating-2">
+    <link rel="stylesheet" href="./static/exam-floating.css?v=20261101-floating-2">
     <link rel="icon" href="./static/ico/Github-Octicons-Cache-16.ico" type="image/x-icon">
 </head>
 
@@ -128,7 +129,7 @@
                             </div>
                             <div class="session-clock" id="sessionClock" hidden>
                                 <small>剩餘時間</small>
-                                <strong id="countdown">--:--</strong>
+                                <strong id="countdown" role="timer" aria-label="模擬考剩餘時間">--:--</strong>
                             </div>
                         </header>
                         <progress class="progress" id="sessionProgress" value="0" max="100" aria-label="題組作答進度"></progress>
@@ -176,6 +177,7 @@
             </div>
         </main>
     </div>
-    <script type="module" src="./static/exam.js"></script>
+    <aside class="exam-floating-tools" id="examFloatingTools" aria-label="計時與題號浮動面板" hidden></aside>
+    <script type="module" src="./static/exam.js?v=20261101-floating-2"></script>
 </body>
 </html>

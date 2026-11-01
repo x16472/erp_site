@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"erp-site/backend/internal/config"
-	"erp-site/database"
-	"erp-site/backend/rpc"
 	"erp-site/backend/internal/server"
+	"erp-site/backend/rpc"
+	"erp-site/database"
 
 	"google.golang.org/grpc"
 )
@@ -155,7 +155,7 @@ func run() error {
 		}
 	}
 	if err == nil && !*syncDocs {
-		err = store.SeedEmployees(workCtx, root)
+		err = store.SeedInitialData(workCtx, root)
 		if err != nil {
 			cancel()
 			return err

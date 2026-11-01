@@ -45,7 +45,7 @@
     "read_only": false
   },
   "domain.start_training_session.2": {
-    "sql": "INSERT dbo.Company_TrainingSession\n                (score,session_id,employee_id,subject_id,mode,status,config_json,expires_at)\n                VALUES (NULL,?,?,?, ?,N'in_progress',?,?)",
+    "sql": "INSERT dbo.Company_TrainingSession\n                (score,session_id,employee_id,subject_id,mode,status,config_json,started_at,expires_at)\n                VALUES (NULL,?,?,?, ?,N'in_progress',?,?,?)",
     "dynamic": 0,
     "read_only": false
   },

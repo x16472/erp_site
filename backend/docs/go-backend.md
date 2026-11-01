@@ -14,7 +14,7 @@ Go 停止時通知 Python，逾時則回收子程序；Python 監測父程序 st
 
 啟動時辨識 dbo.Employees 實體表與 dbo.Company_Staff 檢視表，選擇新／舊查詢目錄。新結構透過 17 個單表檢視表保留原業務欄位名稱，實體命名與型別依 DATABASE.md。Python 不執行 DDL、不接受任意 SQL。每次更改內嵌查詢 JSON 後必須重新編譯 Go。切換資料庫結構後必須重啟服務。
 
-`--init-db` 只用於全新資料庫；`--sync-docs` 執行 SOP 同步後退出；`--skip-doc-sync` 預設為 false，一般啟動自動同步文件；員工由 Go 執行 database/SeedEmployees.sql 一次性初始化，不再讀取 CSV，之後由員工管理維護；`--check` 不連資料庫。
+`--init-db` 只用於全新資料庫；`--sync-docs` 執行 SOP 同步後退出；`--skip-doc-sync` 預設為 false，一般啟動自動同步文件；員工由 Go 執行 database/SeedEmployees.sql 一次性初始化，不再讀取 CSV，之後由員工管理維護；同一初始化交易以 SeedOperationCategories.sql 補齊日報必要類別，不覆寫既有值；`--check` 不連資料庫。
 
 ## 驗證
 
@@ -22,3 +22,9 @@ Go 測試涵蓋 SQL 參數綁定、查詢白名單、唯讀限制、交易所有
 
 修改 protobuf 後使用 requirements-dev.txt 與固定版本 protoc-gen-go／protoc-gen-go-grpc 執行 backend/tools/generate_rpc.py；產生檔不手動修改。實作參考 [gRPC Go 官方文件](https://grpc.io/docs/languages/go/basics/) 與 [Microsoft SQL Server Go 驅動](https://github.com/microsoft/go-mssqldb)。
 
+
+## 模擬考與營運日報
+
+模擬考建立時透過 Go 資料庫層取得 SQL Server UTC 快照，明確寫入開始與到期時間；讀取題組及儲存答案也以 SQL Server UTC 判斷期限。API 回傳帶時區的 expires_at 與 server_time，前端以單調時鐘倒數並每 60 秒重新校時，不以瀏覽器本機日期直接判斷到期。已交卷的題組仍依原規則提供檢討，未交卷不揭露答案。
+
+GET /api/operations/categories 提供員工可填報的資料庫類別，與既有員工驗證一致。日報與個人紀錄分開載入，提交成功後即使紀錄刷新失敗，也保留成功訊息；使用者可重新整理，避免重複送出。

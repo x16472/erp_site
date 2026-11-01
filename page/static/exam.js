@@ -6,7 +6,9 @@ let csrf = '', catalog = {
     activeSubject = null,
     activeSession = null,
     questionIndex = 0,
-    timerHandle = null;
+    timerHandle = null,
+    submissionPending = false,
+    pendingSave = Promise.resolve();
 const $ = selector => document.querySelector(selector), esc = escapeHtml;
 const request = (path, options = {}) => apiData(path, options, '題庫服務暫時無法使用');
 const writeRequest = (path, payload) => jsonRequest(path, payload, {
@@ -30,8 +32,29 @@ const domainTabs = $('#domainTabs'),
     answerArea = $('#answerArea'),
     answerFeedback = $('#answerFeedback'),
     sessionProgress = $('#sessionProgress');
+const floatingTools = $('#examFloatingTools'),
+    sessionClock = $('#sessionClock'),
+    floatingViewport = matchMedia('(min-width: 680px)'),
+    clockHome = document.createComment('計時器原始位置'),
+    navigatorHome = document.createComment('題號導覽原始位置');
+sessionClock.before(clockHome);
+questionNavigator.before(navigatorHome);
+function syncFloatingTools() {
+    const floating = floatingViewport.matches && !sessionView.hidden && !academicPanel.hidden;
+    floatingTools.hidden = !floating;
+    document.body.classList.toggle('exam-has-floating-tools', floating);
+    if (floating) {
+        floatingTools.append(sessionClock, questionNavigator);
+    } else {
+        clockHome.after(sessionClock);
+        navigatorHome.after(questionNavigator);
+    }
+}
+floatingViewport.addEventListener('change', syncFloatingTools);
+syncFloatingTools();
 function showAcademic(view) {
-    [academicHome, setupView, sessionView, resultView, wrongView].forEach(item => item.hidden = item !== view)
+    [academicHome, setupView, sessionView, resultView, wrongView].forEach(item => item.hidden = item !== view);
+    syncFloatingTools();
 }
 function renderBlocks(blocks) {
     return (blocks || []).map(block => {
@@ -87,33 +110,101 @@ function renderQuestion() {
     $('#submitSession').textContent = activeSession.mode === 'mock' ? '交卷' : '完成練習';
     renderNavigator()
 }
-function startTimer() {
-    clearInterval(timerHandle);
-    $('#sessionClock').hidden = activeSession.mode !== 'mock';
-    if (!activeSession.expires_at || activeSession.mode !== 'mock') return;
-    const tick = () => {
-        const remaining = new Date(activeSession.expires_at).getTime() - Date.now();
-        if (remaining <= 0) {
-            clearInterval(timerHandle);
-            submitSession(true); return
-        } const minutes = Math.floor(remaining / 60000), seconds = Math.floor(remaining % 60000 / 1000);
-        $('#countdown').textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-    }; tick(); timerHandle = setInterval(tick, 1000)
+function utcMilliseconds(value) {
+    if (!value) return NaN;
+    const text = String(value);
+    return Date.parse(/(?:Z|[+-]\d{2}:\d{2})$/i.test(text) ? text : `${text}Z`);
 }
-function openSession(session) {
-    activeSession = session; questionIndex = 0;
-    if (session.status === 'submitted') return renderResult(session); showAcademic(sessionView); renderQuestion(); startTimer();
+async function startTimer(requestStarted = performance.now()) {
+    clearInterval(timerHandle);
+    timerHandle = null;
+    const session = activeSession;
+    $('#sessionClock').hidden = session.mode !== 'mock';
+    if (session.mode !== 'mock') return;
+    $('#countdown').textContent = '校時中…';
+    const expiresAt = utcMilliseconds(session.expires_at);
+    if (!Number.isFinite(expiresAt)) throw new Error('模擬考缺少有效的到期時間，請重新讀取題組。');
+    let deadline, lastSync = performance.now(), syncing = false;
+    const initialTime = utcMilliseconds(session.server_time);
+    if (Number.isFinite(initialTime)) {
+        deadline = performance.now() + expiresAt - initialTime - (performance.now() - requestStarted) / 2;
+    } else {
+        const started = performance.now();
+        const time = await request('/api/time', { cache: 'no-store' });
+        if (!Number.isFinite(Number(time.unix_ms))) throw new Error('無法取得模擬考計時資料。');
+        deadline = performance.now() + expiresAt - Number(time.unix_ms) - (performance.now() - started) / 2;
+    }
+    if (activeSession !== session) return;
+    const tick = () => {
+        if (activeSession !== session || session.status === 'submitted') return;
+        const remaining = Math.max(0, Math.ceil((deadline - performance.now()) / 1000));
+        $('#countdown').textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+        if (remaining === 0) {
+            clearInterval(timerHandle);
+            timerHandle = null;
+            session.expired = true;
+            answerArea.querySelectorAll("input").forEach(input => { input.disabled = true; });
+            $("#saveAnswer").disabled = true;
+            $("#flagQuestion").disabled = true;
+            submitSession(true);
+            return;
+        }
+        if (!syncing && performance.now() - lastSync >= 60000) {
+            syncing = true;
+            const started = performance.now();
+            request('/api/time', { cache: 'no-store' }).then(time => {
+                if (activeSession === session && Number.isFinite(Number(time.unix_ms))) {
+                    deadline = performance.now() + expiresAt - Number(time.unix_ms) - (performance.now() - started) / 2;
+                }
+            }).catch(() => {
+                answerFeedback.textContent = '暫時無法校時，持續依前次伺服器時間倒數。';
+            }).finally(() => { syncing = false; lastSync = performance.now(); });
+        }
+    };
+    timerHandle = setInterval(tick, 1000);
+    tick();
+}
+async function openSession(session, requestStarted = performance.now()) {
+    clearInterval(timerHandle);
+    activeSession = session;
+    questionIndex = 0;
+    submissionPending = false;
+    pendingSave = Promise.resolve();
+    if (session.status === 'submitted') return renderResult(session);
+    if (!session.questions?.length) throw new Error('此題組沒有可作答的題目。');
+    showAcademic(sessionView);
+    renderQuestion();
+    $('#submitSession').disabled = false;
+    $('#saveAnswer').disabled = false;
+    $('#flagQuestion').disabled = false;
+    try { await startTimer(requestStarted); } catch (error) {
+        $('#countdown').textContent = '計時失敗';
+        answerFeedback.textContent = error.message;
+        answerFeedback.className = 'quiz-feedback error-note';
+    }
 }
 async function saveCurrent(showMessage = true) {
-    const question = sessionQuestion(), answers = answerValues(question), result = await writeRequest('/api/training/session/answer', { session_id: activeSession.id, order: question.order, response: { answers }, flagged: Boolean(question.flagged) });
+    const session = activeSession, question = sessionQuestion(), answers = answerValues(question);
+    const payload = { session_id: session.id, order: question.order, response: { answers }, flagged: Boolean(question.flagged) };
     question.response = { answers };
-    if (activeSession.mode === 'practice') {
+    const task = pendingSave.catch(() => {}).then(() => writeRequest('/api/training/session/answer', payload));
+    pendingSave = task;
+    const result = await task;
+    if (activeSession !== session || session.status === 'submitted') return result;
+    if (session.mode === 'practice') {
         answerFeedback.textContent = `${result.correct ? '答對了。' : '答案不正確。'} ${result.explanation || '此題尚無解析。'}`;
-        answerFeedback.className = `quiz-feedback ${result.correct ? 'success-note' : 'error-note'}`
+        answerFeedback.className = `quiz-feedback ${result.correct ? 'success-note' : 'error-note'}`;
     } else if (showMessage) answerFeedback.textContent = '答案已儲存。';
-    renderNavigator(); return result
+    renderNavigator();
+    return result;
 }
+answerArea.addEventListener('change', () => {
+    if (activeSession?.mode === 'mock' && !activeSession.expired) {
+        saveCurrent(false).catch(error => { answerFeedback.textContent = error.message; });
+    }
+});
 async function navigateQuestion(index) {
+    if (activeSession.expired || submissionPending) return;
     if (activeSession.mode === 'mock') {
         try { await saveCurrent(false) } catch (error) {
             answerFeedback.textContent = error.message;
@@ -122,12 +213,29 @@ async function navigateQuestion(index) {
     } questionIndex = index; renderQuestion()
 }
 async function submitSession(timeout = false) {
+    if (submissionPending || !activeSession || activeSession.status === 'submitted') return;
+    timeout = timeout || Boolean(activeSession.expired);
     if (!timeout && activeSession.mode === 'mock') {
         const unanswered = activeSession.questions.filter((question, index) => {
             const answers = index === questionIndex ? answerValues(question) : (question.response?.answers || []);
-            return !answers.length
-        }).length; if (!confirm(`確定要交卷嗎？目前尚有 ${unanswered} 題未作答，仍會一併送出。`)) return
-    } try { await saveCurrent(false) } catch (_) { } const result = await writeRequest('/api/training/session/submit', { session_id: activeSession.id }); renderResult(result)
+            return !answers.length;
+        }).length;
+        if (!confirm(`確定要交卷嗎？目前尚有 ${unanswered} 題未作答，仍會一併送出。`)) return;
+    }
+    submissionPending = true;
+    $('#submitSession').disabled = true;
+    try {
+        if (timeout) await pendingSave.catch(() => {});
+        else await saveCurrent(false);
+        const result = await writeRequest('/api/training/session/submit', { session_id: activeSession.id });
+        renderResult(result);
+    } catch (error) {
+        answerFeedback.textContent = `${error.message}${timeout ? ' 時間已到，請按交卷重試。' : ''}`;
+        answerFeedback.className = 'quiz-feedback error-note';
+    } finally {
+        submissionPending = false;
+        $('#submitSession').disabled = false;
+    }
 }
 function renderReviewQuestion(question) { const answerText = (question.answers || []).map(value => typeof value === 'number' ? String.fromCharCode(65 + value) : value).join('、') || '由人工審核'; return `<details class="review-question ${question.correct ? 'correct' : 'wrong'}"><summary>第 ${question.order} 題｜${question.correct ? '答對' : '答錯或未作答'}</summary>${renderBlocks(question.content_blocks)}<p>正確答案：${esc(answerText)}</p><p>${esc(question.explanation || '此題尚無解析。')}</p></details>` }
 function renderResult(session) {
@@ -162,6 +270,8 @@ async function loadPractical() {
 }
 async function loadCatalog() {
     catalog = await request('/api/training/catalog');
+    $('#resumeSession').hidden = !catalog.resumable;
+    $('#wrongCount').textContent = String(catalog.wrong_count || 0);
     renderCatalog()
 }
 domainTabs.onclick = event => {
@@ -171,6 +281,7 @@ domainTabs.onclick = event => {
     const academic = button.dataset.domain === 'academic';
     academicPanel.hidden = !academic;
     practicalPanel.hidden = academic;
+    syncFloatingTools();
     if (!academic) loadPractical().catch(error => $('#practicalList').innerHTML = `<div class="error-note">${esc(error.message)}</div>`)
 };
 subjectGrid.onclick = event => {
@@ -185,7 +296,11 @@ setupForm.onsubmit = async event => {
     event.preventDefault();
     const values = new FormData(setupForm);
     setupStatus.textContent = '正在建立題組…';
+    const startButton = setupForm.querySelector('[type="submit"]');
+    if (startButton.disabled) return;
+    startButton.disabled = true;
     try {
+        const requestStarted = performance.now();
         const session = await writeRequest('/api/training/session/start', {
             subject_id: Number(values.get('subject_id')),
             mode: values.get('mode'),
@@ -193,11 +308,11 @@ setupForm.onsubmit = async event => {
             chapter_ids: values.getAll('chapter_id').map(Number),
             source_ids: values.getAll('source_id').map(Number),
             question_types: values.getAll('question_type')
-        }); openSession(session)
+        }); await openSession(session, requestStarted)
     } catch (error) {
         setupStatus.className = 'error-note';
         setupStatus.textContent = error.message
-    }
+    } finally { startButton.disabled = false; }
 };
 questionNavigator.onclick = event => {
     const button = event.target.closest('[data-question-index]');
@@ -209,13 +324,18 @@ $('#nextQuestion').onclick = () => {
     if (questionIndex < activeSession.questions.length - 1) navigateQuestion(questionIndex + 1)
 };
 $('#flagQuestion').onclick = async () => {
+    if (activeSession.expired || submissionPending) return;
     const question = sessionQuestion();
     question.flagged = !question.flagged;
     await saveCurrent(false);
     renderQuestion()
 }; $('#saveAnswer').onclick = () => saveCurrent().catch(error => answerFeedback.textContent = error.message);
 $('#submitSession').onclick = () => submitSession(false);
-$('#resumeSession').onclick = async () => openSession(await request(`/api/training/session?id=${encodeURIComponent(catalog.resumable.id)}`));
+$('#resumeSession').onclick = async () => {
+    const started = performance.now();
+    try { await openSession(await request(`/api/training/session?id=${encodeURIComponent(catalog.resumable.id)}`), started); }
+    catch (error) { $('#apiState').textContent = error.message; }
+};
 $('#openWrong').onclick = () => loadWrong().catch(error => $('#wrongList').innerHTML = `<div class="error-note">${esc(error.message)}</div>`);
 $('#closeWrong').onclick = () => showAcademic(academicHome);
 $('#wrongList').onclick = async event => {

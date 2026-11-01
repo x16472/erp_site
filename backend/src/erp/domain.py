@@ -290,6 +290,11 @@ def branches() -> list[dict[str, Any]]:
     return _fetch('domain.branches.1')
 
 
+def operation_categories() -> list[dict[str, Any]]:
+    """提供資料庫中可供日報填報的類別與排序。"""
+    return _fetch('domain.operation_categories.1')
+
+
 def operations_process() -> list[dict[str, Any]]:
     """以營運分類與待審日報呈現目前可用的生命週期。"""
     return _fetch('domain.operations_process.1')
@@ -767,6 +772,21 @@ def training_catalog(employee_id: str) -> dict[str, Any]:
     }
 
 
+def _training_utc(value: str | datetime) -> datetime:
+    """訓練到期欄位以 UTC 儲存，補足 DATETIME2 沒有時區的資訊。"""
+    parsed = datetime.fromisoformat(value) if isinstance(value, str) else value
+    return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
+
+
+def _training_now() -> datetime:
+    """使用 SQL Server UTC 快照判定剩餘作答時間。"""
+    try:
+        with connect() as db:
+            return _training_utc(time.now(db.cursor())["utc_time"])
+    except database.Error as exc:
+        raise DatabaseUnavailable("無法取得模擬考計時資料。") from exc
+
+
 def _public_session_payload(session: dict[str, Any], rows: list[dict[str, Any]], *, include_review: bool = False) -> dict[str, Any]:
     """依交卷狀態過濾答案，產生對外工作階段資料。"""
     questions = []
@@ -790,7 +810,8 @@ def _public_session_payload(session: dict[str, Any], rows: list[dict[str, Any]],
         "status": session["status"],
         "subject_id": session["subject_id"],
         "started_at": session["started_at"],
-        "expires_at": session.get("expires_at"),
+        "expires_at": _training_utc(session["expires_at"]).isoformat() if session.get("expires_at") else None,
+        "server_time": session.get("server_time"),
         "submitted_at": session.get("submitted_at"),
         "score": session.get("score"),
         "config": _loads_json(session.get("config_json"), {}),
@@ -816,8 +837,9 @@ def start_training_session(item: dict[str, Any], employee_id: str) -> dict[str, 
     random.SystemRandom().shuffle(rows)
     rows = rows if count == 0 else rows[:count]
     session_id = str(uuid.uuid4())
-    duration = int(subject["mock_duration_minutes"]) if item["mode"] == "mock" else 0
-    expires_at = (datetime.utcnow() + timedelta(minutes=duration)) if duration else None
+    duration = int(subject.get("mock_duration_minutes") or 0) if item["mode"] == "mock" else 0
+    if item["mode"] == "mock" and duration <= 0:
+        raise ValueError("模擬考時間必須大於 0 分鐘，請先由管理員設定科目規則")
     config = {
         "question_count": len(rows),
         "pass_score": int(subject["mock_pass_score"]) if item["mode"] == "mock" else None,
@@ -828,7 +850,9 @@ def start_training_session(item: dict[str, Any], employee_id: str) -> dict[str, 
     try:
         with connect(read_only=False, autocommit=False) as db:
             cursor = db.cursor()
-            cursor.execute('domain.start_training_session.2', session_id, employee_id, item["subject_id"], item["mode"], json.dumps(config), expires_at)
+            started_at = _training_utc(time.now(cursor)["utc_time"]).replace(tzinfo=None)
+            expires_at = started_at + timedelta(minutes=duration) if duration else None
+            cursor.execute('domain.start_training_session.2', session_id, employee_id, item["subject_id"], item["mode"], json.dumps(config), started_at, expires_at)
             for order, row in enumerate(rows, 1):
                 cursor.execute('domain.start_training_session.3', session_id, row["id"], order, json.dumps(_question_snapshot(row), ensure_ascii=False))
             db.commit()
@@ -843,11 +867,10 @@ def training_session(session_id: str, employee_id: str) -> dict[str, Any]:
     if not sessions:
         raise ValueError("找不到指定的作答階段")
     session = sessions[0]
+    now_utc = _training_now()
+    session["server_time"] = now_utc.isoformat()
     if session["status"] == "in_progress" and session.get("expires_at"):
-        expires = datetime.fromisoformat(session["expires_at"])
-        if expires.tzinfo is None:
-            expires = expires.replace(tzinfo=UTC)
-        if expires <= datetime.now(UTC):
+        if _training_utc(session["expires_at"]) <= now_utc:
             return submit_training_session(session_id, employee_id)
     rows = _fetch('domain.training_session.2', (session_id,))
     return _public_session_payload(session, rows, include_review=session["status"] == "submitted")
@@ -890,13 +913,9 @@ def save_training_answer(item: dict[str, Any], employee_id: str) -> dict[str, An
     if not rows or rows[0]["status"] != "in_progress":
         raise ValueError("此題組目前無法作答")
     row = rows[0]
-    if row.get("expires_at"):
-        expires = datetime.fromisoformat(row["expires_at"])
-        if expires.tzinfo is None:
-            expires = expires.replace(tzinfo=UTC)
-        if expires <= datetime.now(UTC):
-            submit_training_session(item["session_id"], employee_id)
-            raise ValueError("模擬考時間已到，系統已自動交卷")
+    if row.get("expires_at") and _training_utc(row["expires_at"]) <= _training_now():
+        submit_training_session(item["session_id"], employee_id)
+        raise ValueError("模擬考時間已到，系統已自動交卷")
     snapshot = _loads_json(row["snapshot_json"], {})
     correct = _grade_snapshot(snapshot, item["response"])
     try:

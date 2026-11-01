@@ -12,24 +12,26 @@ import (
 
 var batchSeparator = regexp.MustCompile(`(?im)^\s*GO\s*$`)
 
-// SeedEmployees 將版本控管的員工初始資料寫入新結構，交易及執行標記避免覆寫後台修改。
-func (s *Store) SeedEmployees(ctx context.Context, root string) error {
+// SeedInitialData 建立必要日報類別與一次性員工資料，不覆寫後台修改。
+func (s *Store) SeedInitialData(ctx context.Context, root string) error {
 	if !s.normalized {
-		return errors.New("員工初始化需要新版資料表結構")
-	}
-	body, err := os.ReadFile(filepath.Join(root, "database", "SeedEmployees.sql"))
-	if err != nil {
-		return errors.New("無法讀取員工初始資料腳本")
+		return errors.New("應用初始化需要新版資料表結構")
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.New("無法啟動員工初始化交易")
+		return errors.New("無法啟動應用初始化交易")
 	}
-	if _, err := tx.ExecContext(ctx, string(body)); err != nil {
-		return errors.Join(errors.New("員工初始化失敗，資料已回復"), tx.Rollback())
+	for _, name := range []string{"SeedOperationCategories.sql", "SeedEmployees.sql"} {
+		body, err := os.ReadFile(filepath.Join(root, "database", name))
+		if err != nil {
+			return errors.Join(fmt.Errorf("無法讀取初始資料腳本：%s", name), tx.Rollback())
+		}
+		if _, err := tx.ExecContext(ctx, string(body)); err != nil {
+			return errors.Join(errors.New("必要資料初始化失敗，資料已回復"), tx.Rollback())
+		}
 	}
 	if err := tx.Commit(); err != nil {
-		return errors.New("員工初始化提交失敗")
+		return errors.New("應用初始化提交失敗")
 	}
 	return nil
 }
@@ -47,7 +49,7 @@ func (s *Store) Initialize(ctx context.Context, root string) error {
 	if err != nil {
 		return errors.New("無法啟動資料庫初始化交易")
 	}
-	for _, name := range []string{"CreateTables.sql", "SeedData.sql"} {
+	for _, name := range []string{"CreateTables.sql", "SeedOperationCategories.sql", "SeedData.sql"} {
 		body, err := os.ReadFile(filepath.Join(root, "database", name))
 		if err != nil {
 			return errors.Join(err, tx.Rollback())

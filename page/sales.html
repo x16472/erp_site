@@ -33,7 +33,8 @@
                 <span class="top-kicker">Operation&nbsp;&amp;&nbsp;Collection</span>
                 <h1>營運日報</h1>
                 <span class="api-state" id="apiState">準備填報</span>
-                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
+                    aria-pressed="false">切換深色</button>
             </header>
             <div class="portal-content">
                 <section class="admin-panel active">
@@ -60,14 +61,8 @@
                                     </label>
                                     <label class="field">
                                         <span>資料類別</span>
-                                        <select name="category" required>
-                                            <option>出勤</option>
-                                            <option>業務進度</option>
-                                            <option>物流調度</option>
-                                            <option>帳務</option>
-                                            <option>設備</option>
-                                            <option>餐飲服務</option>
-                                            <option>其他</option>
+                                        <select name="category" required disabled>
+                                            <option value="">載入類別中…</option>
                                         </select>
                                     </label>
                                     <label class="field">
@@ -76,13 +71,13 @@
                                     </label>
                                     <label class="field">
                                         <span>備註</span>
-                                        <textarea name="note" maxlength="200" placeholder="只填寫摘要，請勿輸入個人資料、敏感資訊。">
-                                        </textarea>
+                                        <textarea name="note" maxlength="200"
+                                            placeholder="只填寫摘要，請勿輸入個人資料、敏感資訊。"></textarea>
                                     </label>
                                 </div>
                                 <label class="field">
                                     <h3>送出</h3>
-                                    <button class="btn" type="submit">送出&nbsp;審核</button>
+                                    <button class="btn" type="submit" disabled>送出&nbsp;審核</button>
                                     <button class="btn red" type="reset">清除</button>
                                     <p id="formStatus" aria-live="polite"></p>
                                 </label>
@@ -112,8 +107,26 @@
                         <div><span class="eyebrow">MY&nbsp;SUBMISSIONS</span>
                             <h2>我的填報與審閱回覆</h2>
                             <p>查看管理員審閱意見；收到補件要求時，可直接補充回覆。</p>
+                            <p id="historyStatus" aria-live="polite"></p>
                         </div>
                     </div>
+                    <form class="form-grid" id="historyFilters">
+                        <label class="field"><span>搜尋紀錄</span><input name="search" type="search"
+                                placeholder="單號、據點、類別或備註"></label>
+                        <label class="field"><span>審閱狀態</span><select name="status">
+                                <option value="">全部狀態</option>
+                                <option>待審核</option>
+                                <option>要求補件</option>
+                                <option>員工已回覆</option>
+                                <option>審核通過</option>
+                                <option>已退回</option>
+                            </select></label>
+                        <label class="field"><span>起始日期</span><input name="from" type="date"></label>
+                        <label class="field"><span>結束日期</span><input name="to" type="date"></label>
+                        <div class="actions"><button class="btn second" type="button"
+                                id="refreshHistory">重新整理紀錄</button><button class="btn second" type="reset">清除篩選</button>
+                        </div>
+                    </form>
                     <div class="result-list" id="mySubmissions">
                         <div class="empty">正在讀取填報紀錄…</div>
                     </div>
@@ -124,4 +137,5 @@
     <div class="toast" id="toast" role="status"></div>
     <script type="module" src="./static/sales.js"></script>
 </body>
+
 </html>

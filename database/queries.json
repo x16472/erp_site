@@ -440,7 +440,7 @@
     "read_only": true
   },
   "domain.start_training_session.2": {
-    "sql": "INSERT dbo.Company_TrainingSession\n                (session_id,employee_id,subject_id,mode,status,config_json,expires_at)\n                VALUES (?,?,?, ?,N'in_progress',?,?)",
+    "sql": "INSERT dbo.Company_TrainingSession\n                (session_id,employee_id,subject_id,mode,status,config_json,started_at,expires_at)\n                VALUES (?,?,?, ?,N'in_progress',?,?,?)",
     "dynamic": 0,
     "read_only": false
   },
@@ -691,6 +691,11 @@
   },
   "time_sync.now.1": {
     "sql": "DECLARE @utc datetime2 = SYSUTCDATETIME();\n        DECLARE @now datetimeoffset = @utc AT TIME ZONE 'UTC' AT TIME ZONE 'Taipei Standard Time';\n        SELECT\n            CONVERT(nvarchar(33), CONVERT(datetime2, @now), 126) + DATENAME(TZOFFSET, @now) AS offset_time,\n            CONVERT(datetime2, @now) AS local_time,\n            CONVERT(date, @now) AS work_date,\n            CONVERT(nvarchar(33), CONVERT(datetime2, @now), 126) + DATENAME(TZOFFSET, @now) AS iso_time,\n            DATEDIFF_BIG(millisecond, '1970-01-01', @utc) AS unix_ms,\n            @utc AS utc_time",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.operation_categories.1": {
+    "sql": "SELECT category_code AS code FROM dbo.Company_OperationCategory ORDER BY display_order,category_code",
     "dynamic": 0,
     "read_only": true
   }

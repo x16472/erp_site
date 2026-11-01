@@ -7,7 +7,11 @@ bin/
 __pycache__/
 *.pyc
 data/*.db
-data/*
+data/*.doc
+data/*.docx
+data/*.xls
+data/*.xlsx
+data/*.pdf
 data/*.bak
 database/*.db
 database/*.bak

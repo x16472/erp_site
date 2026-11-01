@@ -247,6 +247,7 @@ class Handler:
             "/api/dashboard": data.dashboard,
             "/api/knowledge": data.knowledge,
             "/api/operations": data.operations_process,
+            "/api/operations/categories": data.operation_categories,
             "/api/departments": data.departments,
             "/api/branches": data.branches,
             "/api/compliance/questions": data.compliance_questions,

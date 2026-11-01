@@ -1,0 +1,81 @@
+/* 此面板由 exam.js 在非手機作答畫面啟用，原欄位保留為手機版位置。 */
+#examFloatingTools[hidden] {
+    display: none;
+}
+
+@media (min-width: 680px) {
+    .exam-has-floating-tools {
+        --exam-tools-width: 190px;
+        --exam-tools-gap: 24px;
+    }
+
+    .exam-has-floating-tools #sessionView {
+        padding-right: calc(var(--exam-tools-width) + var(--exam-tools-gap));
+    }
+
+    #sessionView[hidden] {
+        display: none;
+    }
+
+    .exam-has-floating-tools .session-layout {
+        grid-template-columns: minmax(0, 1fr);
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .exam-has-floating-tools .session-layout > .question-stage {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    .exam-floating-tools {
+        position: fixed;
+        top: 50%;
+        right: var(--content-space);
+        z-index: 25;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        width: var(--exam-tools-width);
+        max-height: calc(100dvh - 180px);
+        transform: translateY(-50%);
+    }
+
+    .exam-floating-tools .session-clock {
+        position: static;
+        flex: 0 0 auto;
+        min-width: 0;
+        box-shadow: var(--shadow);
+    }
+
+    .exam-floating-tools .session-clock[hidden] {
+        display: none;
+    }
+
+    .exam-floating-tools .question-navigator {
+        position: static;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+    }
+
+    .exam-floating-tools .question-navigator button {
+        min-width: 0;
+        min-height: 32px;
+        padding: 0;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+}
