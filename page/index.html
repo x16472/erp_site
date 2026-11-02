@@ -160,6 +160,8 @@
                             <h2>讓專業團隊成為您的可靠後盾</h2>
                             <h4>北門─羅瓦德運河大橋區</h4>
                             <p>歡迎商業夥伴提出採購、製造、場域、技術或長期合作需求，由營運團隊安排專責窗口。</p>
+                            <button class="btn red contact-open" id="contactOpen" type="button" aria-haspopup="dialog"
+                                aria-controls="contactDialog">洽詢合作需求</button>
                             <iframe
                                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3618.040033650518!2d121.16941751164306!3d24.930706077791232!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34682361c065cbe9%3A0xc24080034849b3e3!2z5Yue5YuV6YOo5Yue5YuV5Yqb55m85bGV572y5qGD56u56IuX5YiG572y5bm8542F6IG35qWt6KiT57e05aC0!5e0!3m2!1szh-TW!2stw!4v1786915477769!5m2!1szh-TW!2stw"
                                 class="location-map" allowfullscreen="" loading="lazy"
@@ -195,6 +197,49 @@
             </footer>
         </main>
     </div>
+
+    <dialog class="contact-dialog" id="contactDialog" aria-labelledby="contactTitle"
+        aria-describedby="contactDescription">
+        <form id="contactForm" action="mailto:dog0830430@gmail.com" method="post" enctype="text/plain">
+            <div class="contact-dialog-header">
+                <div>
+                    <h2 id="contactTitle">告訴我們您的需求</h2>
+                    <p id="contactDescription">填寫後將開啟您的電子郵件程式，由您確認後寄出。</p>
+                </div>
+                <button class="contact-close" id="contactClose" type="button" aria-label="關閉詢問表單">×</button>
+            </div>
+            <label class="field" for="contactName">
+                <span>如何稱呼您（必填）</span>
+                <input id="contactName" name="name" autocomplete="name" placeholder="您的姓名" maxlength="80"
+                    pattern=".*\S.*" required autofocus>
+            </label>
+            <label class="field" for="contactPhone">
+                <span>聯絡電話（必填）</span>
+                <input id="contactPhone" name="phone" type="tel" autocomplete="tel" placeholder="手機或公司電話" maxlength="40"
+                    pattern=".*\S.*" required>
+            </label>
+            <label class="field" for="contactService">
+                <span>想了解的服務</span>
+                <select id="contactService" name="service">
+                    <option>採購需求</option>
+                    <option>製造合作</option>
+                    <option>場域合作</option>
+                    <option>技術支援</option>
+                    <option>長期合作</option>
+                    <option>其他需求</option>
+                </select>
+            </label>
+            <label class="field" for="contactMessage">
+                <span>需求說明</span>
+                <textarea id="contactMessage" name="message" rows="4" maxlength="2000"
+                    placeholder="請簡述合作項目、預計時程及希望協助的事項…"></textarea>
+            </label>
+            <button class="btn red" type="submit">建立詢問郵件 ↗</button>
+            <p class="contact-status" id="contactStatus" role="status" hidden>請確認電子郵件程式已開啟，並完成寄送。若未開啟，可直接來信至
+                <a href="mailto:dog0830430@gmail.com">dog0830430@gmail.com</a>。
+            </p>
+        </form>
+    </dialog>
 
     <script type="module" src="./static/index.js" defer></script>
 </body>

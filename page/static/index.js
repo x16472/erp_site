@@ -73,3 +73,50 @@ apiData('/api/staff/departments').then(items => {
     staffGrid.innerHTML = `<div class="error-note">${esc(error.message)}</div>`
 });
 departmentFilter.onchange = loadStaff;
+
+const contactDialog = document.querySelector('#contactDialog'),
+    contactForm = document.querySelector('#contactForm'),
+    contactStatus = document.querySelector('#contactStatus');
+
+document.querySelector('#contactOpen').addEventListener('click', () => {
+    contactDialog.showModal();
+});
+document.querySelector('#contactClose').addEventListener('click', () => {
+    contactDialog.close();
+});
+
+function isOutsideContactDialog(event) {
+    const bounds = contactDialog.getBoundingClientRect();
+    return event.clientX < bounds.left || event.clientX > bounds.right ||
+        event.clientY < bounds.top || event.clientY > bounds.bottom;
+}
+
+let contactBackdropPressed = false;
+contactDialog.addEventListener('pointerdown', event => {
+    contactBackdropPressed = event.target === contactDialog && isOutsideContactDialog(event);
+});
+contactDialog.addEventListener('click', event => {
+    if (contactBackdropPressed && event.target === contactDialog && isOutsideContactDialog(event)) {
+        contactDialog.close();
+    }
+    contactBackdropPressed = false;
+});
+contactForm.addEventListener('input', () => {
+    contactStatus.hidden = true;
+});
+contactForm.addEventListener('submit', event => {
+    event.preventDefault();
+    const fields = new FormData(contactForm);
+    const body = [
+        `姓名：${fields.get('name').trim()}`,
+        `聯絡電話：${fields.get('phone').trim()}`,
+        `想了解的服務：${fields.get('service')}`,
+        '',
+        '需求說明：',
+        fields.get('message').trim(),
+    ].join('\r\n').replace(/\r?\n/g, '\r\n');
+    const subject = encodeURIComponent('銀盾共同體｜商務合作詢問');
+    // 只交由使用者的郵件程式建立草稿，不在網站上直接寄信。
+    window.location.href = `${contactForm.getAttribute('action')}?subject=${subject}&body=${encodeURIComponent(body)}`;
+    contactStatus.hidden = false;
+});

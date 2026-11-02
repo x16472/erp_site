@@ -4071,3 +4071,357 @@ textarea::placeholder {
         padding-inline: var(--content-space);
     }
 }
+
+/* 首頁僅調整排版；限定作用範圍，避免共用樣式影響內部頁面。 */
+.public-body {
+    --public-layout-gutter: max(32px, calc((100% - 1440px) / 2));
+}
+
+.public-body .public-header {
+    gap: 16px 28px;
+    padding: 14px var(--public-layout-gutter);
+}
+
+.public-body .public-content > section {
+    padding: 72px var(--public-layout-gutter);
+    scroll-margin-top: 100px;
+}
+
+.public-body .public-content > .public-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 32px 48px;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 32px;
+}
+
+.public-body .hero-copy-public {
+    min-width: 0;
+    padding: 56px 0;
+}
+
+.public-body .hero-copy-public p {
+    max-width: 560px;
+}
+
+/* 讓既有統計列跨越主視覺兩欄，不搬動 HTML 或動態資料節點。 */
+.public-body .hero-stage {
+    display: contents;
+}
+
+.public-body .hero-card {
+    position: relative;
+    inset: auto;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: stretch;
+    min-width: 0;
+    min-height: 420px;
+    padding: 28px;
+}
+
+.public-body .hero-card .announcement {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.public-body .public-stats {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    max-width: none;
+    margin: 0;
+}
+
+.public-body .public-stat {
+    min-width: 0;
+    padding: 24px 28px;
+    overflow-wrap: anywhere;
+}
+
+.public-body .section-intro {
+    display: grid;
+    justify-content: stretch;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.public-body .section-intro p {
+    max-width: 760px;
+    margin: 0;
+}
+
+.public-body .section-intro h4 {
+    max-width: 900px;
+    margin: 12px 0 0;
+}
+
+.public-body .philosophy-grid,
+.public-body .day-grid,
+.public-body .staff-grid {
+    gap: 24px;
+}
+
+.public-body .philosophy-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.public-body .day-grid,
+.public-body .staff-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.public-body .sector-card {
+    min-width: 0;
+    padding: 0 24px 28px;
+}
+
+.public-body .sector-card > img {
+    display: block;
+    width: calc(100% + 48px);
+    max-width: none;
+    aspect-ratio: 4 / 3;
+    margin-inline: -24px;
+    object-fit: cover;
+}
+
+.public-body .team-toolbar {
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    width: 100%;
+    margin: 0 0 24px;
+}
+
+.public-body .team-toolbar .field {
+    flex: 0 1 280px;
+}
+
+.public-body .staff-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.public-body .staff-grid > .empty,
+.public-body .staff-grid > .error-note,
+.public-body .public-stats > .error-note {
+    grid-column: 1 / -1;
+}
+
+.public-body .public-content > #meet {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.public-body .cta-banner {
+    max-width: none;
+    margin: 0;
+    padding: 48px;
+}
+
+.public-body #visit .cta-banner > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 16px 40px;
+    width: 100%;
+}
+
+.public-body #visit .cta-banner > div > * {
+    grid-column: 1;
+    min-width: 0;
+}
+
+.public-body #visit .cta-banner h4 {
+    margin: 0;
+}
+
+.public-body #visit .cta-banner .location-map {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    align-self: stretch;
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+}
+
+.public-body .public-footer {
+    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+    gap: 32px;
+    padding: 48px var(--public-layout-gutter);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 980px) {
+    .public-body .public-content > .public-hero {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+    }
+
+    .public-body .hero-copy-public {
+        padding: 48px 0 8px;
+    }
+
+    .public-body .hero-card {
+        grid-column: 1;
+        grid-row: auto;
+        min-height: 360px;
+    }
+
+    .public-body .day-grid,
+    .public-body .staff-grid,
+    .public-body .public-footer {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .public-body #visit .cta-banner > div {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .public-body #visit .cta-banner .location-map {
+        grid-column: 1;
+        grid-row: auto;
+        height: 360px;
+    }
+}
+
+@media (max-width: 679px) {
+    .public-body {
+        --public-layout-gutter: 20px;
+    }
+
+    .public-body .public-content > section {
+        padding-block: 48px;
+        scroll-margin-top: 80px;
+    }
+
+    .public-body .hero-card {
+        min-height: 280px;
+        padding: 20px;
+    }
+
+    .public-body .public-stats,
+    .public-body .philosophy-grid,
+    .public-body .day-grid,
+    .public-body .staff-grid,
+    .public-body .public-footer {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .public-body .public-stat {
+        padding: 20px 24px;
+    }
+
+    .public-body .team-toolbar {
+        align-items: stretch;
+    }
+
+    .public-body .team-toolbar .field {
+        flex-basis: 100%;
+    }
+
+    .public-body .cta-banner {
+        padding: 28px 24px;
+    }
+
+    .public-body #visit .cta-banner .location-map {
+        height: 280px;
+        min-height: 280px;
+    }
+}
+
+.public-body #visit .contact-open {
+    justify-self: start;
+    margin-top: 0;
+}
+
+.public-body #visit .cta-banner .location-map {
+    grid-row: 1 / span 5;
+}
+
+html:has(.public-body .contact-dialog[open]) {
+    overflow: hidden;
+}
+
+.public-body .contact-dialog {
+    width: min(520px, calc(100% - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: 28px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.public-body .contact-dialog::backdrop {
+    background: color-mix(in srgb, var(--brand-deep) 70%, transparent);
+}
+
+.public-body .contact-dialog form {
+    display: grid;
+    gap: 18px;
+}
+
+.public-body .contact-dialog-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 16px;
+}
+
+.public-body .contact-dialog-header h2 {
+    margin: 0 0 6px;
+    font-size: 24px;
+    line-height: 1.4;
+    color: var(--heading);
+}
+
+.public-body .contact-dialog-header p,
+.public-body .contact-status {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.public-body .contact-close {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xs);
+    background: var(--secondary-bg);
+    color: var(--ink);
+    font-size: 26px;
+    line-height: 1;
+}
+
+.public-body .contact-close:hover {
+    background: var(--info-surface);
+}
+
+.public-body .contact-dialog .field {
+    gap: 6px;
+}
+
+.public-body .contact-dialog textarea {
+    margin: 0;
+    min-height: 116px;
+    font: inherit;
+}
+
+@media (max-width: 980px) {
+    .public-body #visit .cta-banner .location-map {
+        grid-row: auto;
+    }
+}
+
+@media (max-width: 679px) {
+    .public-body .contact-dialog {
+        padding: 24px 20px;
+    }
+}
