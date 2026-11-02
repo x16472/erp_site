@@ -1,5 +1,9 @@
 # OMV 上以 systemd 執行網站
 
+此文件保留為主機直接執行的替代方案。2026-11-03 起主要部署改為 Alpine Linux 容器與 Cloudflare Tunnel，請見 [Jenkins 與 OMV 容器部署](jenkins-omv.md)；兩種方案不可同時占用 8080。
+
+此文件保留為主機直接執行的替代方案。2026-11-03 起主要部署改為 Alpine Linux 容器與 Cloudflare Tunnel，請見 [Jenkins 與 OMV 容器部署](jenkins-omv.md)；兩種方案不可同時占用 8080。
+
 部署目標為 OMV 主機 `10.10.0.4`，網站由主機上的 Go 提供，Python 3.11 由 Go 以 gRPC 管理，連線至同一主機 Docker 容器對外發布的 MSSQL `10.10.0.4:1433`。網站預設使用 `8080` 埠，網址為 <http://10.10.0.4:8080/>。
 
 以下為在 OMV 上手動執行的部署步驟，範例專案路徑為 `/opt/erp_site`。若使用 OMV 資料磁碟的實際路徑，請一併調整所有命令，以及服務範本中的 `RequiresMountsFor`、`WorkingDirectory` 和 `ExecStart`。

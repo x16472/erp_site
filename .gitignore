@@ -1,4 +1,7 @@
 .env
+secrets/
+image-id.txt
+image-tag.txt
 .deps/
 .venv/
 .vscode/

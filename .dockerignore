@@ -1,6 +1,12 @@
 agents/
 bin/
 .git/
+.env
+.env.*
+secrets/
+Jenkinsfile
+image-id.txt
+image-tag.txt
 .deps/
 .venv/
 .vscode/

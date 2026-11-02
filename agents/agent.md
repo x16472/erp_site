@@ -42,7 +42,7 @@
 ## 部署
 
 - start.bat、start.sh、dockerfile、docker-compose.yml 與 systemd 同步架構；啟動預先編譯的 Go，由 Go 管理 Python 子程序。
-- Windows 容器保留 Server Core LTSC 2022、IIS 與 C:/inetpub/wwwroot；Python 使用 3.11 venv。依既有決策先維持可啟動部署，不自行增加 volume／HTTPS。
+- 2026-11-03 依 Phoenix 指定，容器部署改為 OMV 上的 Alpine Linux（目前 linux/amd64），搭配 cloudflare/cloudflared:2026.10.5 與既有 MSSQL 容器；取代先前 Windows IIS 容器配置。Python 使用 3.11 venv，網站監聽 8080，.env 與 Tunnel token 掛載而不烘焙至映像，文件與照片持久化。Jenkins 目前只測試及建置，不自動部署。
 - OMV 主機以 systemd 執行 Go，連接既有 Docker SQL Server；網站 8080、資料庫 1433 的規劃依現有文件，不擅改正式環境。
 
 ## 整理來源與適用方式

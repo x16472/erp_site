@@ -248,3 +248,11 @@ Phoenix 回報上一版沒有呈現指定效果。上一版只在共用樣式覆
 浮動樣式改為 page/static/exam-floating.css，移除 style.css 尾端的舊定位覆寫；容器直接置於 body，下方預留題目空間，固定右側並限制總高度，題號可內部捲動。exam.html 明確載入新樣式，並更新該頁 style.css／exam.js URL 版本，避免沿用舊資源；尚未證實 Phoenix 畫面未更新的原因是快取，不把快取列為已確認根因。
 
 Edge 與本機模擬 API 確認兩個元件實際位於新容器、頁面捲動前後座標不變、不遮擋題目、40 題切換、短螢幕及深淺色顯示正常。390px 時元件回到原 HTML 位置，與不載入浮動 CSS 的尺寸及座標一致。倒數、答案儲存、到期交卷／重試及原日報流程通過；交卷結果頁確實收起浮動容器。已檢視本機桌面截圖 .deps/exam-floating-desktop.png；本輪沒有操作 Phoenix 正在觀看的既有部署或正式資料庫，不將本機測試視為其部署驗收。README 同步，紀錄續寫末端。
+
+## 2026-11-03｜Jenkins、OMV Alpine 與 Cloudflare Tunnel
+
+依 Phoenix 要求建立 Jenkinsfile；後續指定 OMV、既有 MSSQL 容器、Alpine 網站容器，以及 cloudflare/cloudflared:2026.10.5。Dockerfile 改為 Go 編譯、Go／前端／Python 測試與 Python 3.11 Alpine runtime 多階段配置。PyMuPDF 維持 1.26.4，在編譯階段建立 wheel；runtime 加入 LibreOffice Writer、Tesseract 英文及繁體中文資料，目標限定 linux/amd64。
+
+Jenkins 使用 linux-docker agent，依序檢查 Docker／Compose、執行三組容器測試、建置 runtime，保存 image tag 與 ID；沒有自動部署、推送 registry 或遠端 SSH。Compose 使用網站 8080、唯讀掛載 .env、持久化 data 與員工照片，新增指定版本 cloudflared，以 secret 檔案讀取 token，等待網站健康後啟動。未改動 MSSQL、實際 .env 或 Cloudflare 帳號。同步 README、專案規範、systemd 替代方案提示與 backend/docs/jenkins-omv.md。
+
+Compose config --quiet、Jenkins 兩段多行 shell 的 bash 語法檢查、兩項前端測試、Go vet，以及 CGO_ENABLED=0 的 linux/amd64 交叉編譯通過；編譯產物僅留在忽略版控的 .deps/ci-validation。Windows 本機 go test 的 TestStaticAllowlistAndTraversal 出現三個 404／200 不符，未擴大範圍修改既有後端；Python 測試因本機 venv 無法啟動直譯器未能執行。Docker daemon 與 WSL 存取遭環境權限拒絕，未完成 Alpine 原生套件編譯、Linux 容器測試、完整 Jenkins 執行或 Tunnel／資料庫連線驗收。遠端 OMV SSH 指紋限制維持。

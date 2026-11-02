@@ -2,7 +2,7 @@
 
 銀盾共同體營運中心整合企業官網、員工工作台與 MIS 後台，提供出勤管理、營運填報、教育訓練與企業宣導功能。前端使用原生 HTML、CSS 與 JavaScript，後端由 Go 提供 HTTP、程序管理與 SQL Server 存取，Python 3.11 透過私有 gRPC 執行既有業務邏輯，業務資料存放於 SQL Server。
 
-目前提供 OMV／Linux systemd、Windows 本機執行與 Windows 容器部署方式。OMV 使用 `start.sh` 啟動 Go，並由 Go 管理 Python gRPC 工作程序，部署步驟請見 [OMV systemd 部署說明](backend/docs/omv-systemd.md)。Windows 容器以 Windows Server Core LTSC 2022 為基底，啟用內建 IIS，並在網站目錄建立 Python venv。
+目前以 OMV 上的 Alpine Linux 容器部署網站，搭配 Cloudflare Tunnel 與既有 MSSQL 容器。Go 管理 Python 3.11 gRPC 工作程序，Jenkins 在容器內執行測試及映像建置，詳見 [Jenkins 與 OMV 容器部署](backend/docs/jenkins-omv.md)。另保留 Windows 本機啟動與 [OMV systemd 替代部署方式](backend/docs/omv-systemd.md)。
 
 ## 功能總覽
 
@@ -23,7 +23,7 @@
 
 ## 前端介面與資源
 
-前端採原生 HTML、共用 CSS 與 JavaScript ES Modules，不需要 Node.js 或前端打包工具。請透過 Go 或 IIS 提供的 HTTP 網址使用，讓模組載入、同來源 API 與工作階段驗證正常運作。
+前端採原生 HTML、共用 CSS 與 JavaScript ES Modules，不需要 Node.js 或前端打包工具。請透過 Go 提供的 HTTP 網址或 Cloudflare Tunnel 網址使用，讓模組載入、同來源 API 與工作階段驗證正常運作。
 
 - 公開官網包含企業理念、四大產業據點、部門篩選名冊與合作資訊。據點圖片使用 `page/static/png/company/` 的相對路徑，可隨網站部署位址載入。
 - MIS 官網設定提供銀盾藍（`shield`）、勳章紅（`medal`）、鋼鐵灰（`steel`）及專業白（`white`）四種主題，並提供首頁預覽。
@@ -36,7 +36,7 @@
 ```mermaid
 flowchart LR
     Browser[瀏覽器] --> Go[Go HTTP 主程式]
-    IIS[IIS 容器入口] --> Go
+    Cloudflare[Cloudflare Tunnel] --> Go
     Go -->|gRPC：API 與控制| Python[Python 3.11 業務服務]
     Python -->|gRPC：查詢代碼與參數| DB[Go 資料存取層]
     DB --> SQL[SQL Server]
@@ -68,7 +68,7 @@ erp_site/
 ├─ go.mod、go.sum                # Go 相依套件
 ├─ requirements*.txt             # Python 執行／開發相依套件
 ├─ start.bat、start.sh            # 執行預先編譯的 Go 主程式
-└─ dockerfile、docker-compose.yml # Windows IIS 容器
+└─ dockerfile、docker-compose.yml # Alpine Linux 與 Cloudflare Tunnel 容器
 ```
 
 資料庫實體表遵循*專案內*`DATABASE.md`的開發規範，既有`API`使用的`Company_*`名稱由相容檢視表提供。資料庫重新建置，搬移、回復、盤點及演練工具已移除；建表與初始資料保留於 database/。
@@ -93,57 +93,28 @@ erp_site/
 
 一般啟動不執行 DDL；Go 以 database/SeedEmployees.sql 一次性建立員工及部門，重啟不覆寫後台維護內容；database/SeedOperationCategories.sql 另補齊必要日報類別，只新增缺少的類別，不覆寫既有設定。執行期不讀取 CSV。文件預設自動同步，可用 --skip-doc-sync 略過。全新資料庫可明確執行 --init-db，由 database/CreateTables.sql、SeedOperationCategories.sql、SeedData.sql 及業務初始化建立必要資料；現有 Company 不需重新初始化。
 
-## Windows 容器部署
+## OMV Alpine 容器與 Jenkins
 
-### 執行需求
+網站使用 `python:3.11-alpine3.22`，Go 以多階段建置產生 Linux 執行檔，對外入口搭配 `cloudflare/cloudflared:2026.10.5`。目前支援 `linux/amd64`；既有 MSSQL 容器獨立運作，Compose 不建立或修改資料庫服務。
 
-- 使用 Windows 容器模式的 Docker 與 Docker Compose。
-- 可執行 Windows Server Core LTSC 2022 容器的主機環境。
-- 可下載官方 image、Microsoft 安裝程式與 Python 套件的網路連線。
-- 已完成上述 `.env` 設定，且容器可連線至 SQL Server。
-- 主機的 80 埠可供網站使用。
+- Jenkins agent 標籤為 `linux-docker`，安裝 Git、Docker Engine 與 Compose v2。pipeline 執行 Go test／vet、前端測試、Alpine Python 測試及網站映像建置。
+- `.env` 於執行時唯讀掛載到 `/app/.env`，不進入映像；資料庫位址使用容器可連線的 OMV 主機位址與 MSSQL 已發布埠，不能使用 `127.0.0.1` 代表另一個容器。
+- `data/` 掛載至 `/app/data`；員工照片使用 `staff_photos` named volume，保留重建後的資料。
+- Go 監聽 `8080`，主機也發布 `8080`。Cloudflare Tunnel 使用同一 Compose 網路的 `http://erp_service:8080`。
+- Tunnel token 存放於未納入版控的 `secrets/cloudflared-token.txt`；Cloudflare 後台設定公開網域路由。外部 HTTPS 由 Cloudflare 提供，容器之間使用 HTTP。
+- 容器包含 LibreOffice Writer、Tesseract 英文與繁體中文資料；PyMuPDF 1.26.4 在 Alpine 由原始碼編譯，首次建置需較多時間與記憶體。
+- 健康檢查使用 `/api/health`，涵蓋 Python 與 SQL Server；網站健康後才啟動 Tunnel。Docker 健康檢查失敗本身不會觸發容器重啟。
 
-### 建置與啟動
+依 [部署文件](backend/docs/jenkins-omv.md) 準備 `.env`、Tunnel token 及 Cloudflare 路由後，在 OMV 專案目錄執行：
 
-在專案根目錄執行：
-
-```powershell
+```bash
 docker compose build erp_service
 docker compose up -d
-```
-
-建置後的 image 名稱為 `erp-site:servercore-ltsc2022`，容器名稱為 `ERP_Site`。瀏覽 [網站首頁](http://localhost/) 或 [資料庫健康 API](http://localhost/api/health) 確認服務。
-
-Dockerfile 先以 `golang:1.23-windowsservercore-ltsc2022` 編譯 Go，以官方 Python 3.11.9 安裝程式及 SHA-256 校驗安裝 Python，最終基底為 `mcr.microsoft.com/windows/servercore:ltsc2022`。建置流程包含 IIS、ARR、URL Rewrite、Visual C++ Runtime、venv 與 Python 套件安裝，並檢查 `start.bat --check`、文件套件匯入、產生的啟動腳本及 IIS XML。
-
-容器啟動時，Go 使用 `127.0.0.1:8000`，IIS 使用 80 埠。啟動程序會監控 Go 與 IIS，任一停止便結束容器；Compose 設定為 `restart: unless-stopped`。
-
-### 狀態與維護
-
-```powershell
-# 查看服務與健康狀態
 docker compose ps
-
-# 查看最近的啟動訊息
-docker compose logs --tail 100 erp_service
-
-# 持續追蹤記錄；Ctrl+C 結束追蹤
-docker compose logs -f erp_service
-
-# 停止服務並移除 Compose 容器與網路
-docker compose down
+docker compose logs --tail 100 erp_service cloudflared
 ```
 
-目前 image 的健康檢查請求為首頁 `/`，用來確認 IIS 至 Go 的 HTTP 路徑（不涵蓋 Python／SQL 就緒狀態）；`/api/health` 另會讀取 SQL Server，供資料庫連線診斷。
-
-### 目前部署行為
-
-- 最終 image 保留必要 SQL／管理員設定，排除僅供部署使用的 DokerPublishName／DokerPublishPassword；本機 .env 不公開。Image 仍含執行所需帳密，不供公開分享。
-- 網站程式與 `.env` 更新後，需要重新建置並更新容器，可執行 `docker compose up -d --build`。
-- 尚未設定 volume。員工照片與文件快取等寫入容器的檔案，會在容器移除或重建時遺失；SQL Server 中的資料仍由資料庫保存。
-- `.dockerignore` 排除 `data/` 內多數資料，容器不打包 `data/`，員工初始資料隨 `database/` 腳本部署，目前 image 不包含本機的 `data/exam/` 文件。
-- 目前提供 HTTP，未設定 HTTPS。
-- Image 未安裝 Tesseract、LibreOffice 或 Microsoft Word；需要 OCR 或舊版 DOC 轉檔時，須另外準備對應執行環境。
+預設網站映像為 `erp-site:alpine`；Jenkins 使用個別建置標籤，詳細使用方式見部署文件。Jenkins 目前只測試與建置，不自動推送 registry、SSH 登入或更新正式容器。既有 systemd 網站若占用 8080，切換前需先由維運人員停用，避免兩份網站同時執行。
 
 ## Windows 本機執行
 
