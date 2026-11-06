@@ -698,5 +698,105 @@
     "sql": "SELECT category_code AS code FROM dbo.Company_OperationCategory ORDER BY display_order,category_code",
     "dynamic": 0,
     "read_only": true
+  },
+  "domain.adventure_worlds.1": {
+    "sql": "SELECT WorldNo, WorldName, Description, CurrentVersionNo FROM dbo.AdventureWorlds WHERE IsOpen = 1 ORDER BY Id ASC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.adventure_worlds.2": {
+    "sql": "SELECT WorldNo, WorldName, Description, IsOpen, CurrentVersionNo FROM dbo.AdventureWorlds WHERE WorldNo = ?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.adventure_saves.1": {
+    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName FROM dbo.AdventureSaves s JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo WHERE s.EmployeeNo = ? AND s.IsActive = 1 ORDER BY s.WorldNo, s.SlotIndex",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.adventure_saves.2": {
+    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName FROM dbo.AdventureSaves s JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo WHERE s.SaveNo = ? AND s.EmployeeNo = ? AND s.IsActive = 1",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.adventure_saves.3": {
+    "sql": "INSERT INTO dbo.AdventureSaves (SaveNo, EmployeeNo, WorldNo, SlotIndex, VersionNo, Revision, CharacterSnapshot, StateJson, IsActive) VALUES (?, ?, ?, ?, ?, 1, ?, ?, 1)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.adventure_saves.4": {
+    "sql": "UPDATE dbo.AdventureSaves SET StateJson = ?, Revision = Revision + 1 WHERE SaveNo = ? AND Revision = ?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.adventure_version.1": {
+    "sql": "SELECT WorldNo, VersionNo, FormatVersion, Content, PublishedBy, CreateTime FROM dbo.AdventureVersions WHERE WorldNo = ? AND VersionNo = ?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.adventure_turns.1": {
+    "sql": "SELECT TurnIndex, RequestId, ExpectedRevision, ActionId, ActionInput, RollResult, StateDiff, ResponseJson, CreateTime FROM dbo.AdventureTurns WHERE SaveNo = ? AND RequestId = ?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.adventure_turns.2": {
+    "sql": "INSERT INTO dbo.AdventureTurns (SaveNo, TurnIndex, RequestId, ExpectedRevision, ActionId, ActionInput, RollResult, StateDiff, ResponseJson) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.adventure_turns.3": {
+    "sql": "SELECT Id, TurnIndex, RequestId, ActionId, ActionInput, RollResult, StateDiff, ResponseJson, CreateTime FROM dbo.AdventureTurns WHERE SaveNo = ? AND (? = 0 OR Id < ?) ORDER BY Id DESC OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.admin_adventure_worlds.1": {
+    "sql": "SELECT w.WorldNo, w.WorldName, w.Description, w.IsOpen, w.CurrentVersionNo, d.Revision AS [DraftRevision], d.UpdatedBy, d.CreateTime AS [DraftCreateTime] FROM dbo.AdventureWorlds w LEFT JOIN dbo.AdventureDrafts d ON d.WorldNo = w.WorldNo ORDER BY w.Id ASC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.admin_adventure_worlds.2": {
+    "sql": "INSERT INTO dbo.AdventureWorlds (WorldNo, WorldName, Description, IsOpen, CurrentVersionNo) VALUES (?, ?, ?, ?, ?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.admin_adventure_worlds.3": {
+    "sql": "UPDATE dbo.AdventureWorlds SET WorldName = ?, Description = ?, IsOpen = ?, CurrentVersionNo = ? WHERE WorldNo = ?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.admin_adventure_draft.1": {
+    "sql": "SELECT WorldNo, Revision, Content, UpdatedBy, CreateTime FROM dbo.AdventureDrafts WHERE WorldNo = ?",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.admin_adventure_draft.2": {
+    "sql": "MERGE dbo.AdventureDrafts AS target USING (SELECT ? AS WorldNo) AS source ON target.WorldNo = source.WorldNo WHEN MATCHED AND target.Revision = ? THEN UPDATE SET Content = ?, Revision = target.Revision + 1, UpdatedBy = ? WHEN NOT MATCHED THEN INSERT (WorldNo, Revision, Content, UpdatedBy) VALUES (?, 1, ?, ?);",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.admin_adventure_publish.1": {
+    "sql": "INSERT INTO dbo.AdventureVersions (WorldNo, VersionNo, FormatVersion, Content, PublishedBy) VALUES (?, ?, 1, ?, ?)",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.admin_adventure_publish.2": {
+    "sql": "UPDATE dbo.AdventureWorlds SET CurrentVersionNo = ?, IsOpen = 1 WHERE WorldNo = ?",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.admin_adventure_staff.1": {
+    "sql": "SELECT employee_id, display_name, department, position, photo_file, traits FROM dbo.Company_Staff WHERE is_active=1 ORDER BY employee_id ASC",
+    "dynamic": 0,
+    "read_only": true
+  },
+  "domain.adventure_saves.lock": {
+    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName FROM dbo.AdventureSaves s WITH (UPDLOCK, HOLDLOCK) JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo WHERE s.SaveNo = ? AND s.EmployeeNo = ? AND s.IsActive = 1",
+    "dynamic": 0,
+    "read_only": false
+  },
+  "domain.admin_adventure_draft.lock": {
+    "sql": "SELECT WorldNo, Revision, Content, UpdatedBy, CreateTime FROM dbo.AdventureDrafts WITH (UPDLOCK, HOLDLOCK) WHERE WorldNo = ?",
+    "dynamic": 0,
+    "read_only": false
   }
 }

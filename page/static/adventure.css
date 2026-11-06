@@ -1,0 +1,940 @@
+/* 穿越冒險專屬樣式 (adventure-) */
+
+#adventure {
+    padding: 1.5rem;
+    max-width: 1300px;
+    margin: 0 auto;
+    color: var(--text, #1e293b);
+}
+
+/* 冒險入口與英雄區 */
+.adventure-hero {
+    text-align: center;
+    padding: 2.5rem 1rem 2rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(99, 102, 241, 0.04));
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 16px;
+    margin-bottom: 2rem;
+}
+
+.adventure-hero-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent, #2563eb);
+    background: rgba(37, 99, 235, 0.12);
+    border-radius: 9999px;
+    margin-bottom: 0.75rem;
+}
+
+.adventure-hero-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0.5rem 0;
+    letter-spacing: -0.02em;
+}
+
+.adventure-hero-desc {
+    max-width: 640px;
+    margin: 0 auto;
+    color: var(--muted, #64748b);
+    line-height: 1.6;
+}
+
+/* 存檔槽位區域 */
+.adventure-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+}
+
+.adventure-section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.adventure-muted {
+    font-size: 0.875rem;
+    color: var(--muted, #64748b);
+}
+
+.adventure-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.adventure-slot-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+    min-height: 220px;
+}
+
+.adventure-slot-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+
+.adventure-slot-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--accent, #2563eb);
+    margin-bottom: 0.5rem;
+}
+
+.adventure-slot-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+}
+
+.adventure-slot-meta {
+    font-size: 0.85rem;
+    color: var(--muted, #64748b);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.adventure-slot-stats {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--muted, #64748b);
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-top: 1px dashed var(--border, #e2e8f0);
+    border-bottom: 1px dashed var(--border, #e2e8f0);
+}
+
+.adventure-slot-empty {
+    border: 2px dashed var(--border, #cbd5e1);
+    background: transparent;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal 彈窗 */
+.adventure-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.adventure-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.adventure-modal-content {
+    position: relative;
+    background: var(--card-bg, #ffffff);
+    border-radius: 16px;
+    border: 1px solid var(--border, #e2e8f0);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.adventure-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.adventure-modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.adventure-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--muted, #64748b);
+}
+
+.adventure-modal-body {
+    padding: 1.5rem;
+}
+
+.adventure-player-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.adventure-preview-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent, #2563eb);
+}
+
+.adventure-traits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.adventure-trait-card {
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--card-bg, #ffffff);
+}
+
+.adventure-trait-card:hover {
+    border-color: var(--accent, #2563eb);
+}
+
+.adventure-trait-card.selected {
+    border-color: var(--accent, #2563eb);
+    background: rgba(37, 99, 235, 0.06);
+}
+
+.adventure-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border, #e2e8f0);
+}
+
+/* 遊戲主畫面頂部 */
+.adventure-top-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+}
+
+.adventure-nav-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.adventure-current-info {
+    font-size: 0.9rem;
+    color: var(--muted, #64748b);
+}
+
+.adventure-save-status {
+    font-size: 0.85rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    font-weight: 600;
+}
+
+/* 手機版分頁抽屜按鈕 */
+.adventure-mobile-tabs {
+    display: none;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+}
+
+.adventure-m-tab {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid var(--border, #e2e8f0);
+    background: var(--card-bg, #ffffff);
+    color: var(--text, inherit);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.adventure-m-tab.active {
+    background: var(--accent, #2563eb);
+    color: #ffffff;
+    border-color: var(--accent, #2563eb);
+}
+
+/* 冒險雙欄主布局 */
+.adventure-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* 主舞台區 */
+.adventure-main-stage {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* 場景資訊卡 */
+.adventure-scene-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.adventure-scene-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.adventure-time-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 6px;
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    margin-bottom: 0.35rem;
+}
+
+.adventure-loc-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.adventure-turn-counter {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--muted, #64748b);
+}
+
+.adventure-loc-desc {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text, inherit);
+    margin-bottom: 1.25rem;
+}
+
+.adventure-scene-elements {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border, #e2e8f0);
+}
+
+.adventure-elem-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.adventure-elem-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted, #64748b);
+}
+
+.adventure-npc-pills, .adventure-obj-pills {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.adventure-npc-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent, #2563eb);
+}
+
+.adventure-npc-pill img {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.adventure-obj-pill {
+    padding: 0.3rem 0.65rem;
+    border-radius: 20px;
+    background: rgba(100, 116, 139, 0.08);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    font-size: 0.85rem;
+    color: var(--text, inherit);
+}
+
+/* 對話與事件盒 */
+.adventure-dialogue-box {
+    background: var(--card-bg, #ffffff);
+    border: 2px solid var(--accent, #2563eb);
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.08);
+}
+
+.adventure-dialogue-speaker {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--accent, #2563eb);
+    margin-bottom: 0.75rem;
+}
+
+.adventure-dialogue-text {
+    font-size: 1rem;
+    line-height: 1.8;
+    margin-bottom: 1.25rem;
+    min-height: 48px;
+}
+
+.adventure-dialogue-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.adventure-choice-btn {
+    text-align: left;
+    padding: 0.85rem 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: rgba(37, 99, 235, 0.05);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--accent, #2563eb);
+}
+
+.adventure-choice-btn:hover {
+    background: var(--accent, #2563eb);
+    color: #ffffff;
+}
+
+/* 戰鬥競技場 */
+.adventure-combat-arena {
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.04), rgba(0, 0, 0, 0.02));
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    border-radius: 14px;
+    padding: 1.5rem;
+}
+
+.adventure-combat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.adventure-combat-header h3 {
+    margin: 0;
+    color: #ef4444;
+}
+
+.adventure-combat-fighters {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.adventure-combat-vs {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #ef4444;
+}
+
+.adventure-fighter-name {
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+}
+
+.adventure-bar-container {
+    margin-bottom: 0.5rem;
+}
+
+.adventure-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted, #64748b);
+    margin-bottom: 0.2rem;
+}
+
+.adventure-bar-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.adventure-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease-out;
+}
+
+.adventure-bar-fill.hp { background: #ef4444; }
+.adventure-bar-fill.ep { background: #3b82f6; }
+.adventure-bar-fill.enemy-hp { background: #f97316; }
+
+.adventure-combat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* 可用行動區 */
+.adventure-actions-panel {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 14px;
+    padding: 1.5rem;
+}
+
+.adventure-actions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+}
+
+.adventure-actions-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.adventure-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+.adventure-act-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.85rem 1rem;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.adventure-act-btn:hover {
+    border-color: var(--accent, #2563eb);
+    background: rgba(37, 99, 235, 0.04);
+    transform: translateY(-1px);
+}
+
+.adventure-act-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text, inherit);
+    margin-bottom: 0.25rem;
+}
+
+.adventure-act-desc {
+    font-size: 0.78rem;
+    color: var(--muted, #64748b);
+    line-height: 1.4;
+}
+
+.adventure-act-cost {
+    font-size: 0.75rem;
+    color: #d97706;
+    margin-top: 0.4rem;
+    font-weight: 600;
+}
+
+/* 敘事歷史紀錄流 */
+.adventure-log-panel {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 14px;
+    padding: 1.5rem;
+}
+
+.adventure-log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.adventure-log-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.adventure-btn-text {
+    background: none;
+    border: none;
+    color: var(--accent, #2563eb);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+.adventure-log-stream {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.adventure-log-item {
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    background: rgba(0, 0, 0, 0.02);
+    border-left: 3px solid #94a3b8;
+}
+
+.adventure-log-item.narrative { border-left-color: #3b82f6; }
+.adventure-log-item.dialogue { border-left-color: #8b5cf6; }
+.adventure-log-item.combat { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.03); }
+.adventure-log-item.effect { border-left-color: #10b981; }
+.adventure-log-item.check { border-left-color: #f59e0b; }
+.adventure-log-item.ending { border-left-color: #ec4899; background: rgba(236, 72, 153, 0.05); font-weight: 700; }
+
+/* 側欄卡片共通 */
+.adventure-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.adventure-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 14px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.adventure-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.adventure-card-head h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.adventure-badge {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--muted, #64748b);
+}
+
+/* 主角屬性卡 */
+.adventure-char-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+}
+
+.adventure-char-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent, #2563eb);
+}
+
+.adventure-char-name {
+    display: block;
+    font-size: 1.1rem;
+}
+
+.adventure-char-dept {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted, #64748b);
+}
+
+.adventure-char-trait {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent, #2563eb);
+    background: rgba(37, 99, 235, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-top: 0.2rem;
+}
+
+.adventure-vitals {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+}
+
+.adventure-vital-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.adventure-vital-row.gold {
+    margin-top: 0.3rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed var(--border, #e2e8f0);
+}
+
+.adventure-gold-val {
+    color: #d97706;
+    font-weight: 700;
+}
+
+.adventure-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.adventure-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border, #e2e8f0);
+}
+
+.adventure-stat-item span {
+    font-size: 0.75rem;
+    color: var(--muted, #64748b);
+}
+
+.adventure-stat-item b {
+    font-size: 1rem;
+    color: var(--text, inherit);
+}
+
+/* 裝備與背包 */
+.adventure-equipment-strip {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.adventure-equip-slot {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border, #e2e8f0);
+}
+
+.adventure-inventory-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.adventure-inv-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border, #e2e8f0);
+    background: var(--card-bg, #ffffff);
+}
+
+.adventure-inv-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+.adventure-inv-actions {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.adventure-inv-btn {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid var(--border, #cbd5e1);
+    background: none;
+    cursor: pointer;
+}
+
+.adventure-inv-btn:hover {
+    background: var(--accent, #2563eb);
+    color: #ffffff;
+    border-color: var(--accent, #2563eb);
+}
+
+/* 地圖列表 */
+.adventure-map-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.adventure-map-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid var(--border, #e2e8f0);
+    background: var(--card-bg, #ffffff);
+}
+
+.adventure-map-item.current {
+    border-color: var(--accent, #2563eb);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+/* 手札 Tabs */
+.adventure-journal-tabs {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    padding-bottom: 0.4rem;
+}
+
+.adv-j-tab {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    color: var(--muted, #64748b);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.adv-j-tab.active {
+    color: var(--accent, #2563eb);
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.adventure-journal-content {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.adv-quest-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border, #e2e8f0);
+}
+
+.adv-quest-item:last-child {
+    border-bottom: none;
+}
+
+/* 響應式規則 (<= 980px, <= 680px) */
+@media (max-width: 980px) {
+    .adventure-slots-grid {
+        grid-template-columns: 1fr;
+    }
+    .adventure-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 679px) {
+    #adventure {
+        padding: 0.75rem;
+    }
+    .adventure-hero {
+        padding: 1.5rem 0.75rem;
+    }
+    .adventure-hero-title {
+        font-size: 1.5rem;
+    }
+    .adventure-mobile-tabs {
+        display: flex;
+    }
+    .adventure-sidebar {
+        display: none;
+    }
+    .adventure-sidebar.m-active {
+        display: flex;
+    }
+    .adventure-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}

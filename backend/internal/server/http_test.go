@@ -56,6 +56,34 @@ func TestDeleteBodyCookiesAndRequestCleanup(t *testing.T) {
 	}
 }
 
+func TestLANCookiesAndPublicRequests(t *testing.T) {
+	for _, address := range []string{"10.10.0.20:1234", "192.168.1.20:1234", "127.0.0.1:1234", "[::1]:1234"} {
+		gateway := NewGateway(t.TempDir(), &fakeClient{}, &fakeStore{}, "secret", true)
+		request := httptest.NewRequest(http.MethodPost, "/api/employee/login", strings.NewReader(`{}`))
+		request.RemoteAddr = address
+		response := httptest.NewRecorder()
+		gateway.ServeHTTP(response, request)
+		if response.Code != 200 {
+			t.Fatalf("內網請求遭拒絕：%s", address)
+		}
+		for _, cookie := range response.Result().Cookies() {
+			if cookie.Secure || !cookie.HttpOnly {
+				t.Fatal("內網 HTTP Cookie 必須能儲存且保留 HttpOnly")
+			}
+		}
+	}
+	client := &fakeClient{}
+	gateway := NewGateway(t.TempDir(), client, &fakeStore{}, "secret", true)
+	request := httptest.NewRequest(http.MethodGet, "/api/employee/session", nil)
+	request.RemoteAddr = "203.0.113.1:1234"
+	request.Header.Set("X-Forwarded-For", "10.10.0.1")
+	response := httptest.NewRecorder()
+	gateway.ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden || client.request != nil {
+		t.Fatal("內網 HTTP 不得信任偽造的轉送標頭")
+	}
+}
+
 type deadlineRecorder struct {
 	*httptest.ResponseRecorder
 	deadlines []time.Time

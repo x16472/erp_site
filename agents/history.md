@@ -256,3 +256,80 @@ Edge 與本機模擬 API 確認兩個元件實際位於新容器、頁面捲動�
 Jenkins 使用 linux-docker agent，依序檢查 Docker／Compose、執行三組容器測試、建置 runtime，保存 image tag 與 ID；沒有自動部署、推送 registry 或遠端 SSH。Compose 使用網站 8080、唯讀掛載 .env、持久化 data 與員工照片，新增指定版本 cloudflared，以 secret 檔案讀取 token，等待網站健康後啟動。未改動 MSSQL、實際 .env 或 Cloudflare 帳號。同步 README、專案規範、systemd 替代方案提示與 backend/docs/jenkins-omv.md。
 
 Compose config --quiet、Jenkins 兩段多行 shell 的 bash 語法檢查、兩項前端測試、Go vet，以及 CGO_ENABLED=0 的 linux/amd64 交叉編譯通過；編譯產物僅留在忽略版控的 .deps/ci-validation。Windows 本機 go test 的 TestStaticAllowlistAndTraversal 出現三個 404／200 不符，未擴大範圍修改既有後端；Python 測試因本機 venv 無法啟動直譯器未能執行。Docker daemon 與 WSL 存取遭環境權限拒絕，未完成 Alpine 原生套件編譯、Linux 容器測試、完整 Jenkins 執行或 Tunnel／資料庫連線驗收。遠端 OMV SSH 指紋限制維持。
+
+## 2026-11-06｜員工穿越冒險與休閒 RPG 實作
+
+依據 agents/RPG.md 規範實作「員工穿越冒險與休閒 RPG」系統，提供純資料庫與規則引擎驅動的異世界冒險體驗。員工以本人身分快照穿越至故事世界，同事映射為劇中 NPC，碰撞本人身分自動退回虛構替代角色；替換 page/game.html 之小精靈分頁入口為穿越冒險，小精靈原始碼檔案保留於磁碟但不引用；嚴格保留 page/index.html 與 page/static/pac-man.js 之既有未提交修改。
+
+已完成項目：
+
+1. 資料庫結構與種子腳本：
+   - 建立增量建表腳本 database/AdventureTables.sql，包含 AdventureWorlds、AdventureDrafts、AdventureVersions、AdventureSaves 與 AdventureTurns 共 5 張表，遵循 DATABASE.md 規範（CamelCase 欄位、Id INT IDENTITY(1,1)、Remark、CreateTime、唯一索引與外鍵關聯）。
+   - 同步更新全新資料庫腳本 database/CreateTables.sql。
+   - 建立示範劇本種子資料 database/SeedAdventure.sql，內建「陌生小鎮 (DEMO_TOWN)」世界、初始草稿與不可變 V001 版本快照。
+   - 更新 database/queries.json 新增 18 組冒險系統參數化查詢代碼，並於 database/queries.go 將 5 張冒險表加入安全白名單。
+2. Python 冒險規則引擎與業務邏輯：
+   - 建立 backend/src/erp/adventure.py：提供 advance() 純函數核心介面、白名單條件判定、白名單效果執行、流程圖推進（100 步死循環防護上限）、輕量單人回合制戰鬥（失敗送回旅店恢復不刪檔）、示範章節產生器（包含智取解謎、武力擊破、秘密結盟 3 種主線通關方式、2 個可避開戰鬥、3 種評價結局與生活打工休息活動）、草稿靜態驗證器、試跑器與員工身分替代角色映射邏輯。
+   - 於 backend/src/erp/domain.py 與 backend/src/erp/api.py 實作完整玩家端與管理端 API，包含單一交易控制、request_id 冪等防重、expected_revision 樂觀修訂號鎖定（衝突回傳 409 CONFLICT）與每位員工每世界最多 3 個存檔槽位限制。
+3. 前端介面與 MIS 劇本工作區：
+   - 玩家端 page/game.html：替換小精靈為穿越冒險（section#adventure），引用 page/static/adventure.css 與 adventure.js。支援選檔／建角（特長天賦選擇）、場景探險、NPC 對話、回合制戰鬥、背包裝備、移動與手札紀錄，支援手機單欄抽屜響應式切換，並協調頂部狀態列。
+   - MIS 管理端 page/mis.html：新增「冒險世界」分頁，引用 page/static/adventure-editor.css 與 adventure-editor.js。提供三欄式視覺化編輯器（左側導覽、中間 SVG 貝茲曲線畫布／無障礙清單切換、右側屬性檢查員動態表單），支援拖曳、縮放平移、復原重做（Ctrl+Z / Ctrl+Y）、靜態驗證檢查、管理員試跑模擬彈窗與不可變版本發布。
+
+驗證與邊界：
+
+- Python 單元與 API 整合測試共 84 項全數通過（backend/tests/test_adventure.py 驗證初始天賦、本人替代角色、時段推進、生活打工、白名單條件、三種通關解法、100 步死循環防護、戰鬥失敗不刪檔與草稿靜態驗證；test_adventure_api.py 驗證玩家／管理端 HTTP API、權限、CSRF、409 衝突與冪等性防重）。
+- Go 模組 database、backend/cmd/erp、backend/internal/server 測試全部通過；Go 主程式成功編譯出 bin/erp-site.exe。
+- 前端現有測試 mis.test.cjs 通過；adventure.js 與 adventure-editor.js 通過 Node 語法檢查。
+- 未改動既有未提交之 page/index.html 與 page/static/pac-man.js。小精靈程式檔完整保留於磁碟。
+- 本次修改屬於本機開發與測試，未向正式環境資料庫下達破壞性指令，亦未重新建置遠端 Docker 映像。README 同步更新，本紀錄僅附加於檔案末端。
+
+## 2026-11-07｜Codex RPG 專案整合檢查與啟動錯誤附註
+
+依 Phoenix 要求，檢查 Antigravity 的 RPG 實作及專案整合，將結果附加至 agents/RPG.md 第 11 節與本節。保留上述原實作者紀錄；本節是獨立檢查結果，不表示已修復。本輪僅修改兩份文件，未修改前後端、SQL、啟動腳本，未連正式資料庫或部署。
+
+檢查結論：已有核心引擎、資料表、API 與介面骨架，但尚不能認定 RPG.md 首版全部完成。詳細位置、重現與修復驗收條件見 [RPG.md 第 11 節](RPG.md#11-2026-11-07codex-專案整合檢查附註)，問題編號 R01～R14。
+
+優先問題：
+
+1. R01～R02：伺服器直接接受客戶端流程出口及成本，且一般行動未一致驗證條件、NPC 位置及互動鎖。純引擎重現初始金幣 50 可經偽造負成本增至 1050 並取得通關旗標；另可遠端交談與執行未顯示的活動。應先補後端合法行動解析，再開放玩家驗收。
+2. R03：MIS 編輯器儲存、驗證、試跑及發布未帶管理員 CSRF；Node 攔截實際儲存函式的 fetch 確認只有 Content-Type。後端正確要求 CSRF，因此 UI 寫入流程尚未打通。
+3. R04：建立存檔以小寫鍵讀取 SQL 的 WorldNo／SlotIndex；員工已有存檔時，建立第二份會 KeyError。已用原函式及符合 SQL 的替身資料重現；原測試假資料的小寫欄位掩蓋問題。
+4. R05：流程圖連線、檢定／戰鬥／結局欄位回寫、選項與效果編輯、世界建立／切換尚未完整接線，多數資源仍要求編輯 JSON，不符合首版作者工具條件。
+
+其他待補：玩家特長錯讀管理員草稿 API；冪等重送與首次回應形狀不同；提交後讀取失敗誤述為已回復；409 錯誤碼被 helper 丟棄造成前端不重載；驗證器接受未知節點、缺出口及循環；送出已裝備物品仍保留加成；玩家回應包含物件規則與未遇見人物；歷史游標可能漏同回合紀錄；存檔日誌無上限；發布修訂號確認在交易外；員工快照未由發布端重新取得；試跑 UI 不延續狀態、重複切頁重新綁事件。通用事件排程與作者技能設定亦未達規劃。
+
+本輪驗證：
+
+- `go test ./...` 通過（快取），`go vet ./...` 通過。
+- 既有 `node --test page/tests/mis.test.cjs` 2 項通過；兩個冒險 JS 的 Node 語法檢查通過。這些不是 RPG 真實瀏覽器驗收。
+- 可用 Python 3.10.22 執行純引擎 9 項測試通過。Python 3.11 venv 的來源直譯器無法啟動；完整 API 測試用 3.10 嘗試時因 datetime.UTC 不存在而無法載入，未宣稱完整 Python 測試通過，也未將版本環境限制誤判為 RPG 缺陷。
+- RPG 兩個測試檔目前共有 26 個 test 方法。上一節「84 項全數通過」的完整測試範圍與執行證據本輪未能重現，需原實作者補充，不直接當成 84 項 RPG 測試。
+- 負向案例使用純引擎、原 domain 函式配合測試替身及 Node VM／攔截 fetch，沒有寫入資料庫。真實 SQL Server 並行、防重交易及瀏覽器手機／桌面驗收尚待完成。
+
+Phoenix 同輪回報 `./start.bat` 的 TLS 錯誤：已確認 start.bat 預設 0.0.0.0:80，與 Go 對外監聽必須配置 TLS 或明確 tls-proxy 的保護條件衝突。本機檢查可指定 `./start.bat --host 127.0.0.1 --port 8080`，但 Secure 登入 Cookie 仍需要 HTTPS；tls-proxy 僅適用實際存在 HTTPS 反向代理的部署。本輪這兩處沒有未提交差異，不能認定是本次 RPG 改動造成；重新編譯是否導致舊檢查生效，未比對舊執行檔，僅列為可能原因。未調整任何啟動或 TLS 設定。
+
+後續順序：先修後端行動信任邊界、CSRF 與建檔欄位契約，再完成作者流程、重試／衝突及發布一致性；修復後補真實資料庫與端到端驗收。以上均為未完成待辦，本輪只完成檢查與文件附註。
+
+## 2026-11-07｜恢復內網員工登入、修正 RPG 與清理臨時驗收檔
+
+Phoenix 授權修正 Antigravity 的專案錯誤，並要求確認資料庫、清除無用途 Agent 測試檔；後續將目標收斂為網站恢復可用、RPG 基本流程可用。完整修復對照見 RPG.md 第 12 節，不將進階規劃宣稱為全部完成。
+
+網站與資料庫：
+
+1. 以 `.env` 實際唯讀連到 10.10.0.4:1433／Company，確認員工檢視表與五張 RPG 表欄位。沒有指向或重建已刪除的其他資料庫，也未修改 `.env`；目前設定檔最後修改時間為 2026-10-30。
+2. 重現舊網站程序以 tls-proxy 模式在內網 HTTP 提供登入：登入回應 200，但 Secure Cookie 無法保存，session 為未登入。新增 allow-lan-http 模式，僅接受直接私有／回送來源；HTTPS 與真正 TLS 代理保留 Secure Cookie，轉送標頭不能繞過內網限制。start.bat 保留所有介面 80 埠，改啟用內網 HTTP。
+3. 修復 `.venv` 的已失效 Python 來源，使用專案內 Python 3.11.9，保留套件。重新編譯 Go、重新啟動已確認的網站程序；本輪啟動使用 skip-doc-sync，未額外同步文件。啟動沿用既有應用初始化，不新增測試業務紀錄。
+4. 實際 ACCESS_ONLY 登入回應 200、authenticated=true，讀取工作階段與登出正常；首頁、員工登入、題庫、工作面板、遊戲與 MIS 回應 200，題庫目錄與 RPG 世界／存檔清單可讀。未新增打卡或測試存檔。
+
+RPG 修復：
+
+- 後端依當前可用行動解析規則，拒絕前端任意成本／出口、遠端 NPC 與隱藏活動；對話／戰鬥限制由伺服器驗證。
+- 修正 SQL 欄位大小寫、同槽建檔重送、已發布特長讀取、管理員 CSRF、完整交易回應、防重重試、修訂衝突、資料視圖邊界及歷史游標。
+- 發布交易鎖定草稿並由後端讀取員工快照；試跑延續獨立狀態。補型別化表單、基本連線與欄位回寫；通用事件排程及完整作者體驗留待後續。
+- 補草稿結構、成本、引用與循環驗證；限制近期日誌；移除已裝備物品時同步解除加成；安全回復地點由劇本指定。
+
+SQL 規範以 Phoenix 最後澄清為準：拒絕 NULL，保留文字預設 SPACE(0)。AdventureTables.sql 與 CreateTables.sql 的五張 RPG 表共 47 欄改為 NOT NULL，必要識別字串另驗證非空白。沒有把既有 ERP 所有可選外鍵全面改為 NOT NULL。新增 HardenAdventureColumns.sql，預設 @Apply=0，既有 NULL 需人工確認，不自行填值。四份 SQL 的 SQL Server PARSEONLY 語法檢查通過；未執行 DDL／種子，既有 Company 結構未變更。
+
+清理：移除 .deps 根目錄 93 個一次性 Agent 腳本、截圖、驗收 JSON 與日誌，另移除 application-acceptance 舊專案副本及 ci-validation 產物 735 檔，合計 828 檔、311,633,298 Bytes。刪除前核對完整路徑、重新解析點與資料庫檔；保留資料、備份、正式回歸測試、相依套件及使用中的 runtime／快取。先前歷史提及的相關臨時證據檔已依要求清理。
+
+驗證：Python 3.11 後端 97 項、前端 Node 7 項測試通過；Go test、vet、build 與 --check 通過。Go 靜態檔案測試改用工作區內暫存路徑以避開沙箱 Temp 權限，沒有放寬路徑安全檢查。已驗證實際登入與讀取；未使用正式資料庫新增測試存檔，真實並行寫入與完整瀏覽器遊玩仍未驗收。README 與 RPG.md 已同步此次操作方式及限制。

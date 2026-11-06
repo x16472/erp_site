@@ -219,6 +219,40 @@ class Handler:
             except data.DatabaseUnavailable as exc:
                 return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
 
+        if parsed.path == "/api/adventure/worlds":
+            try:
+                if not self.require_employee():
+                    return
+                return self.send_json({"data": data.adventure_worlds()})
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+
+        if parsed.path.startswith("/api/adventure/"):
+            try:
+                session = self.require_employee()
+                if not session:
+                    return
+                query = parse_qs(parsed.query)
+                if parsed.path == "/api/adventure/saves":
+                    result = data.adventure_saves(session["employee_id"])
+                elif parsed.path == "/api/adventure/state":
+                    save_no = query.get("save_no", [""])[0]
+                    if not save_no:
+                        raise ValueError("缺少 save_no 參數")
+                    result = data.adventure_state(save_no, session["employee_id"])
+                elif parsed.path == "/api/adventure/history":
+                    save_no = query.get("save_no", [""])[0]
+                    before_turn = int(query.get("before_id", query.get("before_turn", ["0"]))[0])
+                    limit = int(query.get("limit", ["20"])[0])
+                    result = data.adventure_history(save_no, session["employee_id"], before_turn, limit)
+                else:
+                    return self.send_not_found()
+                return self.send_json({"data": result})
+            except ValueError as exc:
+                return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
+            except data.DatabaseUnavailable as exc:
+                return self.send_json({"error": str(exc), "code": "DATABASE_UNAVAILABLE"}, 503)
+
         if parsed.path.startswith("/api/training/"):
             try:
                 session = self.require_employee()
@@ -322,6 +356,13 @@ class Handler:
                     return self.send_json({"data": data.compliance_essay_answers_admin()})
                 if parsed.path == "/api/admin/training/taxonomy":
                     return self.send_json({"data": data.training_taxonomy_admin()})
+                if parsed.path == "/api/admin/adventure/worlds":
+                    return self.send_json({"data": data.admin_adventure_worlds()})
+                if parsed.path == "/api/admin/adventure/draft":
+                    world_no = query.get("world_no", ["DEMO_TOWN"])[0]
+                    return self.send_json({"data": data.admin_adventure_draft(world_no)})
+                if parsed.path == "/api/admin/adventure/staff-options":
+                    return self.send_json({"data": data.admin_staff_options()})
             except ValueError as exc:
                 return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
             except data.DatabaseUnavailable as exc:
@@ -362,6 +403,29 @@ class Handler:
                     return
                 item = user_input.validate_operation_reply(self.read_json())
                 return self.send_json({"data": data.reply_operation(item, session["employee_id"])})
+            if parsed.path == "/api/adventure/saves/create":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                body = self.read_json()
+                world_no = str(body.get("world_no", "DEMO_TOWN")).strip()
+                slot_index = int(body.get("slot_index", 1))
+                trait_id = str(body.get("trait_id", "")).strip()
+                result = data.adventure_create_save(session["employee_id"], world_no, slot_index, trait_id)
+                return self.send_json({"data": result}, 201)
+            if parsed.path == "/api/adventure/action":
+                session = self.require_employee()
+                if not session or not self.require_csrf(session):
+                    return
+                body = self.read_json()
+                save_no = str(body.get("save_no", "")).strip()
+                request_id = str(body.get("request_id", "")).strip()
+                expected_revision = int(body.get("expected_revision", 1))
+                action_data = body.get("action", {})
+                if not save_no or not request_id or not action_data:
+                    raise ValueError("缺少必要的 save_no, request_id 或 action 資料")
+                result = data.adventure_action(session["employee_id"], save_no, request_id, expected_revision, action_data)
+                return self.send_json({"data": result})
             if parsed.path == "/api/compliance/answer":
                 session = self.require_employee()
                 if not session or not self.require_csrf(session):
@@ -491,10 +555,47 @@ class Handler:
                 if parsed.path == "/api/admin/submission/review":
                     item = user_input.validate_operation_review(self.read_json())
                     return self.send_json({"data": data.review_operation(item, session["employee_id"])})
+                if parsed.path == "/api/admin/adventure/worlds/save":
+                    body = self.read_json()
+                    result = data.admin_save_world(
+                        str(body.get("world_no", "")).strip(),
+                        str(body.get("world_name", "")).strip(),
+                        str(body.get("description", "")).strip(),
+                        bool(body.get("is_open", False)),
+                        str(body.get("current_version_no", "")).strip(),
+                    )
+                    return self.send_json({"data": result})
+                if parsed.path == "/api/admin/adventure/draft/save":
+                    body = self.read_json()
+                    world_no = str(body.get("world_no", "DEMO_TOWN")).strip()
+                    expected_rev = int(body.get("expected_revision", 1))
+                    content = body.get("content", {})
+                    result = data.admin_save_draft(world_no, expected_rev, content, session["username"])
+                    return self.send_json({"data": result})
+                if parsed.path == "/api/admin/adventure/validate":
+                    body = self.read_json()
+                    content = body.get("content", {})
+                    return self.send_json({"data": data.admin_validate_draft(content)})
+                if parsed.path == "/api/admin/adventure/test-run":
+                    body = self.read_json()
+                    content = body.get("content", {})
+                    initial_state = body.get("initial_state")
+                    action_data = body.get("action", {})
+                    rng_seed = int(body.get("rng_seed", 42))
+                    return self.send_json({"data": data.admin_test_run(content, initial_state, action_data, rng_seed)})
+                if parsed.path == "/api/admin/adventure/publish":
+                    body = self.read_json()
+                    world_no = str(body.get("world_no", "DEMO_TOWN")).strip()
+                    expected_rev = int(body.get("expected_revision", 1))
+                    result = data.admin_publish_draft(world_no, expected_rev, session["username"])
+                    return self.send_json({"data": result})
         except user_input.InputError as exc:
             return self.send_json({"error": str(exc), "code": "INVALID_INPUT"}, 400)
         except ValueError as exc:
-            return self.send_json({"error": str(exc), "code": "INVALID_REQUEST"}, 400)
+            msg = str(exc)
+            if msg.startswith("CONFLICT:"):
+                return self.send_json({"error": msg.replace("CONFLICT:", ""), "code": "CONFLICT"}, 409)
+            return self.send_json({"error": msg, "code": "INVALID_REQUEST"}, 400)
         except (data.DatabaseUnavailable, operations_manuals.DocumentImportError) as exc:
             return self.send_json({"error": str(exc), "code": "SERVICE_UNAVAILABLE"}, 503)
         except (ExternalServiceUnavailable, media.MetadataUnavailable) as exc:

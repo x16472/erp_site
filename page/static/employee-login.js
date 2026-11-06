@@ -4,7 +4,7 @@ const
     statusBox = document.querySelector('#accessStatus'),
     clock = document.querySelector('#accessClock'),
     buttons = [...form.querySelectorAll('button[type="submit"]')];
-const allowedNext = new Set(['/home.html', '/sales.html', '/exam.html', '/youtube.html', '/staff.html', '/mis.html']);
+const allowedNext = new Set(['/home.html', '/sales.html', '/exam.html', '/workflow.html', '/game.html', '/staff.html', '/mis.html']);
 const requested = new URLSearchParams(location.search).get('next') || '/home.html';
 const next = allowedNext.has(requested) ? requested : '/home.html';
 let serverOffset = 0;
@@ -41,7 +41,7 @@ form.addEventListener('submit', async event => {
             })
         }, '驗證失敗');
         const attendance = data.attendance;
-        await syncTime();
+        await syncTime().catch(() => {});
         if (attendance) {
             const occurred = new Date(attendance.clocked_at);
             statusBox.className = 'success-note';

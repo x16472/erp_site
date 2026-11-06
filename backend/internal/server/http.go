@@ -48,15 +48,17 @@ type Gateway struct {
 	requests           chan struct{}
 	longRequests       context.Context
 	cancelLongRequests context.CancelFunc
+	allowLANHTTP       bool
 }
 
 // NewGateway 建立共用的網站與 API 入口；root 是專案根目錄。
-func NewGateway(root string, client rpc.PythonWorkerClient, store ScopeStore, token string) *Gateway {
+func NewGateway(root string, client rpc.PythonWorkerClient, store ScopeStore, token string, allowLANHTTP ...bool) *Gateway {
 	longRequests, cancel := context.WithCancel(context.Background())
 	return &Gateway{
 		root: root, client: client, store: store, token: token,
 		requests:     make(chan struct{}, 12),
 		longRequests: longRequests, cancelLongRequests: cancel,
+		allowLANHTTP: len(allowLANHTTP) > 0 && allowLANHTTP[0],
 	}
 }
 
@@ -96,6 +98,14 @@ func writeError(w http.ResponseWriter, status int, message string) {
 // ServeHTTP 將公開靜態內容留在 Go，業務 API 經驗證的 gRPC 通道執行。
 func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	secureHeaders(w)
+	if g.allowLANHTTP && r.TLS == nil {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		ip := net.ParseIP(host)
+		if err != nil || ip == nil || !(ip.IsPrivate() || ip.IsLoopback()) {
+			writeError(w, http.StatusForbidden, `{"error":"此 HTTP 入口僅供內網使用","code":"LAN_ONLY"}`)
+			return
+		}
+	}
 	if !strings.HasPrefix(r.URL.Path, "/api/") {
 		setWriteDeadline(w, responseWriteTimeout)
 		g.static(w, r)
@@ -183,8 +193,8 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				writeError(w, 502, `{"error":"業務服務 Cookie 格式錯誤","code":"INVALID_RESPONSE"}`)
 				return
 			}
-			// 瀏覽器應透過 TLS 或 HTTPS 反向代理使用工作階段。
-			cookie.Secure = true
+			// 內網 HTTP 已驗證直接來源；其他部署仍強制 Secure。
+			cookie.Secure = r.TLS != nil || !g.allowLANHTTP
 			http.SetCookie(w, cookie)
 		case "content-type", "cache-control":
 			w.Header().Add(header.Name, header.Value)

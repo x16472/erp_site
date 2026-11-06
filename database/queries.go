@@ -27,6 +27,8 @@ var allowedTables = map[string]bool{
 	"Company_WebSettings": true, "Company_Department": true, "Company_Staff": true, "Company_Attendance": true,
 	"Company_OperationCategory": true, "Company_OperationSubmission": true, "Company_TrainingDocument": true,
 	"Company_TrainingSection": true, "Company_TrainingQuestion": true, "Company_ImportState": true,
+	"AdventureWorlds": true, "AdventureDrafts": true, "AdventureVersions": true,
+	"AdventureSaves": true, "AdventureTurns": true,
 }
 
 var identifiersPattern = regexp.MustCompile(`^\[(?:[^\]\x00\r\n]|\]\])+\](?:, \[(?:[^\]\x00\r\n]|\]\])+\])*$`)

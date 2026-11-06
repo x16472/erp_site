@@ -28,7 +28,10 @@ export async function apiData(path, options = {}, fallbackMessage = DEFAULT_API_
         throw new Error('需要員工驗證');
     }
     if (!response.ok) {
-        throw new Error(body.error || fallbackMessage);
+        const error = new Error(body.error || fallbackMessage);
+        error.code = body.code;
+        error.status = response.status;
+        throw error;
     }
     return body.data;
 }

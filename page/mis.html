@@ -7,6 +7,7 @@
     <title>後台管理區｜銀盾共同體營運中心</title>
     <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
+    <link rel="stylesheet" href="./static/adventure-editor.css">
     <link rel="icon" href="./static/ico/calc_calculator_10824.ico" type="image/x-icon">
 </head>
 
@@ -39,6 +40,7 @@
                     <button data-panel="partPanel">題庫科目</button>
                     <button data-panel="questionPanel">題庫維護</button>
                     <button data-panel="dataPanel">資料表查閱</button>
+                    <button data-panel="adventurePanel">冒險世界</button>
                 </nav>
                 <span class="api-state" id="apiState">檢查登入狀態</span>
                 <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
@@ -470,12 +472,149 @@
                             </div>
                         </div>
                     </section>
+                    <section class="admin-panel" id="adventurePanel">
+                        <!-- 編輯器頂部操作列 -->
+                        <div class="adv-editor-toolbar">
+                            <div class="adv-toolbar-left">
+                                <label style="font-weight: 700; font-size: 0.9rem;">世界：</label>
+                                <select class="adv-world-select" id="advWorldSelect"></select>
+                                <span class="adv-status-pill" id="advStatusPill">未開放草稿</span>
+                                <span class="adventure-muted">修訂號：<b id="advDraftRev">1</b></span>
+                                <span class="adv-dirty-tag" id="advDirtyTag" hidden>● 有未儲存修改</span>
+                            </div>
+                            <div class="adv-toolbar-right">
+                                <button type="button" class="btn second" id="advUndoBtn" title="復原 (Ctrl+Z)">↶ 復原</button>
+                                <button type="button" class="btn second" id="advRedoBtn" title="重做 (Ctrl+Y)">↷ 重做</button>
+                                <button type="button" class="btn second" id="advValidateBtn">🔍 靜態驗證</button>
+                                <button type="button" class="btn second" id="advTestRunBtn">▶ 模擬試跑</button>
+                                <button type="button" class="btn primary" id="advSaveDraftBtn">💾 儲存草稿</button>
+                                <button type="button" class="btn second" id="advPublishBtn" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4);">🚀 正式發布</button>
+                            </div>
+                        </div>
+
+                        <!-- 編輯器三欄工作區 -->
+                        <div class="adv-editor-workspace">
+                            <!-- 左欄：導覽與資源分類 -->
+                            <aside class="adv-nav-col" id="advNavCol">
+                                <div class="adv-nav-header">世界設定</div>
+                                <button type="button" class="adv-nav-item" data-nav="world_settings">🌍 世界基本設定</button>
+                                <button type="button" class="adv-nav-item" data-nav="staff_mapping">👥 員工角色映射</button>
+
+                                <div class="adv-nav-header">故事內容</div>
+                                <button type="button" class="adv-nav-item" data-nav="locations">📍 地點與出口</button>
+                                <button type="button" class="adv-nav-item" data-nav="npcs">👤 NPC 設定</button>
+                                <button type="button" class="adv-nav-item" data-nav="items">🎒 道具與裝備</button>
+                                <button type="button" class="adv-nav-item" data-nav="quests">📜 任務進程</button>
+                                <button type="button" class="adv-nav-item" data-nav="enemies">⚔️ 敵人怪物</button>
+
+                                <div class="adv-nav-header">事件流程圖</div>
+                                <button type="button" class="adv-nav-item active" data-nav="flowcharts">🔀 事件流程圖</button>
+                                <div class="adv-subnav-list" id="advFlowSubnavList"></div>
+                            </aside>
+
+                            <!-- 中欄：視覺化流程圖與節點清單 -->
+                            <main class="adv-canvas-col">
+                                <div class="adv-canvas-controls">
+                                    <div class="adv-canvas-tool-group">
+                                        <h4 class="adv-canvas-title" id="advCanvasTitle">流程圖：守衛長對話</h4>
+                                    </div>
+                                    <div class="adv-canvas-tool-group">
+                                        <select class="adv-select" id="advAddNodeSelect" style="width: 140px; font-size: 0.8rem;">
+                                            <option value="">+ 新增節點…</option>
+                                            <option value="narrative">敘事 (Narrative)</option>
+                                            <option value="choice">等待選擇 (Choice)</option>
+                                            <option value="condition">條件分支 (Condition)</option>
+                                            <option value="check">屬性檢定 (Check)</option>
+                                            <option value="random">隨機分支 (Random)</option>
+                                            <option value="effect">狀態效果 (Effect)</option>
+                                            <option value="combat">戰鬥啟動 (Combat)</option>
+                                            <option value="end">章節結束 (End)</option>
+                                        </select>
+                                        <button type="button" class="adv-btn-icon" id="advZoomOut" title="縮小">-</button>
+                                        <button type="button" class="adv-btn-icon" id="advZoomReset" title="重設縮放">1:1</button>
+                                        <button type="button" class="adv-btn-icon" id="advZoomIn" title="放大">+</button>
+                                        <button type="button" class="btn second" id="advToggleView" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">節點清單</button>
+                                    </div>
+                                </div>
+
+                                <!-- 流程圖視覺畫布 -->
+                                <div class="adv-canvas-viewport" id="advCanvasViewport">
+                                    <div class="adv-canvas-layer" id="advCanvasLayer">
+                                        <svg class="adv-connections-svg" id="advConnectionsSvg"></svg>
+                                    </div>
+                                </div>
+
+                                <!-- 表單式節點清單 (無障礙與鍵盤友善) -->
+                                <div class="adv-node-list-view" id="advNodeListView" hidden>
+                                    <table class="adv-node-list-table">
+                                        <thead>
+                                            <tr>
+                                                <th>節點 ID</th>
+                                                <th>類型</th>
+                                                <th>內容預覽 / 條件</th>
+                                                <th>下一出口 (連線)</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="advNodeListTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </main>
+
+                            <!-- 右欄：屬性檢查員 Inspector -->
+                            <aside class="adv-inspector-col" id="advInspectorCol">
+                                <div class="adv-inspector-head">
+                                    <h3 id="advInspectorTitle">屬性檢查員</h3>
+                                </div>
+                                <div id="advInspectorBody">
+                                    <p class="adventure-muted">請在畫布或左側選取項目以進行編輯。</p>
+                                </div>
+                            </aside>
+                        </div>
+                    </section>
                 </div>
             </section>
         </main>
     </div>
+    <!-- 試跑模擬器彈窗 -->
+    <div class="adv-sim-modal" id="advSimModal" hidden>
+        <div class="adv-sim-backdrop" id="advSimBackdrop"></div>
+        <div class="adv-sim-content">
+            <div class="adv-inspector-head">
+                <h3>冒險試跑模擬器 (Test Simulator)</h3>
+                <button type="button" class="adventure-close-btn" id="advSimCloseBtn">&times;</button>
+            </div>
+            <p class="adventure-muted" style="margin: 0.5rem 0 1rem;">
+                使用管理員專屬暫存狀態進行單步演算與分支追蹤，不寫入任何正式存檔。
+            </p>
+            <div class="adv-sim-grid">
+                <div>
+                    <div class="adv-form-group">
+                        <label>測試隨機種子 (Seed，固定隨機結果)</label>
+                        <input type="number" class="adv-input" id="advSimSeed" value="42">
+                    </div>
+                    <div class="adv-form-group">
+                        <label>模擬玩家行動</label>
+                        <select class="adv-select" id="advSimActionType">
+                            <option value="move">移動地點 (前往溫暖旅店)</option>
+                            <option value="talk">交談 (與守衛長對話)</option>
+                            <option value="combat_action">戰鬥指令 (普通攻擊)</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn primary" id="advSimRunBtn" style="margin-top: 0.5rem;">▶ 執行單步試跑</button>
+                </div>
+                <div>
+                    <label style="font-size: 0.82rem; font-weight: 700; color: var(--muted, #64748b);">執行軌跡與狀態差異 (Diff)</label>
+                    <div class="adv-sim-trace" id="advSimTrace">
+                        <span class="adventure-muted">點選「執行單步試跑」開始模擬。</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="toast" id="toast" role="status"></div>
     <script type="module" src="./static/mis.js"></script>
+    <script type="module" src="./static/adventure-editor.js"></script>
 </body>
 
 </html>

@@ -1372,3 +1372,492 @@ def update_training_questions_bulk(item: dict[str, Any]) -> dict[str, Any]:
         return {"updated": len(item["ids"]), **item}
     except database.Error as exc:
         raise DatabaseUnavailable("題目批次更新失敗。") from exc
+
+
+# ==============================================================================
+# 穿越冒險與休閒 RPG
+# ==============================================================================
+from . import adventure
+
+
+def adventure_worlds() -> list[dict[str, Any]]:
+    """取得對玩家開放的冒險世界清單。"""
+    rows = _fetch("domain.adventure_worlds.1")
+    return [
+        {
+            "world_no": r["WorldNo"],
+            "world_name": r["WorldName"],
+            "description": r["Description"],
+            "current_version_no": r["CurrentVersionNo"],
+            "traits": adventure_world_traits(r["WorldNo"], r["CurrentVersionNo"]),
+        }
+        for r in rows
+    ]
+
+
+def adventure_world_traits(world_no: str, version_no: str) -> list[dict[str, Any]]:
+    """僅提供已發布版本的建角選項。"""
+    rows = _fetch("domain.adventure_version.1", (world_no, version_no))
+    content = json.loads(rows[0]["Content"]) if rows else {}
+    return [{"id": t["id"], "name": t.get("name", t["id"]), "desc": t.get("desc", "")}
+            for t in content.get("traits", [])]
+
+
+def adventure_saves(employee_id: str) -> list[dict[str, Any]]:
+    """取得指定員工的所有冒險存檔清單。"""
+    rows = _fetch("domain.adventure_saves.1", (employee_id,))
+    saves = []
+    for r in rows:
+        state = json.loads(r["StateJson"] or "{}")
+        char = json.loads(r["CharacterSnapshot"] or "{}")
+        saves.append({
+            "save_no": r["SaveNo"],
+            "employee_no": r["EmployeeNo"],
+            "world_no": r["WorldNo"],
+            "world_name": r["WorldName"],
+            "slot_index": r["SlotIndex"],
+            "version_no": r["VersionNo"],
+            "revision": r["Revision"],
+            "turn": state.get("turn", 1),
+            "location_id": state.get("location_id", ""),
+            "time_of_day": state.get("time_of_day", "morning"),
+            "hp": state.get("character", {}).get("hp", 100),
+            "max_hp": state.get("character", {}).get("max_hp", 100),
+            "gold": state.get("character", {}).get("gold", 50),
+            "character": char,
+            "create_time": r["CreateTime"],
+        })
+    return saves
+
+
+def adventure_create_save(employee_id: str, world_no: str, slot_index: int, trait_id: str = "") -> dict[str, Any]:
+    """為登入員工在指定世界的存檔槽建立新角色與存檔。"""
+    if slot_index not in (1, 2, 3):
+        raise ValueError("存檔欄位必須為 1、2 或 3。")
+
+    # 取得世界資訊
+    world_rows = _fetch("domain.adventure_worlds.2", (world_no,))
+    if not world_rows or not world_rows[0].get("IsOpen"):
+        raise ValueError("該冒險世界不存在或尚未對外開放。")
+    current_version_no = world_rows[0].get("CurrentVersionNo", "")
+    if not current_version_no:
+        raise ValueError("該世界尚未發布任何有效版本。")
+
+    # 取得不可變版本劇本
+    ver_rows = _fetch("domain.adventure_version.1", (world_no, current_version_no))
+    if not ver_rows or not ver_rows[0].get("Content"):
+        raise ValueError("無法取得該版本的劇本內容。")
+    script = json.loads(ver_rows[0]["Content"])
+
+    # 取得員工身分快照
+    emp = employee_identity(employee_id)
+    emp_snapshot = {
+        "employee_id": emp["employee_id"],
+        "display_name": emp["display_name"],
+        "department": emp["department"],
+        "position": emp["position"],
+        "photo_file": emp.get("photo_file", ""),
+    }
+
+    initial_state = adventure.create_initial_state(emp_snapshot, script, trait_id)
+    save_no = "SAVE_" + uuid.uuid5(uuid.NAMESPACE_URL, json.dumps([employee_id, world_no, slot_index])).hex
+
+    try:
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+            existing = _fetch("domain.adventure_saves.1", (employee_id,))
+            if any(s["WorldNo"] == world_no and s["SlotIndex"] == slot_index for s in existing):
+                return adventure_state(next(s["SaveNo"] for s in existing if s["WorldNo"] == world_no and s["SlotIndex"] == slot_index), employee_id)
+
+            cursor.execute(
+                "domain.adventure_saves.3",
+                save_no,
+                employee_id,
+                world_no,
+                slot_index,
+                current_version_no,
+                json.dumps(emp_snapshot, ensure_ascii=False),
+                json.dumps(initial_state, ensure_ascii=False),
+            )
+            db.commit()
+    except database.IntegrityError:
+        return adventure_state(save_no, employee_id)
+    except database.Error as exc:
+        raise DatabaseUnavailable("建立存檔失敗。") from exc
+
+    return adventure_state(save_no, employee_id)
+
+
+def adventure_state(save_no: str, employee_id: str) -> dict[str, Any]:
+    """取得指定存檔的可見狀態、當前地點資訊、NPC 與可用行動。"""
+    rows = _fetch("domain.adventure_saves.2", (save_no, employee_id))
+    if not rows:
+        raise ValueError("找不到指定存檔或無存取權限。")
+    save = rows[0]
+
+    world_no = save["WorldNo"]
+    version_no = save["VersionNo"]
+    state = json.loads(save["StateJson"] or "{}")
+
+    # 讀取劇本
+    ver_rows = _fetch("domain.adventure_version.1", (world_no, version_no))
+    if not ver_rows:
+        raise ValueError("無法讀取存檔所關聯的劇本版本。")
+    script = json.loads(ver_rows[0]["Content"])
+
+    return adventure_view(save, script, state)
+
+
+def adventure_view(save: dict[str, Any], script: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    """從同一修訂號產生玩家視圖，不再另外讀取資料庫。"""
+    save_no, world_no, version_no = save["SaveNo"], save["WorldNo"], save["VersionNo"]
+    available_actions = adventure.get_available_actions(script, state)
+    current_loc_id = state.get("location_id", "")
+    current_loc = script.get("locations", {}).get(current_loc_id, {})
+    current_time = state.get("time_of_day", "morning")
+
+    # 取得目前地點的所有 NPC（經員工角色替換處理）
+    npcs_in_scene = []
+    for npc_id, npc_data in script.get("npcs", {}).items():
+        schedule = npc_data.get("schedule", {})
+        npc_loc = schedule.get(current_time, schedule.get("default", ""))
+        if npc_loc == current_loc_id:
+            effective_npc = adventure.get_effective_npc(npc_id, script, state)
+            npcs_in_scene.append(effective_npc)
+
+    # 物品清單加上定義資訊
+    inventory_items = []
+    for entry in state.get("inventory", []):
+        item_id = entry.get("item_id")
+        item_def = script.get("items", {}).get(item_id, {})
+        inventory_items.append({
+            "item_id": item_id,
+            "count": entry.get("count", 1),
+            "equipped": entry.get("equipped", False),
+            "name": item_def.get("name", item_id),
+            "type": item_def.get("type", "misc"),
+            "description": item_def.get("description", ""),
+        })
+
+    # 任務清單加上名稱與描述
+    quests_info = []
+    for q_id, q_data in state.get("quests", {}).items():
+        q_def = script.get("quests", {}).get(q_id, {})
+        quests_info.append({
+            "quest_id": q_id,
+            "name": q_def.get("name", q_id),
+            "description": q_def.get("description", ""),
+            "stage": q_data.get("stage", 1),
+            "completed": q_data.get("completed", False),
+            "method_used": q_data.get("method_used", ""),
+        })
+
+    # 人物關係
+    relationships_info = []
+    for npc_id, aff in state.get("relationships", {}).items():
+        if npc_id not in state.get("met_npcs", []) and npc_id not in [n["id"] for n in npcs_in_scene]:
+            continue
+        effective_npc = adventure.get_effective_npc(npc_id, script, state)
+        relationships_info.append({
+            "npc_id": npc_id,
+            "name": effective_npc.get("name", npc_id),
+            "title": effective_npc.get("title", ""),
+            "affinity": aff,
+        })
+
+    return {
+        "save_no": save_no,
+        "world_no": world_no,
+        "world_name": save.get("WorldName", ""),
+        "slot_index": save["SlotIndex"],
+        "version_no": version_no,
+        "revision": save["Revision"],
+        "state": {
+            "turn": state.get("turn", 1),
+            "time_of_day": current_time,
+            "time_name": adventure.TIME_PHASE_NAMES.get(current_time, "白天"),
+            "location_id": current_loc_id,
+            "character": state.get("character", {}),
+            "inventory": inventory_items,
+            "equipment": state.get("equipment", {}),
+            "quests": quests_info,
+            "clues": state.get("clues", []),
+            "relationships": relationships_info,
+            "interaction": bool(state.get("interaction")),
+            "combat": ({k: state["combat"][k] for k in ("enemy_name", "enemy_hp", "enemy_max_hp", "round")} if state.get("combat") else None),
+            "flags": {k: v for k, v in state.get("flags", {}).items() if k in ("game_ended", "ending_id")},
+            "recent_logs": state.get("recent_logs", [])[-25:],
+        },
+        "location": {
+            "id": current_loc_id,
+            "name": current_loc.get("name", "未知地點"),
+            "description": current_loc.get("description", ""),
+            "exits": [
+                {"id": eid, "name": script.get("locations", {}).get(eid, {}).get("name", eid)}
+                for eid in current_loc.get("exits", [])
+            ],
+            "objects": [{k: o.get(k, "") for k in ("id", "name", "description")} for o in current_loc.get("objects", []) if adventure.evaluate_condition(o.get("condition"), state)],
+            "activities": [{k: o.get(k, "") for k in ("id", "name", "description")} for o in current_loc.get("activities", []) if adventure.evaluate_condition(o.get("condition"), state)],
+        },
+        "npcs_in_scene": [{k: n.get(k, "") for k in ("id", "name", "title", "bio", "photo_file")} for n in npcs_in_scene],
+        "available_actions": [{k: v for k, v in a.items() if k not in ("flow_id", "next_node_id")} for a in available_actions],
+    }
+
+
+def adventure_history(save_no: str, employee_id: str, before_turn: int = 0, limit: int = 20) -> list[dict[str, Any]]:
+    """游標分頁取得存檔歷史行動與事件紀錄。"""
+    rows = _fetch("domain.adventure_saves.2", (save_no, employee_id))
+    if not rows:
+        raise ValueError("找不到指定存檔或無存取權限。")
+
+    turn_rows = _fetch("domain.adventure_turns.3", (save_no, before_turn, before_turn, max(1, min(100, limit))))
+    results = []
+    for r in turn_rows:
+        results.append({
+            "cursor": r["Id"],
+            "turn_index": r["TurnIndex"],
+            "request_id": r["RequestId"],
+            "action_id": r["ActionId"],
+            "action_input": json.loads(r["ActionInput"] or "{}"),
+            "roll_result": json.loads(r["RollResult"] or "{}"),
+            "state_diff": json.loads(r["StateDiff"] or "{}"),
+            "response": json.loads(r["ResponseJson"] or "{}"),
+            "create_time": r["CreateTime"],
+        })
+    return results
+
+
+def adventure_action(
+    employee_id: str,
+    save_no: str,
+    request_id: str,
+    expected_revision: int,
+    action_data: dict[str, Any],
+) -> dict[str, Any]:
+    """提交冒險結構化行動，具備單一交易、冪等防重與樂觀鎖。"""
+    if not isinstance(action_data, dict) or not request_id or len(request_id) > 50:
+        raise ValueError("行動格式或 request_id 不合法。")
+
+    try:
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+
+            # 1. 查詢存檔
+            cursor.execute("domain.adventure_saves.lock", save_no, employee_id)
+            save_rows = cursor.fetchall()
+            if not save_rows:
+                db.rollback()
+                raise ValueError("存檔不存在或無權限。")
+
+            current_revision = save_rows[0][5]
+            world_no = save_rows[0][2]
+            version_no = save_rows[0][4]
+            current_state_json = save_rows[0][7]
+
+            # 2. 冪等檢查
+            cursor.execute("domain.adventure_turns.1", save_no, request_id)
+            turn_rows = cursor.fetchall()
+            if turn_rows:
+                existing_input = json.loads(turn_rows[0][4] or "{}")
+                if existing_input == action_data:
+                    cached_response = json.loads(turn_rows[0][7] or "{}")
+                    db.commit()
+                    return cached_response
+                else:
+                    db.rollback()
+                    raise ValueError("相同請求識別碼搭配不同行動內容，請求遭拒。")
+
+            # 3. 樂觀鎖比對
+            if current_revision != expected_revision:
+                db.rollback()
+                raise ValueError("CONFLICT:存檔修訂號不符，已被其他操作更新，請重新整理取得最新狀態。")
+
+            # 4. 取得劇本
+            cursor.execute("domain.adventure_version.1", world_no, version_no)
+            ver_rows = cursor.fetchall()
+            if not ver_rows or not ver_rows[0][3]:
+                db.rollback()
+                raise ValueError("無法讀取劇本資料。")
+            script = json.loads(ver_rows[0][3])
+
+            # 5. 規則引擎推進
+            current_state = json.loads(current_state_json or "{}")
+            new_state, logs, actions, roll_result = adventure.advance(script, current_state, action_data)
+
+            state_diff = {
+                "turn": {"old": current_state.get("turn"), "new": new_state.get("turn")},
+                "hp": {"old": current_state.get("character", {}).get("hp"), "new": new_state.get("character", {}).get("hp")},
+                "gold": {"old": current_state.get("character", {}).get("gold"), "new": new_state.get("character", {}).get("gold")},
+            }
+
+            next_revision = current_revision + 1
+            response_payload = {
+                "save_no": save_no,
+                "revision": next_revision,
+                "new_logs": logs,
+                "roll_result": roll_result,
+                "state_diff": state_diff,
+            }
+
+            save = dict(zip(("SaveNo", "EmployeeNo", "WorldNo", "SlotIndex", "VersionNo", "Revision", "CharacterSnapshot", "StateJson", "IsActive", "CreateTime", "WorldName"), save_rows[0]))
+            save["Revision"] = next_revision
+            response_payload.update(adventure_view(save, script, new_state))
+
+            # 6. 寫入 AdventureTurns
+            cursor.execute(
+                "domain.adventure_turns.2",
+                save_no,
+                new_state.get("turn", 1),
+                request_id,
+                expected_revision,
+                action_data.get("action", ""),
+                json.dumps(action_data, ensure_ascii=False),
+                json.dumps(roll_result, ensure_ascii=False),
+                json.dumps(state_diff, ensure_ascii=False),
+                json.dumps(response_payload, ensure_ascii=False),
+            )
+
+            # 7. 更新 AdventureSaves
+            cursor.execute(
+                "domain.adventure_saves.4",
+                json.dumps(new_state, ensure_ascii=False),
+                save_no,
+                expected_revision,
+            )
+            if cursor.rowcount == 0:
+                db.rollback()
+                raise ValueError("CONFLICT:存檔儲存衝突，狀態已變更。")
+
+            db.commit()
+
+        return response_payload
+    except database.Error as exc:
+        raise DatabaseUnavailable("行動結果尚未確認，請使用相同請求識別碼重試。") from exc
+
+
+def admin_adventure_worlds() -> list[dict[str, Any]]:
+    """管理員取得所有世界清單（含草稿狀態與版本號）。"""
+    rows = _fetch("domain.admin_adventure_worlds.1")
+    return [
+        {
+            "world_no": r["WorldNo"],
+            "world_name": r["WorldName"],
+            "description": r["Description"],
+            "is_open": bool(r["IsOpen"]),
+            "current_version_no": r["CurrentVersionNo"],
+            "draft_revision": r["DraftRevision"] or 1,
+            "draft_updated_by": r["UpdatedBy"] or "",
+            "draft_create_time": r["DraftCreateTime"],
+        }
+        for r in rows
+    ]
+
+
+def admin_save_world(world_no: str, world_name: str, description: str, is_open: bool, current_version_no: str) -> dict[str, Any]:
+    """管理員建立或更新世界基礎設定。"""
+    if not world_no or len(world_no) > 50 or not world_name or len(world_name) > 50:
+        raise ValueError("世界編號與名稱必填且不可超過 50 字。")
+    try:
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+            existing = _fetch("domain.adventure_worlds.2", (world_no,))
+            if existing:
+                cursor.execute("domain.admin_adventure_worlds.3", world_name, description, int(is_open), existing[0]["CurrentVersionNo"], world_no)
+            else:
+                cursor.execute("domain.admin_adventure_worlds.2", world_no, world_name, description, 0, "")
+                demo = adventure.create_demo_chapter()
+                demo["world_no"] = world_no
+                demo["world_name"] = world_name
+                demo["description"] = description
+                cursor.execute("domain.admin_adventure_draft.2", world_no, 1, json.dumps(demo, ensure_ascii=False), "admin", world_no, json.dumps(demo, ensure_ascii=False), "admin")
+            db.commit()
+        return {"world_no": world_no, "saved": True}
+    except database.Error as exc:
+        raise DatabaseUnavailable("世界設定儲存失敗。") from exc
+
+
+def admin_adventure_draft(world_no: str) -> dict[str, Any]:
+    """取得指定世界的草稿內容與修訂號。"""
+    rows = _fetch("domain.admin_adventure_draft.1", (world_no,))
+    if not rows:
+        raise ValueError("世界草稿不存在。")
+    return {
+        "world_no": rows[0]["WorldNo"],
+        "revision": rows[0]["Revision"],
+        "content": json.loads(rows[0]["Content"] or "{}"),
+        "updated_by": rows[0]["UpdatedBy"],
+        "create_time": rows[0]["CreateTime"],
+    }
+
+
+def admin_save_draft(world_no: str, expected_revision: int, content: dict[str, Any], updated_by: str) -> dict[str, Any]:
+    """管理員儲存世界草稿，具備樂觀修訂號鎖定。"""
+    if not isinstance(content, dict):
+        raise ValueError("草稿必須為物件。")
+    content_json = json.dumps(content, ensure_ascii=False)
+    try:
+        with connect(read_only=False) as db:
+            cursor = db.cursor()
+            cursor.execute("domain.admin_adventure_draft.2", world_no, expected_revision, content_json, updated_by, world_no, content_json, updated_by)
+            if cursor.rowcount == 0:
+                raise ValueError("CONFLICT:草稿版本已被其他管理員更新（修訂號不符），請重新載入後再儲存。")
+        return {"world_no": world_no, "revision": expected_revision + 1, "saved": True}
+    except database.Error as exc:
+        raise DatabaseUnavailable("儲存草稿失敗。") from exc
+
+
+def admin_staff_options() -> list[dict[str, Any]]:
+    """取得合格在職員工列表以供作者建立 NPC 角色映射。"""
+    rows = _fetch("domain.admin_adventure_staff.1")
+    return [
+        {
+            "employee_id": r["employee_id"],
+            "display_name": r["display_name"],
+            "department": r["department"],
+            "position": r["position"],
+            "photo_file": r.get("photo_file", ""),
+            "traits": r.get("traits", ""),
+        }
+        for r in rows
+    ]
+
+
+def admin_validate_draft(content: dict[str, Any]) -> dict[str, Any]:
+    """驗證草稿結構。"""
+    errors = adventure.validate_draft(content)
+    return {"valid": len(errors) == 0, "errors": errors}
+
+
+def admin_test_run(content: dict[str, Any], initial_state: dict[str, Any] | None, action: dict[str, Any], rng_seed: int = 42) -> dict[str, Any]:
+    """試跑器模擬執行。"""
+    return adventure.simulate_test_run(content, initial_state, action, rng_seed)
+
+
+def admin_publish_draft(world_no: str, expected_revision: int, published_by: str) -> dict[str, Any]:
+    """驗證並發布草稿為不可變版本快照，並更新世界的目前版本。"""
+    try:
+        with connect(read_only=False, autocommit=False) as db:
+            cursor = db.cursor()
+            cursor.execute("domain.admin_adventure_draft.lock", world_no)
+            rows = cursor.fetchall()
+            if not rows or rows[0][1] != expected_revision:
+                raise ValueError("CONFLICT:發布草稿已過期，請重新載入。")
+            content = json.loads(rows[0][2])
+            for npc in content.get("npcs", {}).values():
+                employee_id = npc.get("mapped_employee_id")
+                npc.pop("mapped_employee_snapshot", None)
+                if employee_id:
+                    employee = employee_identity(employee_id)
+                    npc["mapped_employee_snapshot"] = {k: employee.get(k, "") for k in
+                        ("employee_id", "display_name", "department", "position", "photo_file")}
+            errors = adventure.validate_draft(content)
+            if errors:
+                raise ValueError("劇本驗證未通過：" + "；".join(errors))
+            version_no = f"v{expected_revision}.{uuid.uuid4().hex[:12]}"
+            cursor.execute("domain.admin_adventure_publish.1", world_no, version_no,
+                           json.dumps(content, ensure_ascii=False), published_by)
+            cursor.execute("domain.admin_adventure_publish.2", version_no, world_no)
+            db.commit()
+        return {"world_no": world_no, "version_no": version_no, "published": True}
+    except database.Error as exc:
+        raise DatabaseUnavailable("發布世界版本失敗。") from exc

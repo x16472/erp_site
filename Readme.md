@@ -17,7 +17,8 @@
 | 文件與題庫 | 來源文件同步與狀態維護、題目草稿審核、科目與章節維護、題目發布與停用 |
 | 工作面板 | 分頁工具、Python 3.11 瀏覽器 Playground 與 Go WASM Playground |
 | 企業宣導 | YouTube、BiliBili、ニコニコ、Douyin、TikTok 分頁播放與標題解析，以及 YouTube 縮圖下載 |
-| MIS 後台 | 官網設定、資料表查閱、營運與申論審核、教育資料管理 |
+| 穿越冒險 RPG | 員工身分穿越異世界冒險，同事映射為劇中 NPC，包含探險、對話、生活打工、回合戰鬥與多結局章節；MIS 提供視覺化劇本工作區 |
+| MIS 後台 | 官網設定、資料表查閱、營運與申論審核、教育資料管理、冒險世界劇本設計與版本發布 |
 
 學科題型包含單選、多選與閱讀；已移除程式碼填空與連連看設定，術科申論由管理員人工審核。模擬考交卷前不回傳正解與解析，作答紀錄保留題目快照。模擬考開始、到期及作答期限以 SQL Server UTC 為準，API 明確提供時區與伺服器時間；瀏覽器倒數不依賴裝置時鐘，每 60 秒校時。作答選項變更自動儲存，到期交卷失敗可重試，續作沿用原期限。寬度 680px 以上時，剩餘時間與題號導覽會移入獨立的右側浮動容器，捲動題目仍可查看；題號過多可在面板內捲動。手機版維持原本配置。
 
@@ -131,6 +132,10 @@ go build -trimpath -o bin/erp-site.exe ./backend/cmd/erp
 
 `--check` 檢查 Python 版本與套件匯入，不連線資料庫。一般啟動必須先備妥既有或已初始化的 SQL Server。`start.bat` 預設使用 `0.0.0.0:80`，`start.sh` 預設使用 `0.0.0.0:8080`；命令列 `--host`／`--port` 優先於作業系統環境變數 `WEB_HOST`／`WEB_PORT`。`ERP_PYTHON` 或 `--python` 可指定 Python 3.11 的絕對路徑；這些啟動變數不從 `.env` 載入。
 
+Windows 的 `start.bat` 預設啟用 `--allow-lan-http`，供內網 IP 直接使用 HTTP。此模式只接受私有或回送來源，登入 Cookie 保留 HttpOnly 與 SameSite，讓一般 HTTP 可以保存工作階段。使用 TLS 憑證或 `--tls-proxy` 時會自動停用內網 HTTP 模式並使用 Secure Cookie；不要把沒有 HTTPS 代理的直接內網連線當成 TLS 代理。
+
+啟動紀錄會列出實際 `.env` 路徑及資料庫主機／名稱，不輸出帳密。網站使用專案根目錄的 `.env`，不自動切換或建立其他資料庫。若 Python 來源路徑失效，先修復 `.venv`，再以 `start.bat --check` 檢查；本機目前的 Python 3.11.9 來源位於 `.deps/python-runtime/`，此目錄已是執行相依，不能當成臨時測試檔刪除。
+
 只有全新資料庫需要明確執行以下初始化；目前 Company 不需重新執行：
 
 ```powershell
@@ -149,9 +154,9 @@ go build -trimpath -o bin/erp-site.exe ./backend/cmd/erp
 | `/sales.html` | 提交營運日報、查看審閱結果與回覆補件 |
 | `/exam.html` | 學科刷題、模擬考、未完成題組續作、錯題本與術科申論 |
 | `/workflow.html` | 工作面板、Python 3.11 與 Go 瀏覽器 Playground |
-| `/game.html` | 五個影音平台分頁、影片標題、原站連結與 YouTube 縮圖下載 |
+| `/game.html` | 穿越冒險 RPG、五個影音平台分頁、影片標題、原站連結與 YouTube 縮圖下載 |
 | `/staff.html` | 員工組織、明細、部門與打卡紀錄管理 |
-| `/mis.html` | 官網設定、資料查閱、營運與教育訓練管理 |
+| `/mis.html` | 官網設定、資料查閱、營運與教育訓練管理、冒險世界劇本設計與版本發布 |
 
 員工先以在職員工編號登入，再進入工作台；管理功能還需通過 MIS 帳密驗證。HTML 頁面可被載入，資料讀取與寫入權限由各 API 在後端驗證。
 
@@ -190,7 +195,17 @@ YouTube 使用 `/api/youtube/resolve` 與 oEmbed 取得影片資訊，前端設�
 
 縮圖最近查詢最多保留 8 筆影片 ID，儲存在目前瀏覽器的 `localStorage`，可點選重新查詢或清除紀錄，不寫入 SQL Server。也可使用 `/game.html?url=影片網址或ID` 預填並啟動縮圖查詢；此參數只控制縮圖工具。
 
-目前 `game.html` 的可見介面提供多平台影音與 YouTube 縮圖工具，未提供知識搜尋或 SOP 閱讀入口。後端仍保留文件查詢 API，來源文件管理與同步則位於 MIS。
+目前 `game.html` 提供員工穿越冒險休閒 RPG、多平台影音與 YouTube 縮圖工具，未提供知識搜尋或 SOP 閱讀入口。後端仍保留文件查詢 API，來源文件管理與同步則位於 MIS。
+
+### 員工穿越冒險與休閒 RPG
+
+在 `/game.html` 點擊「穿越冒險」分頁。沿用員工登入，每個世界提供三個獨立存檔欄位，支援已發布特長、場景移動、對話、背包、裝備、生活活動與簡單回合制戰鬥。示範主線提供付費通行、取得介紹信及探索替代山徑三種解法。
+
+行動由伺服器依當前存檔與不可變劇本驗證，前端不能指定成本或任意流程出口。同一請求重送會回傳原結果，修訂衝突會要求載入最新狀態。世界／NPC 不共享其他玩家進度，遊戲結果不回寫員工主檔。
+
+MIS「冒險世界」提供草稿、員工映射、型別化資源表單、節點連線、驗證、單步試跑與發布。進階作者操作、通用事件排程與完整瀏覽器驗收仍列於 `agents/RPG.md`，不視為整份規劃已完成。
+
+`database/AdventureTables.sql` 與全新安裝的 `CreateTables.sql` 同步定義五張 RPG 表。RPG 欄位使用 NOT NULL，文字預設為 SPACE(0)；必要編號與 JSON 另由後端檢查。既有資料庫若要收緊欄位，可先預覽 `database/HardenAdventureColumns.sql`；預設 `@Apply = 0`，含 NULL 的資料不會被腳本自行填值。示範內容位於 `database/SeedAdventure.sql`，只供人工選擇匯入，不由啟動覆寫世界或玩家存檔。本輪未套用這些 SQL 至 Company。
 
 ## 影音解析 API
 

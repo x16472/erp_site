@@ -25,7 +25,7 @@ import (
 
 func cleanEnvironment(t *testing.T) {
 	t.Helper()
-	for _, name := range []string{"WEB_HOST", "WEB_PORT", "ERP_SKIP_DOC_SYNC", "ERP_TLS_CERT", "ERP_TLS_KEY", "ERP_TLS_PROXY", "ERP_PYTHON"} {
+	for _, name := range []string{"WEB_HOST", "WEB_PORT", "ERP_SKIP_DOC_SYNC", "ERP_TLS_CERT", "ERP_TLS_KEY", "ERP_TLS_PROXY", "ERP_LAN_HTTP", "ERP_PYTHON"} {
 		t.Setenv(name, "")
 	}
 }
@@ -65,6 +65,9 @@ func TestRequireTLSForPublicListener(t *testing.T) {
 		{[]string{"--host", ""}, false},
 		{[]string{"--host", "192.0.2.1"}, false},
 		{[]string{"--host", "0.0.0.0", "--tls-proxy"}, true},
+		{[]string{"--host", "0.0.0.0", "--allow-lan-http"}, true},
+		{[]string{"--host", "10.10.0.2", "--allow-lan-http"}, true},
+		{[]string{"--host", "203.0.113.1", "--allow-lan-http"}, false},
 		{[]string{"--host", "0.0.0.0", "--tls-cert", "cert.pem", "--tls-key", "key.pem"}, true},
 		{[]string{"--tls-cert", "cert.pem"}, false},
 		{[]string{"--tls-key", "key.pem"}, false},

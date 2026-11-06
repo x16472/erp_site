@@ -10,5 +10,5 @@ if not exist "bin\erp-site.exe" (
   echo go build -o bin/erp-site.exe ./backend/cmd/erp
   exit /b 1
 )
-"%~dp0bin\erp-site.exe" --root "%~dp0." --python "%ERP_PYTHON%" %*
+"%~dp0bin\erp-site.exe" --root "%~dp0." --python "%ERP_PYTHON%" --allow-lan-http %*
 exit /b %ERRORLEVEL%

@@ -57,6 +57,7 @@ type options struct {
 	tlsCert  string
 	tlsKey   string
 	tlsProxy bool
+	lanHTTP  bool
 }
 
 func defaultValue(name, value string) string {
@@ -81,6 +82,7 @@ func parseOptions(args []string, output io.Writer) (options, error) {
 	flags.StringVar(&result.tlsCert, "tls-cert", os.Getenv("ERP_TLS_CERT"), "HTTPS 憑證檔案")
 	flags.StringVar(&result.tlsKey, "tls-key", os.Getenv("ERP_TLS_KEY"), "HTTPS 私鑰檔案")
 	flags.BoolVar(&result.tlsProxy, "tls-proxy", defaultValue("ERP_TLS_PROXY", "0") == "1", "由隔離網路內的反向代理提供 HTTPS")
+	flags.BoolVar(&result.lanHTTP, "allow-lan-http", defaultValue("ERP_LAN_HTTP", "0") == "1", "允許私有 IP 直接使用 HTTP 與登入 Cookie")
 	if err := flags.Parse(args); err != nil {
 		return result, err
 	}
@@ -132,7 +134,16 @@ func parseOptions(args []string, output io.Writer) (options, error) {
 	if (result.tlsCert == "") != (result.tlsKey == "") {
 		return result, errors.New("--tls-cert 與 --tls-key 必須同時設定")
 	}
-	if result.tlsCert == "" && !result.tlsProxy {
+	if result.tlsCert != "" || result.tlsProxy {
+		result.lanHTTP = false
+	}
+	if result.lanHTTP {
+		ip := net.ParseIP(*host)
+		if ip == nil || !(ip.IsPrivate() || ip.IsLoopback() || ip.IsUnspecified()) {
+			return result, errors.New("內網 HTTP 模式只能監聽私有、回送或所有介面位址")
+		}
+	}
+	if result.tlsCert == "" && !result.tlsProxy && !result.lanHTTP {
 		ip := net.ParseIP(*host)
 		if ip == nil || !ip.IsLoopback() {
 			return result, errors.New("對外監聽必須設定 TLS 憑證，或以 --tls-proxy 明確使用隔離網路內的 HTTPS 反向代理")
@@ -237,6 +248,7 @@ func runApplication(ctx context.Context, settings options) error {
 	if err != nil {
 		return err
 	}
+	log.Printf("資料庫目標：%s:%s / %s（設定：%s）", values["DatabaseIP"], values["DatabasePort"], values["DatabaseName"], filepath.Join(settings.root, ".env"))
 	store, err := database.Open(values)
 	if err != nil {
 		return err
@@ -288,7 +300,7 @@ func runApplication(ctx context.Context, settings options) error {
 		log.Print("指定的資料庫工作已完成")
 		return nil
 	}
-	gateway := server.NewGateway(settings.root, worker.Client, store, token)
+	gateway := server.NewGateway(settings.root, worker.Client, store, token, settings.lanHTTP)
 	defer gateway.Shutdown()
 	httpServer := &http.Server{
 		Addr:              settings.address,
