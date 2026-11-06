@@ -8,15 +8,16 @@ services:
     image: ${ERP_IMAGE:-erp-site:alpine}
     container_name: ERP_Site
     restart: unless-stopped
-    stop_grace_period: 30s
+    stop_grace_period: 110s
     environment:
       NAME: ERP_Site
       WEB_HOST: '0.0.0.0'
       WEB_PORT: '8080'
       ERP_PYTHON: /app/.venv/bin/python
       ERP_SKIP_DOC_SYNC: '0'
+      ERP_TLS_PROXY: '1'
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - type: bind
         source: ./.env

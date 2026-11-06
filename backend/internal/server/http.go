@@ -25,6 +25,15 @@ import (
 const maxBody = 7 * 1024 * 1024
 const maxMessage = 32 * 1024 * 1024
 
+const (
+	requestReadTimeout   = 20 * time.Second
+	requestTimeout       = 45 * time.Second
+	documentSyncTimeout  = 10 * time.Minute
+	responseWriteTimeout = 15 * time.Second
+	// DefaultWriteTimeout 涵蓋讀取本文、一般 RPC 與回應傳送；長工作由 Gateway 個別延長。
+	DefaultWriteTimeout = requestReadTimeout + requestTimeout + responseWriteTimeout
+)
+
 // ScopeStore 註冊請求生命週期，確保取消或逾時時回復未提交的交易。
 type ScopeStore interface {
 	BeginScope(context.Context, string) func()
@@ -32,16 +41,32 @@ type ScopeStore interface {
 
 // Gateway 管理 HTTP 資源、大小上限、並行數及內部 RPC 的期限。
 type Gateway struct {
-	root     string
-	client   rpc.PythonWorkerClient
-	store    ScopeStore
-	token    string
-	requests chan struct{}
+	root               string
+	client             rpc.PythonWorkerClient
+	store              ScopeStore
+	token              string
+	requests           chan struct{}
+	longRequests       context.Context
+	cancelLongRequests context.CancelFunc
 }
 
 // NewGateway 建立共用的網站與 API 入口；root 是專案根目錄。
 func NewGateway(root string, client rpc.PythonWorkerClient, store ScopeStore, token string) *Gateway {
-	return &Gateway{root: root, client: client, store: store, token: token, requests: make(chan struct{}, 12)}
+	longRequests, cancel := context.WithCancel(context.Background())
+	return &Gateway{
+		root: root, client: client, store: store, token: token,
+		requests:     make(chan struct{}, 12),
+		longRequests: longRequests, cancelLongRequests: cancel,
+	}
+}
+
+// Shutdown 取消長時間同步；一般 API 留待 HTTP Shutdown 等待完成。
+func (g *Gateway) Shutdown() { g.cancelLongRequests() }
+
+func setWriteDeadline(w http.ResponseWriter, duration time.Duration) {
+	if err := http.NewResponseController(w).SetWriteDeadline(time.Now().Add(duration)); err != nil && !errors.Is(err, http.ErrNotSupported) {
+		log.Printf("HTTP 寫入期限設定失敗：%v", err)
+	}
 }
 
 func requestID() (string, error) {
@@ -59,6 +84,7 @@ func secureHeaders(w http.ResponseWriter) {
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {
+	setWriteDeadline(w, responseWriteTimeout)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
@@ -71,9 +97,16 @@ func writeError(w http.ResponseWriter, status int, message string) {
 func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	secureHeaders(w)
 	if !strings.HasPrefix(r.URL.Path, "/api/") {
+		setWriteDeadline(w, responseWriteTimeout)
 		g.static(w, r)
 		return
 	}
+	duration := requestTimeout
+	longRequest := r.URL.Path == "/api/admin/manuals/sync"
+	if longRequest {
+		duration = documentSyncTimeout
+	}
+	setWriteDeadline(w, requestReadTimeout+duration+responseWriteTimeout)
 	if r.Method != http.MethodGet && r.Method != http.MethodPost && r.Method != http.MethodDelete {
 		w.Header().Set("Allow", "GET, POST, DELETE")
 		writeError(w, 405, `{"error":"不支援的請求方法","code":"METHOD_NOT_ALLOWED"}`)
@@ -102,12 +135,15 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, `{"error":"無法建立工作範圍"}`)
 		return
 	}
-	duration := 45 * time.Second
-	if r.URL.Path == "/api/admin/manuals/sync" {
-		duration = 10 * time.Minute
-	}
 	ctx, cancel := context.WithTimeout(r.Context(), duration)
 	defer cancel()
+	if longRequest {
+		stop := context.AfterFunc(g.longRequests, cancel)
+		defer stop()
+		if g.longRequests.Err() != nil {
+			cancel()
+		}
+	}
 	release := g.store.BeginScope(ctx, id)
 	defer release()
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("authorization", "Bearer "+g.token))
@@ -126,6 +162,7 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	request.Headers = append(request.Headers, &rpc.Header{Name: "Content-Length", Value: strconv.Itoa(len(body))})
 	response, err := g.client.Handle(ctx, request, grpc.MaxCallRecvMsgSize(maxMessage), grpc.MaxCallSendMsgSize(maxMessage))
+	setWriteDeadline(w, responseWriteTimeout)
 	if err != nil {
 		status := 503
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
@@ -140,7 +177,16 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, header := range response.Headers {
 		switch strings.ToLower(header.Name) {
-		case "content-type", "set-cookie", "cache-control":
+		case "set-cookie":
+			cookie, err := http.ParseSetCookie(header.Value)
+			if err != nil {
+				writeError(w, 502, `{"error":"業務服務 Cookie 格式錯誤","code":"INVALID_RESPONSE"}`)
+				return
+			}
+			// 瀏覽器應透過 TLS 或 HTTPS 反向代理使用工作階段。
+			cookie.Secure = true
+			http.SetCookie(w, cookie)
+		case "content-type", "cache-control":
 			w.Header().Add(header.Name, header.Value)
 		}
 	}

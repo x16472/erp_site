@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"erp-site/backend/rpc"
 	"google.golang.org/grpc"
@@ -47,6 +48,102 @@ func TestDeleteBodyCookiesAndRequestCleanup(t *testing.T) {
 	}
 	if len(response.Header().Values("Set-Cookie")) != 2 || store.active != 0 || client.auth != "Bearer secret" {
 		t.Fatal("Cookie、驗證或範圍清理不正確")
+	}
+	for _, cookie := range response.Result().Cookies() {
+		if !cookie.Secure || !cookie.HttpOnly {
+			t.Fatal("工作階段 Cookie 應保留 HttpOnly 並強制 Secure")
+		}
+	}
+}
+
+type deadlineRecorder struct {
+	*httptest.ResponseRecorder
+	deadlines []time.Time
+}
+
+func (w *deadlineRecorder) SetWriteDeadline(deadline time.Time) error {
+	w.deadlines = append(w.deadlines, deadline)
+	return nil
+}
+
+type blockingClient struct {
+	rpc.PythonWorkerClient
+	handle func(context.Context) (*rpc.HttpResponse, error)
+}
+
+func (c *blockingClient) Handle(ctx context.Context, _ *rpc.HttpRequest, _ ...grpc.CallOption) (*rpc.HttpResponse, error) {
+	return c.handle(ctx)
+}
+
+func TestShutdownCancelsOnlyLongRequests(t *testing.T) {
+	for _, path := range []string{"/api/admin/manuals/sync", "/api/public"} {
+		t.Run(path, func(t *testing.T) {
+			longRequest := path == "/api/admin/manuals/sync"
+			started := make(chan time.Duration, 1)
+			release := make(chan struct{})
+			client := &blockingClient{handle: func(ctx context.Context) (*rpc.HttpResponse, error) {
+				deadline, _ := ctx.Deadline()
+				started <- time.Until(deadline)
+				select {
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				case <-release:
+					return &rpc.HttpResponse{Status: 200, Body: []byte("ok")}, nil
+				}
+			}}
+			gateway := NewGateway(t.TempDir(), client, &fakeStore{}, "secret")
+			defer gateway.Shutdown()
+			recorder := &deadlineRecorder{ResponseRecorder: httptest.NewRecorder()}
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				gateway.ServeHTTP(recorder, httptest.NewRequest("POST", path, nil))
+			}()
+			var duration time.Duration
+			select {
+			case duration = <-started:
+			case <-time.After(time.Second):
+				t.Fatal("RPC 未開始")
+			}
+			wantDuration := requestTimeout
+			if longRequest {
+				wantDuration = documentSyncTimeout
+			}
+			if duration < wantDuration-time.Second || duration > wantDuration {
+				t.Fatalf("RPC 期限不正確：%s", duration)
+			}
+			gateway.Shutdown()
+			if !longRequest {
+				select {
+				case <-done:
+					t.Fatal("一般 API 應等待完成，不應因開始關閉而取消")
+				default:
+				}
+				close(release)
+			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+				if longRequest {
+					close(release)
+				}
+				t.Fatal("請求未完成關閉")
+			}
+			wantStatus := 200
+			if longRequest {
+				wantStatus = 503
+			}
+			if recorder.Code != wantStatus {
+				t.Fatalf("關閉時的狀態碼不正確：%d", recorder.Code)
+			}
+			if len(recorder.deadlines) < 2 {
+				t.Fatal("RPC 完成後應重新設定傳送期限")
+			}
+			remaining := time.Until(recorder.deadlines[len(recorder.deadlines)-1])
+			if remaining < responseWriteTimeout-time.Second || remaining > responseWriteTimeout {
+				t.Fatalf("回應傳送期限不正確：%s", remaining)
+			}
+		})
 	}
 }
 

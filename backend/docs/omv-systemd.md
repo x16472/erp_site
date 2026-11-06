@@ -4,7 +4,7 @@
 
 此文件保留為主機直接執行的替代方案。2026-11-03 起主要部署改為 Alpine Linux 容器與 Cloudflare Tunnel，請見 [Jenkins 與 OMV 容器部署](jenkins-omv.md)；兩種方案不可同時占用 8080。
 
-部署目標為 OMV 主機 `10.10.0.4`，網站由主機上的 Go 提供，Python 3.11 由 Go 以 gRPC 管理，連線至同一主機 Docker 容器對外發布的 MSSQL `10.10.0.4:1433`。網站預設使用 `8080` 埠，網址為 <http://10.10.0.4:8080/>。
+部署目標為 OMV 主機 `10.10.0.4`，網站由主機上的 Go 提供，Python 3.11 由 Go 以 gRPC 管理，連線至同一主機 Docker 容器對外發布的 MSSQL `10.10.0.4:1433`。網站預設只監聽 `127.0.0.1:8080`，由 HTTPS 反向代理提供瀏覽器入口；工作階段 Cookie 強制設定 Secure。若直接由 Go 提供 HTTPS，請設定 `WEB_HOST`、`ERP_TLS_CERT` 與 `ERP_TLS_KEY`，並確認憑證對應實際網域。非回送位址的明文 HTTP 監聽需明確指定 `ERP_TLS_PROXY=1`，且必須另以防火牆或網路隔離限制來源。
 
 以下為在 OMV 上手動執行的部署步驟，範例專案路徑為 `/opt/erp_site`。若使用 OMV 資料磁碟的實際路徑，請一併調整所有命令，以及服務範本中的 `RequiresMountsFor`、`WorkingDirectory` 和 `ExecStart`。
 
@@ -80,7 +80,7 @@ sudo journalctl -u erp-site.service -n 100 --no-pager
 服務會等網路上線並排在 Docker 服務之後啟動，但這不代表 MSSQL 已就緒。若資料庫版本辨識因 MSSQL 尚未就緒而失敗，systemd 會每 10 秒重試；其他啟動錯誤也會持續重試，需從 journal 檢查原因。`systemctl status` 顯示 active 僅代表程序已啟動，請繼續確認健康 API：
 
 ```bash
-curl --fail --show-error http://10.10.0.4:8080/api/health
+curl --fail --show-error http://127.0.0.1:8080/api/health
 ```
 
 內網用戶也需能連線至 OMV 的 TCP 8080。若此埠已占用，可修改服務範本的 `WEB_PORT`，重新安裝範本後執行 `daemon-reload` 與 `restart`。

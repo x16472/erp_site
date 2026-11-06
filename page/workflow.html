@@ -120,8 +120,8 @@
                             <button type="button" id="golang-clear">清除命令列</button>
                         </div>
                         <label for="golang-code">main.go</label>
-                        <textarea id="golang-code" rows="18" spellcheck="false" autocapitalize="off"
-                            autocomplete="off" autocorrect="off" aria-describedby="golang-help">package main
+                        <textarea id="golang-code" rows="18" spellcheck="false" autocapitalize="off" autocomplete="off"
+                            autocorrect="off" aria-describedby="golang-help">package main
 
 import "fmt"
 
@@ -140,8 +140,8 @@ func main() {
                             <summary>標準輸入（stdin）</summary>
                             <p id="golang-stdin-help">執行前先填入資料，供 fmt.Scan、bufio.Scanner 或 os.Stdin 讀取；資料讀完即為 EOF。</p>
                             <label for="golang-stdin">輸入資料</label>
-                            <textarea id="golang-stdin" rows="3" spellcheck="false"
-                                aria-describedby="golang-stdin-help" placeholder="例如：第一行姓名，第二行年齡"></textarea>
+                            <textarea id="golang-stdin" rows="3" spellcheck="false" aria-describedby="golang-stdin-help"
+                                placeholder="例如：第一行姓名，第二行年齡"></textarea>
                         </details>
                         <label for="golang-output">命令列 / 輸出</label>
                         <pre id="golang-output" role="log" aria-label="Go 命令列輸出" aria-live="off" tabindex="0"></pre>
@@ -153,7 +153,8 @@ func main() {
                             <button type="submit" id="golang-send" disabled>送出</button>
                         </form>
                         <p>支援 Go 互動指令、多行區塊、go run main.go、go fmt main.go、go version、help、clear、reset。</p>
-                        <p>使用 Yaegi 0.16.1 / WebAssembly 在瀏覽器內執行，內建標準函式庫；語法支援以 Yaegi 為準，未提供 go get 或完整 Go modules 工具鏈。</p>
+                        <p>使用 Yaegi 0.16.1 / WebAssembly 在瀏覽器內執行，內建標準函式庫；語法支援以 Yaegi 為準，未提供 go get 或完整 Go modules 工具鏈。
+                        </p>
                         <p>執行環境使用瀏覽器快取；程式碼與輸入留在此瀏覽器，不會傳送到外部編譯服務或安裝到網站後端。</p>
                     </div>
                 </section>
@@ -183,8 +184,7 @@ def greet(name):
 
 print(greet("Phoenix"))
 for number in range(1, 4):
-    print(f"第 {number} 次練習")
-</textarea>
+    print(f"第 {number} 次練習")</textarea>
                         <details>
                             <summary>標準輸入（input / stdin）</summary>
                             <p id="python-stdin-help">執行前先填入資料，每行供一次 input() 讀取；資料讀完即為 EOF。每次執行都會從第一行開始。</p>

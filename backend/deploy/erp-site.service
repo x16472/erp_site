@@ -11,11 +11,11 @@ User=erp-site
 Group=erp-site
 WorkingDirectory=/opt/erp_site
 ExecStart=/bin/bash /opt/erp_site/start.sh
-Environment=WEB_HOST=0.0.0.0
+Environment=WEB_HOST=127.0.0.1
 Environment=WEB_PORT=8080
 Restart=on-failure
 RestartSec=10s
-TimeoutStopSec=30s
+TimeoutStopSec=110s
 KillMode=control-group
 UMask=0027
 NoNewPrivileges=true

@@ -26,7 +26,7 @@ Cloudflared 映像以非 root 使用者執行；Compose 的檔案型 secret 直�
 
 在 Cloudflare Tunnel 後台新增網站的公開網域路由，Service 設為 `HTTP`，URL 設為 `erp_service:8080`。不使用 `localhost:8080`，因為 localhost 在 cloudflared 容器內指向自身。Tunnel 需要 OMV 對外連線；不需要為 Tunnel 額外發布主機連接埠。此設定使用官方 [`--token-file`](https://developers.cloudflare.com/tunnel/reference/run-parameters/) 參數。
 
-Compose 仍保留 OMV `8080:8080` 供內網直接存取；若只允許 Tunnel 存取，可由維運人員移除 `ports`。Cloudflare 的帳號、網域與路由需在實際後台設定，本次程式修改不會自動建立。
+Compose 設定 `ERP_TLS_PROXY=1`，容器內的 HTTP 只供受隔離的反向代理使用；主機埠僅發布於 `127.0.0.1:8080`，供 OMV 本機健康檢查，不再向內網公開明文登入入口。瀏覽器請使用 Tunnel 的 HTTPS 網域，工作階段 Cookie 強制設定 Secure。Cloudflare 的帳號、網域與路由需在實際後台設定，本次程式修改不會自動建立。
 
 ## 建置與啟動
 
@@ -57,7 +57,7 @@ docker compose logs --tail 100 erp_service cloudflared
 curl --fail --show-error http://127.0.0.1:8080/api/health
 ```
 
-網站健康檢查通過才啟動 cloudflared。確認 Tunnel 已連線後，再透過實際公開網域檢查首頁與登入。內網健康檢查不等於公開網域驗收。`restart: unless-stopped` 會在程序退出時重啟，單純 unhealthy 不會自動重啟。
+網站健康檢查通過才啟動 cloudflared。確認 Tunnel 已連線後，再透過實際公開網域檢查首頁與登入。本機健康檢查不等於公開網域驗收。SOP 同步在網站啟動後於背景執行，健康檢查成功不表示文件同步完成，可由同步完成或失敗的記錄確認。`restart: unless-stopped` 會在程序退出時重啟，單純 unhealthy 不會自動重啟。
 
 更新程式需重建映像並重新建立網站容器；更新 `.env` 後需重啟網站。更新 token 檔後可用 `docker compose up -d --force-recreate cloudflared` 重新建立 Tunnel 容器，讓檔案掛載更新。`docker compose down` 保留照片 volume；不要使用 `down -v`，除非確定要刪除照片資料。
 
