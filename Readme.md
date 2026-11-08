@@ -129,7 +129,7 @@ py -3.11 -m venv .venv
 go mod download
 go build -trimpath -o bin/erp-site.exe ./backend/cmd/erp
 .\start.bat --check
-.\start.bat --host 127.0.0.1 --port 8080 --skip-doc-sync
+.\start.bat --host 0.0.0.0 --port 8080 --skip-doc-sync
 ```
 
 `--check` 檢查 Python 版本與套件匯入，不連線資料庫。一般啟動必須先備妥既有或已初始化的 SQL Server。`start.bat` 預設使用 `0.0.0.0:80`，`start.sh` 預設使用 `0.0.0.0:8080`；命令列 `--host`／`--port` 優先於作業系統環境變數 `WEB_HOST`／`WEB_PORT`。`ERP_PYTHON` 或 `--python` 可指定 Python 3.11 的絕對路徑；這些啟動變數不從 `.env` 載入。
@@ -169,7 +169,7 @@ Windows 的 `start.bat` 預設啟用 `--allow-lan-http`，供內網 IP 直接使
 網站仍在執行時，可先產生待替換檔案，避免直接覆寫使用中的執行檔：
 
 ```powershell
-go build -trimpath -o bin/erp-site.next.exe ./backend/cmd/erp
+go build -trimpath -o bin/erp-site.exe ./backend/cmd/erp
 ```
 
 編譯成功後，於維護時段停止原服務、保留原執行檔備份，將待替換檔改為 `bin/erp-site.exe`，再沿用原本參數啟動。重啟後檢查 `/api/health` 並重新登入。`.codex-tmp/erp-site-publish.exe` 是先前排查發布問題時的暫存編譯產物，不會被 `start.bat` 自動選用；`.codex-tmp/` 已排除於 Git 與 Docker 建置內容。

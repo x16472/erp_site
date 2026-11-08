@@ -1,4 +1,4 @@
-import { apiData, serverTimeOffset } from './script.js';
+import { apiData, serverTimeOffset } from '../script.js';
 const
     form = document.querySelector('#accessForm'),
     statusBox = document.querySelector('#accessStatus'),
@@ -41,7 +41,7 @@ form.addEventListener('submit', async event => {
             })
         }, '驗證失敗');
         const attendance = data.attendance;
-        await syncTime().catch(() => {});
+        await syncTime().catch(() => { });
         if (attendance) {
             const occurred = new Date(attendance.clocked_at);
             statusBox.className = 'success-note';

@@ -19,4 +19,4 @@ export PYTHONDONTWRITEBYTECODE=1
 export PYTHONIOENCODING=utf-8
 
 # 讓 systemd 直接追蹤 Go；Go 負責管理 Python gRPC 子程序。
-exec "$ERP_BINARY" --root "$PROJECT_ROOT" --python "$ERP_PYTHON" "$@"
+exec "$ERP_BINARY" --root "$PROJECT_ROOT" --python "$ERP_PYTHON" --allow-lan-http "$@"
