@@ -15,7 +15,7 @@ HTML 路由本身可載入，保護主要由 API 執行。員工頁面透過 `re
 | `home.html` | `home.js` | 員工資訊、公告、校時、出勤與快捷入口 |
 | `sales.html` | `sales.js` | 營運日報、個人填報歷程與補充回覆 |
 | `exam.html` | `exam.js` | 學科刷題、模考、續作、錯題本與術科申論 |
-| `workflow.html` | `panel.js`；另引用影音腳本 | 四個環境分頁，內容尚為佔位文字 |
+| `workflow.html` | `panel.js`、`sd_prompt.js`、`golang.js`、`python.js`、`teris.js`、`adventure.js` | SD 參數、Go／Python Playground、俄羅斯方塊與穿越冒險（`pl5`） |
 | `game.html` | `panel.js`、`game.js`、`youtube_thumbnail.js` | 五平台影音與 YouTube 縮圖工具 |
 | `staff.html` | `staff.js` | 組織、員工維護、部門與出勤管理 |
 | `mis.html` | `mis.js` | 官網設定、日報／申論審核、來源同步、題庫與資料查閱 |
@@ -62,7 +62,7 @@ HTML 路由本身可載入，保護主要由 API 執行。員工頁面透過 `re
 
 ### 工作面板
 
-`workflow.html` 提供「環境一」至「環境四」，由 `panel.js` 切換 `pl1` 至 `pl4`。目前沒有業務表單、資料保存或 SOP 閱讀器。頁面標題仍為「SOP文件」，狀態仍為「播放器就緒」，均不能作為功能完成的依據。
+`workflow.html` 由 `panel.js` 切換 `pl1` 至 `pl5`，依序提供 SD 參數讀取、Go Playground、Python Playground、俄羅斯方塊及穿越冒險。`adventure.js` 以模組載入，首次切入 `pl5` 才初始化；往返分頁保留存檔狀態。存檔選擇區沿用工作面板版型，進入後沿用題庫維護及員工管理的側欄、主區、明細工作區；建立角色使用原生對話框，手機提供場景、角色、背包、地圖、手札與歷程切換。MIS 流程畫布保留專用 CSS。
 
 頁面仍引用 `game.js`、`youtube_thumbnail.js`，但缺少這些腳本預期的影音／縮圖 DOM；這不是已完成的影音整合。本次文件更新未修改此介面或腳本。
 

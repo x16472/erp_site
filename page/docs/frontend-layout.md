@@ -34,3 +34,9 @@
 - 超過 980px：沿用桌面側欄與多欄工作區。
 
 新增寬表格應放在 `.table-scroll` 或 `.staff-table-scroll` 等可捲動容器內，不要隱藏整頁溢位以掩蓋內容裁切。工作面板的文字表格使用 `.workflow-table-scroll`，儲存格允許換行。
+
+## 工作面板的穿越冒險
+
+穿越冒險位於 `page/workflow.html` 的第五分頁 `section#pl5`，由 `panel.js` 與其他工作面板分頁共同控制顯示；`adventure.js` 以 ES Module 載入，首次切入才取得員工、世界與存檔資料。`game.html` 保留五個影音分頁，不載入冒險或俄羅斯方塊腳本。
+
+存檔選擇區使用 `style.css` 的 `workflow-panel`；進入存檔後使用題庫維護及員工管理的 `staff-manager-workspace workspace-layout`，側欄沿用 `organization-pane`，主區沿用 `staff-master-detail`、`staff-directory-pane` 與 `staff-detail-pane`，分別顯示角色資訊、場景操作與敘事歷程。卡片、按鈕、表單與分頁沿用 `portal-card`、`card-head`、`btn`、`form-grid` 與 `admin-tabs`，不再引用 `adventure.css`。共用樣式表只補充 `pl5` 的排列、進度條、原生建立角色對話框及手機內容切換。MIS 的流程畫布仍使用 `adventure-editor.css`，維持原有縮放、節點與連線樣式。

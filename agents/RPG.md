@@ -70,8 +70,8 @@
 
 ### 已確認的決策
 
-- 主要入口位於 `page/game.html`，替換原有 `section#pacman` 與「小精靈」分頁按鈕，改為「穿越冒險」。先前檢查時區塊位於第 273 行，實作以元素識別為準。
-- 不在 `page/workflow.html` 新增遊戲分頁。
+- 主要入口位於 `page/workflow.html` 的 `section#pl5`，與 SD 參數、Go／Python Playground、俄羅斯方塊沿用相同分頁控制器；以元素識別為準。
+- 2026-11-09 依 Phoenix 最新要求將穿越冒險移至工作面板第五分頁；`page/game.html` 保留五個影音分頁。
 - 世界背景由後台設定，不預設武俠、門派、修為或其他特定小說體系。
 - 採「本人穿越到故事世界」，不是登入後改扮原作指定角色。
 - 沿用員工登入與 MIS 管理員驗證，不新增對外會員系統。
@@ -90,7 +90,7 @@
 
 ```mermaid
 flowchart LR
-    P["game.html 穿越冒險"] --> H["Go HTTP 入口"]
+    P["workflow.html pl5 穿越冒險"] --> H["Go HTTP 入口"]
     M["MIS 世界編輯器"] --> H
     H --> A["Python API 與權限驗證"]
     A --> E["冒險規則引擎"]
@@ -401,8 +401,8 @@ flowchart LR
 
 | 範圍 | 檔案 |
 |---|---|
-| 玩家入口 | `page/game.html`、`page/static/js/game.js` |
-| 玩家介面 | `page/static/js/adventure.js`、`page/static/css/adventure.css` |
+| 玩家入口 | `page/workflow.html` 的 `pl5`、`page/static/js/panel.js` |
+| 玩家介面 | `page/static/js/adventure.js`、`page/static/css/style.css` 的工作面板共用樣式；MIS 流程畫布保留 `adventure-editor.css` |
 | 作者工具 | `page/mis.html`、`page/static/js/adventure-editor.js`、`page/static/css/adventure-editor.css`、`page/static/js/adventure-form.js` |
 | 規則引擎 | `backend/src/erp/adventure.py` |
 | API 與交易 | `backend/src/erp/api.py`、`backend/src/erp/domain.py` |

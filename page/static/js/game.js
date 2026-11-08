@@ -18,19 +18,14 @@ function updatePlayerState(platform, message) {
     playerStates[platform] = message;
     const active = document.querySelector('#staffTabs .active')?.dataset.panel;
     if (active === platform || platform === 'youtube' && active === 'yt1') {
-        playerState.textContent = platform === 'adventure' ? `穿越冒險：${message}` : message;
+        playerState.textContent = message;
     }
 }
-window.setPlayerPlatformState = updatePlayerState;
 
 document.querySelector('#staffTabs').addEventListener('click', event => {
     const tab = event.target.closest('[data-panel]');
     if (tab) {
-        if (tab.dataset.panel === 'adventure') {
-            playerState.textContent = playerStates['adventure'] ? `穿越冒險：${playerStates['adventure']}` : '穿越冒險：就緒';
-        } else {
-            playerState.textContent = playerStates[tab.dataset.panel] || '播放器就緒';
-        }
+        playerState.textContent = playerStates[tab.dataset.panel] || '播放器就緒';
     }
 });
 

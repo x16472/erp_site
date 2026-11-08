@@ -6,7 +6,7 @@ const test = require('node:test');
 const source = name => fs.readFileSync(path.join(__dirname, '../static/js', name), 'utf8');
 
 test('API 錯誤保留狀態碼與修訂衝突代碼', async () => {
-    const ctx = vm.createContext({ location: { pathname: '/game.html' }, fetch: async () => ({
+    const ctx = vm.createContext({ location: { pathname: '/workflow.html' }, fetch: async () => ({
         ok: false, status: 409, json: async () => ({ error: '修訂號不符', code: 'CONFLICT' }),
     }) });
     vm.runInContext(source('script.js').replace(/^export /gm, ''), ctx);
@@ -107,4 +107,50 @@ test('存檔卡片顯示流水號，繼續冒險仍使用 UUID', () => {
     assert.match(cards[0].innerHTML, /版本：V000002/);
     assert.match(cards[0].innerHTML, /data-save-no="SAVE_internal_uuid"/);
     assert.doesNotMatch(cards[0].innerHTML.replace(/<[^>]*>/g, ''), /internal_uuid/);
+});
+
+
+test('工作面板冒險分頁延後載入，往返切換保留正確狀態且不重複初始化', async () => {
+    const html = fs.readFileSync(path.join(__dirname, '../workflow.html'), 'utf8');
+    const elements = new Map([...html.matchAll(/id="([^"]+)"/g)].map(([, id]) => [id, {
+        id, textContent: '', listeners: {},
+        addEventListener(type, handler) { (this.listeners[type] ||= []).push(handler); },
+    }]));
+    const tabs = ['pl1', 'pl2', 'pl3', 'pl4', 'pl5'].map(panel => ({ dataset: { panel } }));
+    let activeTab = tabs[0];
+    const documentEvents = {};
+    const requests = [];
+    const ctx = vm.createContext({
+        console,
+        document: {
+            querySelector(selector) {
+                if (selector === '#staffTabs .active') return activeTab;
+                return elements.get(selector.slice(1)) || null;
+            },
+            addEventListener(type, handler) { documentEvents[type] = handler; },
+        },
+        window: { matchMedia: () => ({ addEventListener() {} }) },
+        escapeHtml: value => String(value),
+        requireEmployee: async () => ({ employee: {} }),
+        apiData: async url => { requests.push(url); return []; },
+    });
+    vm.runInContext(source('adventure.js').replace(/^import .*;\r?\n/, ''), ctx);
+    documentEvents.DOMContentLoaded();
+    assert.deepEqual(requests, []);
+    const switchTab = async panel => {
+        const tab = tabs.find(item => item.dataset.panel === panel);
+        // 冒險監聽器先執行，共用控制器稍後才切換 active。
+        elements.get('staffTabs').listeners.click.forEach(handler => handler({ target: { closest: () => tab } }));
+        activeTab = tab;
+        await new Promise(setImmediate);
+    };
+    await switchTab('pl5');
+    assert.equal(elements.get('playerState').textContent, '穿越冒險：就緒');
+    assert.equal(elements.get('advSlotsGrid').textContent, '目前沒有開放的世界。');
+    await switchTab('pl4');
+    assert.equal(elements.get('playerState').textContent, '工作區就緒');
+    await switchTab('pl5');
+    assert.equal(elements.get('playerState').textContent, '穿越冒險：就緒');
+    assert.deepEqual(requests, ['/api/adventure/worlds']);
+    assert.ok(elements.get('pl5').listeners.error);
 });

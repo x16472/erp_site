@@ -10,6 +10,7 @@ let activeSave = null;
 let activeState = null;
 let activeRevision = 1;
 let hasInitialized = false;
+let adventureStatus = '就緒';
 let isActionPending = false;
 let selectedSlot = 1;
 let selectedTrait = '';
@@ -17,10 +18,12 @@ let pendingAction = null;
 let historyCursor = 0;
 let historyLogs = [];
 const advMainStage = document.querySelector('#advMainStage');
+const advWorkspaceMain = document.querySelector('#advWorkspaceMain');
+const advLogPanel = document.querySelector('#advLogPanel');
 
 // DOM 節點快取
 const playerStateEl = document.querySelector('#playerState');
-const adventureSection = document.querySelector('#adventure');
+const adventureSection = document.querySelector('#pl5');
 const adventureEntry = document.querySelector('#adventureEntry');
 const adventureGame = document.querySelector('#adventureGame');
 const advSlotsGrid = document.querySelector('#advSlotsGrid');
@@ -30,7 +33,6 @@ const advWorldDesc = document.querySelector('#advWorldDesc');
 // Modal 節點
 const advCreateModal = document.querySelector('#advCreateModal');
 const advModalCloseBtn = document.querySelector('#advModalCloseBtn');
-const advModalCloseBackdrop = document.querySelector('#advModalCloseBackdrop');
 const advCancelCreate = document.querySelector('#advCancelCreate');
 const advConfirmCreate = document.querySelector('#advConfirmCreate');
 const advPlayerPreview = document.querySelector('#advPlayerPreview');
@@ -101,20 +103,15 @@ const advSidebar = document.querySelector('#advSidebar');
 let currentJournalTab = 'quests';
 let currentMobileSub = 'scene';
 
-function updateAdventureState(statusText) {
+function updateAdventureState(statusText, activeTab = document.querySelector('#staffTabs .active')?.dataset.panel) {
+    adventureStatus = statusText;
     if (advSaveStatus) {
         advSaveStatus.textContent = statusText;
     }
-    if (window.setPlayerPlatformState) {
-        window.setPlayerPlatformState('adventure', statusText);
-    } else {
-        const activeTab = document.querySelector('#staffTabs .active')?.dataset.panel;
-        if (activeTab === 'adventure' && playerStateEl) {
-            playerStateEl.textContent = `穿越冒險：${statusText}`;
-        }
+    if (activeTab === 'pl5' && playerStateEl) {
+        playerStateEl.textContent = `穿越冒險：${statusText}`;
     }
 }
-
 function generateRequestId() {
     return 'REQ_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now();
 }
@@ -159,7 +156,7 @@ function renderSlots(saves) {
     for (let slot = 1; slot <= 3; slot++) {
         const existing = worldSaves.find(s => s.slot_index === slot);
         const card = document.createElement('div');
-        card.className = `adventure-slot-card ${existing ? '' : 'adventure-slot-empty'}`;
+        card.className = `portal-card adventure-slot-card ${existing ? '' : 'adventure-slot-empty'}`;
 
         if (existing) {
             const timeDesc = { morning: '清晨', noon: '正午', dusk: '傍晚', night: '深夜' }[existing.time_of_day] || '白天';
@@ -186,7 +183,7 @@ function renderSlots(saves) {
                 <div>
                     <span class="adventure-slot-badge">存檔槽位 ${slot}</span>
                     <h3 class="adventure-slot-title">空存檔</h3>
-                    <p class="adventure-muted">尚未建立任何冒險紀錄</p>
+                    <p class="adventure-muted hint">尚未建立任何冒險紀錄</p>
                 </div>
                 <button type="button" class="btn second" data-action="new-save" data-slot="${slot}">+ 建立新角色</button>
             `;
@@ -201,10 +198,10 @@ async function openCreateModal(slot) {
     selectedTrait = '';
     if (advPlayerPreview && currentEmployee) {
         advPlayerPreview.innerHTML = `
-            <img class="adventure-preview-avatar" src="${currentEmployee.photo_file ? `static/staff/${esc(currentEmployee.photo_file)}` : 'static/appicon.png'}" alt="照片">
+            <img class="adventure-preview-avatar staff-photo-preview" src="${currentEmployee.photo_file ? `static/staff/${esc(currentEmployee.photo_file)}` : 'static/appicon.png'}" alt="照片">
             <div>
                 <b>${esc(currentEmployee.display_name)}</b>（${esc(currentEmployee.employee_id)}）<br>
-                <span class="adventure-muted">${esc(currentEmployee.department)} · ${esc(currentEmployee.position)}</span>
+                <span class="adventure-muted hint">${esc(currentEmployee.department)} · ${esc(currentEmployee.position)}</span>
             </div>
         `;
     }
@@ -212,15 +209,15 @@ async function openCreateModal(slot) {
     const traits = activeWorldData?.traits || [];
     selectedTrait = traits[0]?.id || '';
     advTraitsList.innerHTML = traits.map((t, idx) => `
-        <button type="button" class="adventure-trait-card ${idx === 0 ? 'selected' : ''}" data-trait-id="${esc(t.id)}">
+        <button type="button" class="adventure-trait-card ${idx === 0 ? 'selected' : ''} btn second" data-trait-id="${esc(t.id)}">
             <b>${esc(t.name)}</b><span>${esc(t.desc || '')}</span>
         </button>`).join('') || '<p>使用共同基礎能力。</p>';
 
-    advCreateModal.hidden = false;
+    advCreateModal.showModal();
 }
 
 function closeCreateModal() {
-    advCreateModal.hidden = true;
+    advCreateModal.close();
 }
 
 /** 提交建立新存檔 */
@@ -295,17 +292,17 @@ function renderGameScreen() {
     // 在場 NPC
     const npcs = activeSave.npcs_in_scene || [];
     advNpcPills.innerHTML = npcs.length ? npcs.map(npc => `
-        <div class="adventure-npc-pill">
+        <div class="adventure-npc-pill tag">
             <img src="${npc.photo_file ? `static/staff/${esc(npc.photo_file)}` : 'static/appicon.png'}" alt="${esc(npc.name)}">
             <span>${esc(npc.name)}（${esc(npc.title || '居民')}）</span>
         </div>
-    `).join('') : '<span class="adventure-muted">無特定人物</span>';
+    `).join('') : '<span class="adventure-muted hint">無特定人物</span>';
 
     // 環境物件
     const objects = activeSave.location?.objects || [];
     advObjPills.innerHTML = objects.length ? objects.map(obj => `
-        <div class="adventure-obj-pill">🔍 ${esc(obj.name)}</div>
-    `).join('') : '<span class="adventure-muted">無顯著物件</span>';
+        <div class="adventure-obj-pill tag">🔍 ${esc(obj.name)}</div>
+    `).join('') : '<span class="adventure-muted hint">無顯著物件</span>';
 
     // 側欄角色屬性
     const char = activeState.character || {};
@@ -318,11 +315,11 @@ function renderGameScreen() {
 
     const hpPercent = Math.max(0, Math.min(100, (char.hp / char.max_hp) * 100));
     advCharHpText.textContent = `${char.hp} / ${char.max_hp}`;
-    advCharHpBar.style.width = `${hpPercent}%`;
+    advCharHpBar.value = hpPercent;
 
     const epPercent = Math.max(0, Math.min(100, (char.ep / char.max_ep) * 100));
     advCharEpText.textContent = `${char.ep} / ${char.max_ep}`;
-    advCharEpBar.style.width = `${epPercent}%`;
+    advCharEpBar.value = epPercent;
 
     advCharGold.textContent = `${char.gold} 金幣`;
 
@@ -345,19 +342,19 @@ function renderGameScreen() {
         <div class="adventure-inv-item">
             <div>
                 <span class="adventure-inv-name">${esc(i.name)} x${i.count}</span>
-                <p class="adventure-muted" style="margin: 0; font-size: 0.75rem;">${esc(i.description || '')}</p>
+                <p class="adventure-muted hint">${esc(i.description || '')}</p>
             </div>
-            <div class="adventure-inv-actions">
-                ${i.type === 'consumable' ? `<button type="button" class="adventure-inv-btn" data-item-action="use" data-item-id="${esc(i.item_id)}">使用</button>` : ''}
-                ${['weapon', 'armor', 'accessory'].includes(i.type) ? `<button type="button" class="adventure-inv-btn" data-item-action="equip" data-item-id="${esc(i.item_id)}">${i.equipped ? '卸下' : '裝備'}</button>` : ''}
+            <div class="adventure-inv-actions actions">
+                ${i.type === 'consumable' ? `<button type="button" class="adventure-inv-btn btn second" data-item-action="use" data-item-id="${esc(i.item_id)}">使用</button>` : ''}
+                ${['weapon', 'armor', 'accessory'].includes(i.type) ? `<button type="button" class="adventure-inv-btn btn second" data-item-action="equip" data-item-id="${esc(i.item_id)}">${i.equipped ? '卸下' : '裝備'}</button>` : ''}
             </div>
         </div>
-    `).join('') : '<p class="adventure-muted">背包空空如也</p>';
+    `).join('') : '<p class="adventure-muted hint">背包空空如也</p>';
 
     // 地圖列表
     const exits = activeSave.location?.exits || [];
     advMapGrid.innerHTML = exits.map(e => `
-        <div class="adventure-map-item">
+        <div class="adventure-map-item card-head">
             <span>📍 ${esc(e.name)}</span>
             <button type="button" class="btn second" data-travel-id="${esc(e.id)}">啟程前往</button>
         </div>
@@ -397,7 +394,7 @@ function renderDialogue() {
     advDialogueText.textContent = lastLog?.text || '請選擇你的回應：';
 
     advDialogueChoices.innerHTML = choices.map(c => `
-        <button type="button" class="adventure-choice-btn" data-choice-payload='${esc(JSON.stringify(c))}'>
+        <button type="button" class="adventure-choice-btn btn second" data-choice-payload='${esc(JSON.stringify(c))}'>
             ${esc(c.label)}
         </button>
     `).join('');
@@ -412,15 +409,15 @@ function renderCombat(combat) {
     const char = activeState.character || {};
     const pHpPct = Math.max(0, Math.min(100, (char.hp / char.max_hp) * 100));
     advCombatPlayerHpVal.textContent = `${char.hp}/${char.max_hp}`;
-    advCombatPlayerHpBar.style.width = `${pHpPct}%`;
+    advCombatPlayerHpBar.value = pHpPct;
 
     const pEpPct = Math.max(0, Math.min(100, (char.ep / char.max_ep) * 100));
     advCombatPlayerEpVal.textContent = `${char.ep}/${char.max_ep}`;
-    advCombatPlayerEpBar.style.width = `${pEpPct}%`;
+    advCombatPlayerEpBar.value = pEpPct;
 
     const eHpPct = Math.max(0, Math.min(100, (combat.enemy_hp / combat.enemy_max_hp) * 100));
     advCombatEnemyHpVal.textContent = `${combat.enemy_hp}/${combat.enemy_max_hp}`;
-    advCombatEnemyHpBar.style.width = `${eHpPct}%`;
+    advCombatEnemyHpBar.value = eHpPct;
 
     const actions = activeSave.available_actions || [];
     advCombatActions.innerHTML = actions.map(a => `
@@ -434,14 +431,14 @@ function renderCombat(combat) {
 function renderActions(actions) {
     advActionsGrid.innerHTML = '';
     if (!actions.length) {
-        advActionsGrid.innerHTML = '<p class="adventure-muted">暫無可用行動。</p>';
+        advActionsGrid.innerHTML = '<p class="adventure-muted hint">暫無可用行動。</p>';
         return;
     }
 
     actions.forEach(a => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'adventure-act-btn';
+        btn.className = 'btn second adventure-act-btn';
         btn.innerHTML = `
             <span class="adventure-act-title">${esc(a.label)}</span>
             ${a.desc ? `<span class="adventure-act-desc">${esc(a.desc)}</span>` : ''}
@@ -455,8 +452,8 @@ function renderActions(actions) {
 /** 繪製敘事紀錄清單 */
 function renderLogs(logs) {
     advLogStream.innerHTML = logs.map(l => `
-        <div class="adventure-log-item ${esc(l.type || 'narrative')}">
-            <span class="adventure-muted" style="font-size: 0.75rem; margin-right: 0.4rem;">[第 ${l.turn} 回合]</span>
+        <div class="adventure-log-item ${esc(l.type || 'narrative')} hint">
+            <span class="adventure-muted hint">[第 ${l.turn} 回合]</span>
             ${esc(l.text)}
         </div>
     `).join('');
@@ -470,25 +467,25 @@ function renderJournalContent() {
         advJournalContent.innerHTML = quests.length ? quests.map(q => `
             <div class="adv-quest-item">
                 <b>${esc(q.name)}</b> ${q.completed ? '（★ 已達成）' : `（階段 ${q.stage}）`}<br>
-                <span class="adventure-muted">${esc(q.description)}</span>
-                ${q.method_used ? `<div style="color: #10b981; font-size: 0.75rem; margin-top: 0.2rem;">採用解法：${esc(q.method_used)}</div>` : ''}
+                <span class="adventure-muted hint">${esc(q.description)}</span>
+                ${q.method_used ? `<div class="hint">採用解法：${esc(q.method_used)}</div>` : ''}
             </div>
-        `).join('') : '<p class="adventure-muted">暫無進行中的任務</p>';
+        `).join('') : '<p class="adventure-muted hint">暫無進行中的任務</p>';
     } else if (currentJournalTab === 'relations') {
         const rels = activeState.relationships || [];
         advJournalContent.innerHTML = rels.length ? rels.map(r => `
             <div class="adv-quest-item">
                 <b>${esc(r.name)}</b>（${esc(r.title || '人物')}）<br>
-                好感度：<span style="color: var(--accent, #2563eb); font-weight: 700;">${r.affinity}</span>
+                好感度：<span class="tag">${r.affinity}</span>
             </div>
-        `).join('') : '<p class="adventure-muted">尚未結識任何人</p>';
+        `).join('') : '<p class="adventure-muted hint">尚未結識任何人</p>';
     } else {
         const clues = activeState.clues || [];
         advJournalContent.innerHTML = clues.length ? clues.map(c => `
             <div class="adv-quest-item">
                 🔑 <b>${esc(c)}</b>
             </div>
-        `).join('') : '<p class="adventure-muted">尚未發現關鍵線索</p>';
+        `).join('') : '<p class="adventure-muted hint">尚未發現關鍵線索</p>';
     }
 }
 
@@ -546,11 +543,13 @@ async function dispatchAction(actionPayload) {
 // 1. 監聽頂部分頁切換
 document.querySelector('#staffTabs')?.addEventListener('click', event => {
     const tab = event.target.closest('[data-panel]');
-    if (tab && tab.dataset.panel === 'adventure') {
+    if (!tab) return;
+    if (tab.dataset.panel === 'pl5') {
         ensureInitialized();
-        if (activeState) {
-            updateAdventureState(activeState.combat ? '戰鬥中' : '就緒');
-        }
+        // 點擊事件可能早於共用控制器切換 active，使用目標分頁更新狀態。
+        updateAdventureState(activeState ? (activeState.combat ? '戰鬥中' : '就緒') : adventureStatus, tab.dataset.panel);
+    } else if (playerStateEl) {
+        playerStateEl.textContent = '工作區就緒';
     }
 });
 
@@ -570,7 +569,6 @@ advSlotsGrid?.addEventListener('click', event => {
 
 // 3. Modal 關閉與選擇特長
 advModalCloseBtn?.addEventListener('click', closeCreateModal);
-advModalCloseBackdrop?.addEventListener('click', closeCreateModal);
 advCancelCreate?.addEventListener('click', closeCreateModal);
 advConfirmCreate?.addEventListener('click', submitCreateSave);
 
@@ -642,9 +640,11 @@ document.querySelector('.adventure-journal-tabs')?.addEventListener('click', eve
 // 手機抽屜與桌面共用顯示狀態，避免縮放後遺留 hidden。
 function syncMobilePanels() {
     const mobile = window.matchMedia('(max-width: 679px)').matches;
-    const showScene = !mobile || currentMobileSub === 'scene';
-    if (advMainStage) advMainStage.hidden = !showScene;
-    advSidebar.classList.toggle('m-active', mobile && !showScene);
+    const showScene = !mobile || ['scene', 'log'].includes(currentMobileSub);
+    if (advWorkspaceMain) advWorkspaceMain.hidden = !showScene;
+    if (advMainStage) advMainStage.hidden = mobile && currentMobileSub !== 'scene';
+    if (advLogPanel) advLogPanel.hidden = mobile && currentMobileSub !== 'log';
+    advSidebar.hidden = mobile && showScene;
     const ids = { char: 'advSubChar', bag: 'advSubBag', map: 'advSubMap', quests: 'advSubQuests' };
     document.querySelectorAll('#advSidebar .adventure-card').forEach(card => {
         card.hidden = mobile && !showScene && card.id !== ids[currentMobileSub];
@@ -675,10 +675,10 @@ advLoadMoreHistory?.addEventListener('click', async () => {
     finally { advLoadMoreHistory.disabled = false; }
 });
 
-// 若初始進入即在 adventure 分頁
+// 若初始進入即在 pl5 分頁
 document.addEventListener('DOMContentLoaded', () => {
     const activeTab = document.querySelector('#staffTabs .active')?.dataset.panel;
-    if (activeTab === 'adventure') {
+    if (activeTab === 'pl5') {
         ensureInitialized();
     }
 });
