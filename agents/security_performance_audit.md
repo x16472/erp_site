@@ -17,8 +17,8 @@
 
 ## 2. XSS 跨站腳本攻擊 (Cross-Site Scripting) ── 【中低風險 / 已有基本防護】
 * **防禦現狀**：
-  * 前端工具庫 [`page/static/script.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/script.js#L5-L9) 提供了 `escapeHtml()` 轉義函式。
-  * 在 [`page/static/mis.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/mis.js#L464) 與 [`page/static/exam.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/exam.js#L36) 等處處理換行 `replace(/\n/g, '<br>')` 時，均先執行了 `esc(text)` HTML 轉義，防止了插入 `<script>` 或惡意 HTML 標籤。
+  * 前端工具庫 [`page/static/js/script.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/js/script.js#L5-L9) 提供了 `escapeHtml()` 轉義函式。
+  * 在 [`page/static/js/mis.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/js/mis.js#L464) 與 [`page/static/js/exam.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/js/exam.js#L36) 等處處理換行 `replace(/\n/g, '<br>')` 時，均先執行了 `esc(text)` HTML 轉義，防止了插入 `<script>` 或惡意 HTML 標籤。
 * **改進建議**：
   * 前端多處（如 `index.js`、`sales.js`）大量使用 `innerHTML` 模板字串拼接。雖然動態變數皆已包裹 `esc()`，長遠維護建議逐步改用 DOM API（如 `textContent` 或 `element.replaceChildren()`），從根本上杜絕 DOM-based XSS 的可能性。
 

@@ -4,7 +4,7 @@
 
 依員工管理參考圖重整 `page/staff.html` 的員工資料分頁，將原本左右兩張卡片改為「組織架構、員工清單、員工明細」三區式工作介面。左側新增公司與部門層級、各部門人數、展開／摺疊及顯示已停用員工控制；右上改為可捲動的資料表，提供姓名、編號與職稱搜尋、新增員工入口、在職狀態及列選取效果；右下集中照片、員工欄位、還原、停用與儲存操作。頁面名稱及側邊導覽同步由「員工出缺勤」調整為「員工管理」，原有管理員登入、部門維護與打卡紀錄功能保持不變。
 
-`page/static/staff.js` 新增組織與搜尋篩選、員工列鍵盤操作、選取後帶入明細、目前編輯狀態及停用按鈕控制，仍沿用既有 `/api/admin/staff`、`/api/admin/departments` 與 `/api/admin/attendance` API。`page/static/style.css` 補上桌面主從式工作區、表格固定表頭、狀態標籤、明細表單及 1180px、760px、520px 響應式規則。此次未調整 SQL Server 結構、資料表、欄位、查詢或既有資料。
+`page/static/staff.js` 新增組織與搜尋篩選、員工列鍵盤操作、選取後帶入明細、目前編輯狀態及停用按鈕控制，仍沿用既有 `/api/admin/staff`、`/api/admin/departments` 與 `/api/admin/attendance` API。`page/static/css/style.css` 補上桌面主從式工作區、表格固定表頭、狀態標籤、明細表單及 1180px、760px、520px 響應式規則。此次未調整 SQL Server 結構、資料表、欄位、查詢或既有資料。
 
 驗證包含 JavaScript 語法檢查、HTML 解析、Git diff 格式檢查，以及使用不連接資料庫的本機假資料預覽桌面與 390px 手機版。已確認組織架構、表格內部橫向捲動、員工選取帶入與關鍵字搜尋可正常運作。專案單元測試執行 6 項，4 項通過；既有訓練文件解析測試 `test_choice_question_is_split_into_structured_fields` 與 `test_question_without_answer_stays_reviewable_draft` 仍因解析結果為 `None` 失敗，與本次員工管理頁面變更無關。
 
@@ -42,7 +42,7 @@
 
 IIS 以 80 埠代理到 `127.0.0.1:8000` 的原有 `backend.app`，容器啟動程序監控 IIS 與 Python，加入 HTTP 健康檢查。Compose 指定小寫 `dockerfile`、image 名稱、80 埠及重新啟動策略。依本次範圍先將既有 `.env` 放入本機 image，未變更其內容；volume、HTTPS、網路調整及外部 OCR／Word 轉檔工具安裝留待後續處理。Dockerfile 使用預設反斜線續行，未使用 `# escape=`。
 
-驗證：Compose 設定、PowerShell 語法、pip check、start.bat --check、文件套件匯入、產生的啟動腳本與 IIS XML 解析均通過。已修正 Windows 命令列剝除雙引號造成的啟動失敗。最終 Windows/amd64 image `erp-site:servercore-ltsc2022` 建置成功（image ID：c775e9ef896c）；暫存容器內首頁、/api/health 與 /static/style.css 經 IIS 均回應 HTTP 200，W3SVC、WAS 均為 Running，Docker 健康狀態為 healthy，健康 API 已成功連線 SQL Server。驗證後停止並移除本次測試容器，保留 image。
+驗證：Compose 設定、PowerShell 語法、pip check、start.bat --check、文件套件匯入、產生的啟動腳本與 IIS XML 解析均通過。已修正 Windows 命令列剝除雙引號造成的啟動失敗。最終 Windows/amd64 image `erp-site:servercore-ltsc2022` 建置成功（image ID：c775e9ef896c）；暫存容器內首頁、/api/health 與 /static/css/style.css 經 IIS 均回應 HTTP 200，W3SVC、WAS 均為 Running，Docker 健康狀態為 healthy，健康 API 已成功連線 SQL Server。驗證後停止並移除本次測試容器，保留 image。
 
 ## 2026-10-26｜全站滿版與共用區段格式整理
 
@@ -349,3 +349,9 @@ Phoenix 指定工具不併入主程式，後續確認寫入 dbo.AttendanceRecord
 同步整理 MIS 冒險共用樣式、分頁、深淺色與手機版、試跑對話框、發布交易、UUID 與流水號分離、日期輸出、建表計算欄位及種子版本行為；補發布未回傳流水號與 TypeError 的排查說明。更新工作面板俄羅斯方塊的五個預覽、儲存／交換與鍵盤操作，標明冒險面板仍在整合，並補前端及獨立打卡工具測試入口。
 
 驗證：核對現有程式、啟動腳本、Dockerfile、測試與工具文件；README 相對文件連結與 Markdown 程式碼區塊檢查通過，git diff --check 通過。本次僅更新文件，未執行 go build、套用 SQL、替換執行檔或重啟服務，未重跑程式測試。
+
+## 2026-11-08｜同步靜態資源搬移文件
+
+更新主 Readme 的 CSS／JS 目錄、登入頁引用範例與手機版共用資源說明；手動打卡工具 Readme 補上網站前端文件連結。同步前端版面維護、頁面指引、Python／Go Playground、RPG 與稽核文件的現行資源路徑，補充模組 import、Worker、CSS 圖片與 Go WASM 相對路徑規則。
+
+驗證：核對本次文件所列的靜態資源與相對文件連結，並執行 git diff --check。本次僅更新文件，未重新執行程式測試、瀏覽器或手機實機驗收，未部署或重啟服務。

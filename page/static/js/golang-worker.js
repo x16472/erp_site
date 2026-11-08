@@ -1,4 +1,4 @@
-const GOLANG_RUNTIME = './golang-runtime/';
+const GOLANG_RUNTIME = '../golang-runtime/';
 const GOLANG_BUILD = 'yaegi-0.16.1-go1.22.12-2';
 const OUTPUT_LIMIT = 120000;
 let busy = false;

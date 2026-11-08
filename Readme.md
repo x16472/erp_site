@@ -26,6 +26,18 @@
 
 前端採原生 HTML、共用 CSS 與 JavaScript ES Modules，不需要 Node.js 或前端打包工具。請透過 Go 提供的 HTTP 網址或 Cloudflare Tunnel 網址使用，讓模組載入、同來源 API 與工作階段驗證正常運作。
 
+共用與各頁 CSS 放在 `page/static/css/`，JavaScript 模組與 Worker 放在 `page/static/js/`。圖片、圖示、員工照片及 Go WASM 執行資源維持在 `page/static/` 原有子目錄；`page/static/golang-runtime/` 的配套 `wasm_exec.js` 隨執行資源保留。
+
+以員工登入頁為例，主題腳本先於樣式表載入：
+
+```html
+<script src="./static/js/theme.js"></script>
+<link rel="stylesheet" href="./static/css/style.css">
+<script type="module" src="./static/js/employee-login.js"></script>
+```
+
+桌面與手機共用上述資源，手機版透過 CSS 媒體查詢調整配置。搬移檔案時也須核對模組 import、Worker、CSS 圖片與 Go 靜態路由；詳細規則見 [前端版面與主題維護](page/docs/frontend-layout.md)。
+
 - 公開官網包含企業理念、四大產業據點、部門篩選名冊與合作資訊。據點圖片使用 `page/static/png/company/` 的相對路徑，可隨網站部署位址載入。
 - MIS 官網設定提供銀盾藍（`shield`）、勳章紅（`medal`）、鋼鐵灰（`steel`）及專業白（`white`）四種主題，並提供首頁預覽。
 - 七個內部頁面共用「工作台、營運日報、題庫練習、工作面板、宣導影音、員工管理、後台管理」側邊導覽。一般頁面側欄標示「內部使用」，員工管理與 MIS 則標示需管理員登入。
@@ -62,6 +74,11 @@ erp_site/
 │  ├─ deploy/、docs/             # 部署範本與操作文件
 │  └─ tools/generate_rpc.py      # gRPC 程式產生器
 ├─ page/                         # 官網、前後台頁面與靜態資源
+│  ├─ static/
+│  │  ├─ css/                   # 共用與各頁樣式表
+│  │  ├─ js/                    # 頁面腳本、共用模組及 Worker
+│  │  ├─ golang-runtime/        # Go WASM、wasm_exec.js 與授權文件
+│  │  └─ ico/、png/、staff/      # 圖示、圖片與員工照片
 │  └─ docs/、tools/              # 前端說明與瀏覽器 WASM 建置工具
 ├─ data/                         # 文件來源、原始檔與處理結果
 ├─ database/                     # Go 資料庫存取、SQL 查詢目錄、建表及初始資料

@@ -1,4 +1,4 @@
-import { apiData, serverTimeOffset } from '../script.js';
+import { apiData, serverTimeOffset } from './script.js';
 const
     form = document.querySelector('#accessForm'),
     statusBox = document.querySelector('#accessStatus'),

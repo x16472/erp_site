@@ -213,7 +213,7 @@ func (g *Gateway) static(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", 405)
 		return
 	}
-	pages := map[string]string{"/": "index.html", "/index.html": "index.html", "/home.html": "home.html", "/sales.html": "sales.html", "/mis.html": "mis.html", "/exam.html": "exam.html", "/workflow.html": "workflow.html", "/game.html": "game.html", "/staff.html": "staff.html", "/employee-login.html": "employee-login.html", "/style.css": "static/style.css"}
+	pages := map[string]string{"/": "index.html", "/index.html": "index.html", "/home.html": "home.html", "/sales.html": "sales.html", "/mis.html": "mis.html", "/exam.html": "exam.html", "/workflow.html": "workflow.html", "/game.html": "game.html", "/staff.html": "staff.html", "/employee-login.html": "employee-login.html", "/style.css": "static/css/style.css"}
 	relative, ok := pages[r.URL.Path]
 	if !ok {
 		if !strings.HasPrefix(r.URL.Path, "/static/") || strings.ContainsAny(r.URL.Path, "\\:\x00") {

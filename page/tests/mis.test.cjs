@@ -5,7 +5,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 test('快速切換資料表時，只顯示最後一次選取的結果', async () => {
-    const source = fs.readFileSync(path.join(__dirname, '../static/mis.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '../static/js/mis.js'), 'utf8');
     const pending = new Map();
     const context = vm.createContext({
         tableRequestVersion: 0, tables: [], pageSize: 20,
@@ -39,7 +39,7 @@ test('快速切換資料表時，只顯示最後一次選取的結果', async ()
 });
 
 test('題庫編號依數值排序，文字型別的 10 與 11 不會排在 2 前面', () => {
-    const source = fs.readFileSync(path.join(__dirname, '../static/mis.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '../static/js/mis.js'), 'utf8');
     const context = vm.createContext({
         questionSearch: { value: '' }, questionStatusFilter: { value: '' },
         complianceQuestions: ['1', '10', '11', '2', '51'].map(id => ({

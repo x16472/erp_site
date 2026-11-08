@@ -24,10 +24,10 @@
 ## 檔案與隔離
 
 - `page/workflow.html`：保留原有外殼與分頁，僅填入第三分頁及調整遊戲相關 ID、資源引用。
-- `page/static/python.js`：`python_canvas` 介面、Worker 生命週期、命令歷史與 Cookie。
-- `page/static/python-worker.js`：Python 執行、套件安裝、標準輸入、輸出上限與公開資產快取。
-- `page/static/python.css`：限定 `python_canvas` 的少量排版，沿用共用色彩與元件。
-- `page/static/teris.js` 與 `teris.css`：畫布為 `teris_canvas`，其他 ID 使用 `teris-` 前綴；JavaScript 使用區域作用域，CSS 限定第四分頁。離開遊戲會暫停，鍵盤事件只作用於遊戲分頁。
+- `page/static/js/python.js`：`python_canvas` 介面、Worker 生命週期、命令歷史與 Cookie。
+- `page/static/js/python-worker.js`：Python 執行、套件安裝、標準輸入、輸出上限與公開資產快取。
+- `page/static/css/python.css`：限定 `python_canvas` 的少量排版，沿用共用色彩與元件。
+- `page/static/js/teris.js` 與 `page/static/css/teris.css`：畫布為 `teris_canvas`，其他 ID 使用 `teris-` 前綴；JavaScript 使用區域作用域，CSS 限定第四分頁。離開遊戲會暫停，鍵盤事件只作用於遊戲分頁。
 
 ## 已驗證
 

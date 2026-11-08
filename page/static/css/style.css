@@ -395,7 +395,7 @@ iframe {
     place-items: center;
     border: 1px solid var(--brand-line);
     border-radius: var(--radius);
-    background: linear-gradient(145deg, color-mix(in srgb, var(--public-theme-dark) 82%, transparent), color-mix(in srgb, var(--public-theme-light) 78%, transparent)), url("appicon.png") center / min(65%, 360px) no-repeat;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--public-theme-dark) 82%, transparent), color-mix(in srgb, var(--public-theme-light) 78%, transparent)), url("../appicon.png") center / min(65%, 360px) no-repeat;
     box-shadow: var(--shadow);
     overflow: hidden;
 }

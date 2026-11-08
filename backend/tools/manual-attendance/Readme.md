@@ -2,6 +2,8 @@
 
 這是獨立工具，不啟動網站、不呼叫網站 API，也不併入主程式。需要 Windows PowerShell 5.1 與可連線的 SQL Server；不需 Go、Python 或 sqlcmd。
 
+網站端出勤介面使用 `page/static/css/` 與 `page/static/js/` 的共用資源，目錄與引用方式見 [專案說明：前端介面與資源](../../../Readme.md#前端介面與資源)。本工具仍由同目錄的批次檔與 PowerShell 腳本執行。
+
 點兩下 `simulate-attendance.bat` 即可執行，結果視窗會保留。連線讀取專案根目錄既有 `.env`，不另外儲存帳密。兩個工具檔案須放在同一目錄；若搬離專案，請修改 PowerShell 的 `EnvPath` 預設路徑。
 
 - 寫入 `dbo.AttendanceRecords`，員工來自 `dbo.Employees` 的在職名單，排除 K002、K020。

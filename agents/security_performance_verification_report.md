@@ -28,8 +28,8 @@
 
 ### 2. XSS 跨站腳本攻擊 (Cross-Site Scripting) ── 【安全 / 防護完整】
 * **檢驗標的**：
-  * [`page/static/script.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/script.js) - `escapeHtml()` / `esc()`
-  * [`page/static/mis.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/mis.js)、[`page/static/exam.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/exam.js)、[`page/static/sales.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/sales.js)
+  * [`page/static/js/script.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/js/script.js) - `escapeHtml()` / `esc()`
+  * [`page/static/js/mis.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/js/mis.js)、[`page/static/js/exam.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/js/exam.js)、[`page/static/js/sales.js`](file:///E:/0.Data_Doc/0.Doc/Github/erp_site/page/static/js/sales.js)
 * **防禦現狀**：
   * 前端所有動態文字渲染與換行轉換（`replace(/\n/g, '<br>')`）皆預先經過 `esc()` 進行 HTML 實體轉義。
   * 題幹內容採用後端結構化 JSON (`stem_blocks` / `content_blocks`) 區分程式碼區塊與文字區塊，由前端分別建立節點渲染，避免產生未轉義的任意 HTML 標籤。

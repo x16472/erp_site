@@ -30,7 +30,7 @@ function createGame() {
         cancelAnimationFrame() {},
         performance: { now: () => 0 },
     });
-    const source = fs.readFileSync(path.join(__dirname, '../static/teris.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '../static/js/teris.js'), 'utf8');
     vm.runInContext(source.replace(/\}\)\(\);\s*$/, `
         globalThis.game = {
             startGame, hardDrop,

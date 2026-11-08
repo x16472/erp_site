@@ -401,9 +401,9 @@ flowchart LR
 
 | 範圍 | 檔案 |
 |---|---|
-| 玩家入口 | `page/game.html`、`page/static/game.js` |
-| 玩家介面 | `page/static/adventure.js`、`page/static/adventure.css` |
-| 作者工具 | `page/mis.html`、`page/static/adventure-editor.js`、`page/static/adventure-editor.css`、`page/static/adventure-form.js` |
+| 玩家入口 | `page/game.html`、`page/static/js/game.js` |
+| 玩家介面 | `page/static/js/adventure.js`、`page/static/css/adventure.css` |
+| 作者工具 | `page/mis.html`、`page/static/js/adventure-editor.js`、`page/static/css/adventure-editor.css`、`page/static/js/adventure-form.js` |
 | 規則引擎 | `backend/src/erp/adventure.py` |
 | API 與交易 | `backend/src/erp/api.py`、`backend/src/erp/domain.py` |
 | 查詢目錄 | `database/queries.json`、`database/queries.go` |

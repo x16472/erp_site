@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
-const source = name => fs.readFileSync(path.join(__dirname, '../static', name), 'utf8');
+const source = name => fs.readFileSync(path.join(__dirname, '../static/js', name), 'utf8');
 
 test('API 錯誤保留狀態碼與修訂衝突代碼', async () => {
     const ctx = vm.createContext({ location: { pathname: '/game.html' }, fetch: async () => ({

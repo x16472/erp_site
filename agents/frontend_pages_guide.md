@@ -20,7 +20,7 @@ HTML 路由本身可載入，保護主要由 API 執行。員工頁面透過 `re
 | `staff.html` | `staff.js` | 組織、員工維護、部門與出勤管理 |
 | `mis.html` | `mis.js` | 官網設定、日報／申論審核、來源同步、題庫與資料查閱 |
 
-上述各頁腳本位於 `page/static/`。入口流程為官網或登入頁 → 員工工作台 → 各業務頁面；管理 API 需再通過 MIS 登入。
+上述各頁腳本位於 `page/static/js/`，樣式表位於 `page/static/css/`；主題腳本為 `page/static/js/theme.js`，共用樣式為 `page/static/css/style.css`。入口流程為官網或登入頁 → 員工工作台 → 各業務頁面；管理 API 需再通過 MIS 登入。
 
 ## 頁面功能與主要 API
 
@@ -101,9 +101,9 @@ HTML 路由本身可載入，保護主要由 API 執行。員工頁面透過 `re
 
 ## 共用程式與版面契約
 
-- `script.js`：API 請求、錯誤處理、員工與管理員驗證、CSRF 請求工具、時間偏移、文字跳脫、圖片備援與既有管理分頁。
-- `panel.js`：使用 `#staffTabs button[data-panel]` 對應 `.portal-content .panel` 的 ID，並以 `display` 切換；目前供影音與工作面板使用。
-- `style.css`：官網四主題、登入頁、共用側欄、卡片、表單、表格及響應式規則。
+- `page/static/js/script.js`：API 請求、錯誤處理、員工與管理員驗證、CSRF 請求工具、時間偏移、文字跳脫、圖片備援與既有管理分頁。
+- `page/static/js/panel.js`：使用 `#staffTabs button[data-panel]` 對應 `.portal-content .panel` 的 ID，並以 `display` 切換；目前供影音與工作面板使用。
+- `page/static/css/style.css`：官網四主題、登入頁、共用側欄、卡片、表單、表格及響應式規則。
 - 七個內部頁面維持相同側欄順序；管理頁底部另標示需管理員登入。頂部可能是主標題或分頁，狀態元素依頁面使用 `apiState` 或 `playerState`。
 - 修改 HTML 時需一併核對腳本選擇器、分頁 ID、表單欄位及狀態容器。API 值插入 HTML 時使用跳脫工具或 DOM 文字屬性。
 - `aria-live` 用於多處非同步狀態；不得據此宣稱所有元件均已完成無障礙或全裝置驗證。
