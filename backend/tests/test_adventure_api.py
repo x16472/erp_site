@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 import unittest
 from unittest import mock
 
 from backend.src.erp import api as app, domain as data, adventure
+from backend.src.erp.rpc import backend_pb2
 
 
 class AdventureApiTests(unittest.TestCase):
@@ -283,7 +285,41 @@ class AdventurePersistenceRegressionTests(unittest.TestCase):
         self.state = adventure.create_initial_state({"employee_id": "E1"}, self.script)
         self.save = {"SaveNo": "S1", "EmployeeNo": "E1", "WorldNo": "DEMO_TOWN", "SlotIndex": 1,
                      "VersionNo": "v1", "Revision": 1, "CharacterSnapshot": "{}",
-                     "StateJson": json.dumps(self.state), "IsActive": True, "CreateTime": None, "WorldName": "小鎮"}
+                     "StateJson": json.dumps(self.state), "IsActive": True, "CreateTime": None, "WorldName": "小鎮",
+                     "SaveDisplayId": 4, "VersionDisplayId": 2}
+
+    def test_save_list_dates_can_be_sent_as_json(self):
+        for timestamp, expected in (
+            (datetime(2026, 11, 7, 12, 34, 56, 123456), "2026-11-07T12:34:56.123456"),
+            ("2026-11-07T12:34:56", "2026-11-07T12:34:56"),
+            (None, None),
+        ):
+            with self.subTest(timestamp=timestamp):
+                self.save["CreateTime"] = timestamp
+                handler = app.Handler(backend_pb2.HttpRequest(method="GET", target="/api/adventure/saves"))
+                with mock.patch.object(data, "_fetch", return_value=[self.save]), mock.patch.object(
+                    handler, "require_employee", return_value={"employee_id": "E1"}
+                ):
+                    handler.do_GET()
+                self.assertEqual(handler.response.status, 200)
+                result = json.loads(handler.wfile.getvalue())["data"][0]
+                self.assertEqual(result["create_time"], expected)
+                self.assertEqual(result["save_no"], "S1")
+                self.assertEqual(result["save_display_no"], "SAVE_000004")
+
+    def test_save_history_dates_can_be_sent_as_json(self):
+        turn = {
+            "Id": 1, "TurnIndex": 1, "RequestId": "R1", "ActionId": "rest",
+            "ActionInput": "{}", "RollResult": "{}", "StateDiff": "{}", "ResponseJson": "{}",
+            "CreateTime": datetime(2026, 11, 7, 12, 34, 56),
+        }
+        handler = app.Handler(backend_pb2.HttpRequest(method="GET", target="/api/adventure/history?save_no=S1"))
+        with mock.patch.object(data, "_fetch", side_effect=[[self.save], [turn]]), mock.patch.object(
+            handler, "require_employee", return_value={"employee_id": "E1"}
+        ):
+            handler.do_GET()
+        self.assertEqual(handler.response.status, 200)
+        self.assertEqual(json.loads(handler.wfile.getvalue())["data"][0]["create_time"], "2026-11-07T12:34:56")
 
     def test_view_hides_rules_and_undiscovered_characters(self):
         view = data.adventure_view(self.save, self.script, self.state)
@@ -306,6 +342,8 @@ class AdventurePersistenceRegressionTests(unittest.TestCase):
         self.assertEqual(json.loads(stored.args[-1]), response)
         self.assertIn("state", response)
         self.assertEqual(response["revision"], 2)
+        self.assertEqual(response["save_display_no"], "SAVE_000004")
+        self.assertEqual(response["version_display_no"], "V000002")
         self.assertEqual(response["state"]["location_id"], "cozy_inn")
         self.assertEqual(cursor.execute.call_args_list[0].args[0], "domain.adventure_saves.lock")
 
@@ -320,6 +358,47 @@ class AdventurePersistenceRegressionTests(unittest.TestCase):
             self.assertEqual(data.adventure_create_save("E1", "DEMO_TOWN", 2), {"created": True})
         self.assertEqual(db.cursor.return_value.execute.call_args.args[4], 2)
         db.commit.assert_called_once()
+
+    def test_save_display_numbers_preserve_internal_identifiers(self):
+        self.save["SaveNo"] = "SAVE_fa4a9fa669115054bd57913a2b650272"
+        self.save["VersionNo"] = "v8.e6eb8950a38e"
+        view = data.adventure_view(self.save, self.script, self.state)
+        with mock.patch.object(data, "_fetch", return_value=[self.save]):
+            listed = data.adventure_saves("E1")[0]
+        for result in (view, listed):
+            self.assertEqual(result["save_no"], self.save["SaveNo"])
+            self.assertEqual(result["version_no"], self.save["VersionNo"])
+            self.assertEqual(result["save_display_no"], "SAVE_000004")
+            self.assertEqual(result["version_display_no"], "V000002")
+
+    def test_publish_uses_uuid_and_returns_separate_display_number(self):
+        db = mock.MagicMock()
+        cursor = db.cursor.return_value
+        cursor.fetchall.return_value = [["DEMO_TOWN", 5, json.dumps(self.script)]]
+        cursor.fetchone.return_value = [12]
+        with mock.patch.object(data, "connect") as connect:
+            connect.return_value.__enter__.return_value = db
+            result = data.admin_publish_draft("DEMO_TOWN", 5, "admin")
+        self.assertRegex(result["version_no"], r"^VER_[0-9a-f]{32}$")
+        self.assertEqual(result["version_display_no"], "V000012")
+        insert = next(c for c in cursor.execute.call_args_list if c.args[0] == "domain.admin_adventure_publish.1")
+        update = next(c for c in cursor.execute.call_args_list if c.args[0] == "domain.admin_adventure_publish.2")
+        self.assertEqual(insert.args[2], result["version_no"])
+        self.assertEqual(update.args[1], result["version_no"])
+
+    def test_publish_without_inserted_id_rolls_back_with_clear_error(self):
+        db = mock.MagicMock()
+        cursor = db.cursor.return_value
+        cursor.fetchall.return_value = [["DEMO_TOWN", 5, json.dumps(self.script)]]
+        cursor.fetchone.return_value = None
+        with mock.patch.object(data, "connect") as connect:
+            connect.return_value.__enter__.return_value = db
+            with self.assertRaisesRegex(data.DatabaseUnavailable, "重新編譯並重啟 Go"):
+                data.admin_publish_draft("DEMO_TOWN", 5, "admin")
+        db.rollback.assert_called_once()
+        db.commit.assert_not_called()
+        self.assertFalse(any(c.args[0] == "domain.admin_adventure_publish.2"
+                             for c in cursor.execute.call_args_list))
 
     def test_stale_publish_checks_locked_revision(self):
         db = mock.MagicMock()

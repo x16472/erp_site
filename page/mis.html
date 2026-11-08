@@ -106,7 +106,7 @@
                                         <input name="announcement" maxlength="160">
                                     </label>
                                 </div>
-                                <div class="actions">
+                                <div class="training-home-actions">
                                     <button class="btn" type="submit">儲存並發布設定</button>
                                 </div>
                             </form>
@@ -253,7 +253,7 @@
                                     </label>
                                 </div>
                                 <label><input name="is_active" type="checkbox" checked>啟用科目</label>
-                                <div class="actions">
+                                <div class="training-home-actions">
                                     <button class="btn" type="submit">儲存科目</button>
                                     <button class="btn second" id="resetSubject" type="button">新增</button>
                                 </div>
@@ -279,7 +279,7 @@
                                     <input name="display_order" type="number" min="0" max="9999" value="0"></label>
                                 <label>
                                     <input name="is_active" type="checkbox" checked>啟用章節</label>
-                                <div class="actions"><button class="btn" type="submit">儲存章節</button>
+                                <div class="training-home-actions"><button class="btn" type="submit">儲存章節</button>
                                     <button class="btn second" id="resetChapter" type="button">新增</button>
                                 </div>
                             </form>
@@ -351,7 +351,7 @@
                                 <section class="staff-directory-pane">
                                     <div class="staff-directory-toolbar">
                                         <div>
-                                            <span class="eyebrow">QUESTION BANK</span>
+                                            <span class="eyebrow">QUESTION&nbsp;BANK</span>
                                             <h2>題庫 <span class="tag" id="questionCount">0 題</span></h2>
                                         </div>
                                         <div class="staff-directory-actions">
@@ -474,15 +474,15 @@
                     </section>
                     <section class="admin-panel" id="adventurePanel">
                         <!-- 編輯器頂部操作列 -->
-                        <div class="adv-editor-toolbar">
-                            <div class="adv-toolbar-left">
-                                <label style="font-weight: 700; font-size: 0.9rem;">世界：</label>
-                                <select class="adv-world-select" id="advWorldSelect"></select>
-                                <span class="adv-status-pill" id="advStatusPill">未開放草稿</span>
-                                <span class="adventure-muted">修訂號：<b id="advDraftRev">1</b></span>
-                                <span class="adv-dirty-tag" id="advDirtyTag" hidden>● 有未儲存修改</span>
+                        <div class="card-head">
+                            <div class="training-home-actions">
+                                <label for="advWorldSelect">世界：</label>
+                                <select id="advWorldSelect"></select>
+                                <span class="tag" id="advStatusPill">未開放草稿</span>
+                                <span class="eyebrow">修訂號：<b id="advDraftRev">1</b></span>
+                                <span class="error-note" id="advDirtyTag" hidden>● 有未儲存修改</span>
                             </div>
-                            <div class="adv-toolbar-right">
+                            <div class="training-home-actions">
                                 <button type="button" class="btn second" id="advUndoBtn" title="復原&nbsp;(Ctrl+Z)">↶
                                     復原</button>
                                 <button type="button" class="btn second" id="advRedoBtn" title="重做&nbsp;(Ctrl+Y)">↷
@@ -490,57 +490,54 @@
                                 <button type="button" class="btn second" id="advValidateBtn">🔍&nbsp;靜態驗證</button>
                                 <button type="button" class="btn second" id="advTestRunBtn">▶&nbsp;模擬試跑</button>
                                 <button type="button" class="btn primary" id="advSaveDraftBtn">💾&nbsp;儲存草稿</button>
-                                <button type="button" class="btn second" id="advPublishBtn"
-                                    style="color: #10b981; border-color: rgba(16, 185, 129, 0.4);">🚀&nbsp;正式發布</button>
+                                <button type="button" class="btn second" id="advPublishBtn">🚀&nbsp;正式發布</button>
                             </div>
                         </div>
 
-                        <!-- 編輯器三欄工作區 -->
-                        <div class="adv-editor-workspace">
+                        <!-- 共用響應式工作區 -->
+                        <div class="portal-grid workspace-layout">
                             <!-- 左欄：導覽與資源分類 -->
-                            <aside class="adv-nav-col" id="advNavCol">
-                                <div class="adv-nav-header">世界設定</div>
-                                <button type="button" class="adv-nav-item" data-nav="world_settings">🌍 世界基本設定</button>
-                                <button type="button" class="adv-nav-item" data-nav="staff_mapping">👥 員工角色映射</button>
+                            <aside class="portal-card narrow field" id="advNavCol">
+                                <div class="eyebrow">世界設定</div>
+                                <button type="button" class="catalog-item" data-nav="world_settings">🌍 世界基本設定</button>
+                                <button type="button" class="catalog-item" data-nav="staff_mapping">👥 員工角色映射</button>
 
-                                <div class="adv-nav-header">故事內容</div>
-                                <button type="button" class="adv-nav-item" data-nav="locations">📍 地點與出口</button>
-                                <button type="button" class="adv-nav-item" data-nav="npcs">👤 NPC 設定</button>
-                                <button type="button" class="adv-nav-item" data-nav="items">🎒 道具與裝備</button>
-                                <button type="button" class="adv-nav-item" data-nav="quests">📜 任務進程</button>
-                                <button type="button" class="adv-nav-item" data-nav="enemies">⚔️ 敵人怪物</button>
+                                <div class="eyebrow">故事內容</div>
+                                <button type="button" class="catalog-item" data-nav="locations">📍 地點與出口</button>
+                                <button type="button" class="catalog-item" data-nav="npcs">👤 NPC 設定</button>
+                                <button type="button" class="catalog-item" data-nav="items">🎒 道具與裝備</button>
+                                <button type="button" class="catalog-item" data-nav="quests">📜 任務進程</button>
+                                <button type="button" class="catalog-item" data-nav="enemies">⚔️ 敵人怪物</button>
 
-                                <div class="adv-nav-header">事件流程圖</div>
-                                <button type="button" class="adv-nav-item active" data-nav="flowcharts">🔀
+                                <div class="eyebrow">事件流程圖</div>
+                                <button type="button" class="catalog-item active" data-nav="flowcharts">🔀
                                     事件流程圖</button>
-                                <div class="adv-subnav-list" id="advFlowSubnavList"></div>
+                                <div class="field" id="advFlowSubnavList"></div>
                             </aside>
 
                             <!-- 中欄：視覺化流程圖與節點清單 -->
-                            <main class="adv-canvas-col">
-                                <div class="adv-canvas-controls">
-                                    <div class="adv-canvas-tool-group">
-                                        <h4 class="adv-canvas-title" id="advCanvasTitle">流程圖：守衛長對話</h4>
+                            <div class="portal-card wide">
+                                <div class="card-head">
+                                    <div class="training-home-actions">
+                                        <h4 id="advCanvasTitle">流程圖：守衛長對話</h4>
                                     </div>
-                                    <div class="adv-canvas-tool-group">
-                                        <select class="adv-select" id="advAddNodeSelect"
-                                            style="width: 140px; font-size: 0.8rem;">
-                                            <option value="">+ 新增節點…</option>
-                                            <option value="narrative">敘事 (Narrative)</option>
-                                            <option value="choice">等待選擇 (Choice)</option>
-                                            <option value="condition">條件分支 (Condition)</option>
-                                            <option value="check">屬性檢定 (Check)</option>
-                                            <option value="random">隨機分支 (Random)</option>
-                                            <option value="effect">狀態效果 (Effect)</option>
-                                            <option value="combat">戰鬥啟動 (Combat)</option>
-                                            <option value="end">章節結束 (End)</option>
+                                    <div class="training-home-actions">
+                                        <select id="advAddNodeSelect">
+                                            <option value="">+&emsp;新增節點…</option>
+                                            <option value="narrative">敘事&nbsp;(Narrative)</option>
+                                            <option value="choice">等待選擇&nbsp;(Choice)</option>
+                                            <option value="condition">條件分支&nbsp;(Condition)</option>
+                                            <option value="check">屬性檢定&nbsp;(Check)</option>
+                                            <option value="random">隨機分支&nbsp;(Random)</option>
+                                            <option value="effect">狀態效果&nbsp;(Effect)</option>
+                                            <option value="combat">戰鬥啟動&nbsp;(Combat)</option>
+                                            <option value="end">章節結束&nbsp;(End)</option>
                                         </select>
                                         <button type="button" class="btn" id="advZoomOut" title="縮小">-</button>
                                         <button type="button" class="btn second" id="advZoomReset"
                                             title="重設縮放">重設縮放</button>
                                         <button type="button" class="btn" id="advZoomIn" title="放大">+</button>
-                                        <button type="button" class="btn second" id="advToggleView"
-                                            style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">節點清單</button>
+                                        <button type="button" class="btn second" id="advToggleView">節點清單</button>
                                     </div>
                                 </div>
 
@@ -552,75 +549,72 @@
                                 </div>
 
                                 <!-- 表單式節點清單 (無障礙與鍵盤友善) -->
-                                <div class="adv-node-list-view" id="advNodeListView" hidden>
-                                    <table class="adv-node-list-table">
+                                <div class="table-scroll" id="advNodeListView" hidden>
+                                    <table class="data-table">
                                         <thead>
                                             <tr>
-                                                <th>節點 ID</th>
+                                                <th>節點&nbsp;ID</th>
                                                 <th>類型</th>
-                                                <th>內容預覽 / 條件</th>
-                                                <th>下一出口 (連線)</th>
+                                                <th>內容預覽&nbsp;/&nbsp;條件</th>
+                                                <th>下一出口&nbsp;(連線)</th>
                                                 <th>操作</th>
                                             </tr>
                                         </thead>
                                         <tbody id="advNodeListTableBody"></tbody>
                                     </table>
                                 </div>
-                            </main>
+                            </div>
 
-                            <!-- 右欄：屬性檢查員 Inspector -->
-                            <aside class="adv-inspector-col" id="advInspectorCol">
-                                <div class="adv-inspector-head">
+                            <!-- 屬性編輯區 -->
+                            <aside class="portal-card full" id="advInspectorCol">
+                                <div class="card-head">
                                     <h3 id="advInspectorTitle">屬性檢查員</h3>
                                 </div>
-                                <div id="advInspectorBody">
-                                    <p class="adventure-muted">請在畫布或左側選取項目以進行編輯。</p>
+                                <div class="field" id="advInspectorBody">
+                                    <p class="eyebrow">請在畫布或左側選取項目以進行編輯。</p>
                                 </div>
                             </aside>
                         </div>
+                        <!-- 試跑模擬器彈窗 -->
+                        <dialog class="portal-card full" id="advSimModal" aria-labelledby="advSimTitle">
+                            <div class="card-head">
+                                <h3 id="advSimTitle">冒險試跑模擬器&nbsp;(Test Simulator)</h3>
+                                <button type="button" class="btn second" id="advSimCloseBtn"
+                                    aria-label="關閉試跑視窗">&times;</button>
+                            </div>
+                            <p class="eyebrow">
+                                使用管理員專屬暫存狀態進行單步演算與分支追蹤，不寫入任何正式存檔。
+                            </p>
+                            <div class="form-grid">
+                                <div class="field">
+                                    <div class="field">
+                                        <label for="advSimSeed">測試隨機&nbsp;種子（固定隨機結果）</label>
+                                        <input type="number" id="advSimSeed" value="42">
+                                    </div>
+                                    <div class="field">
+                                        <label for="advSimActionType">模擬玩家行動</label>
+                                        <select id="advSimActionType">
+                                            <option value="move">移動地點&nbsp;(前往溫暖旅店)</option>
+                                            <option value="talk">交談&nbsp;(與守衛長對話)</option>
+                                            <option value="combat_action">戰鬥指令&nbsp;(普通攻擊)</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn primary" id="advSimRunBtn">▶
+                                        執行單步試跑</button>
+                                </div>
+                                <div class="field">
+                                    <label>執行軌跡與狀態差異
+                                        (Diff)</label>
+                                    <pre class="table-scroll" id="advSimTrace" aria-live="polite">點選「執行單步試跑」開始模擬。</pre>
+                                </div>
+                            </div>
+                        </dialog>
                     </section>
                 </div>
             </section>
         </main>
     </div>
-    <!-- 試跑模擬器彈窗 -->
-    <div class="adv-sim-modal" id="advSimModal" hidden>
-        <div class="adv-sim-backdrop" id="advSimBackdrop"></div>
-        <div class="adv-sim-content">
-            <div class="adv-inspector-head">
-                <h3>冒險試跑模擬器 (Test Simulator)</h3>
-                <button type="button" class="adventure-close-btn" id="advSimCloseBtn">&times;</button>
-            </div>
-            <p class="adventure-muted" style="margin: 0.5rem 0 1rem;">
-                使用管理員專屬暫存狀態進行單步演算與分支追蹤，不寫入任何正式存檔。
-            </p>
-            <div class="adv-sim-grid">
-                <div>
-                    <div class="adv-form-group">
-                        <label>測試隨機種子 (Seed，固定隨機結果)</label>
-                        <input type="number" class="adv-input" id="advSimSeed" value="42">
-                    </div>
-                    <div class="adv-form-group">
-                        <label>模擬玩家行動</label>
-                        <select class="adv-select" id="advSimActionType">
-                            <option value="move">移動地點 (前往溫暖旅店)</option>
-                            <option value="talk">交談 (與守衛長對話)</option>
-                            <option value="combat_action">戰鬥指令 (普通攻擊)</option>
-                        </select>
-                    </div>
-                    <button type="button" class="btn primary" id="advSimRunBtn" style="margin-top: 0.5rem;">▶
-                        執行單步試跑</button>
-                </div>
-                <div>
-                    <label style="font-size: 0.82rem; font-weight: 700; color: var(--muted, #64748b);">執行軌跡與狀態差異
-                        (Diff)</label>
-                    <div class="adv-sim-trace" id="advSimTrace">
-                        <span class="adventure-muted">點選「執行單步試跑」開始模擬。</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
     <div class="toast" id="toast" role="status"></div>
 
 </body>

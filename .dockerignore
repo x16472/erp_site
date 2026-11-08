@@ -11,6 +11,7 @@ image-tag.txt
 .venv/
 .vscode/
 __pycache__/
+.codex-tmp/
 *.pyc
 data/*.db
 data/*.doc

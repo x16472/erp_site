@@ -333,3 +333,19 @@ SQL 規範以 Phoenix 最後澄清為準：拒絕 NULL，保留文字預設 SPAC
 清理：移除 .deps 根目錄 93 個一次性 Agent 腳本、截圖、驗收 JSON 與日誌，另移除 application-acceptance 舊專案副本及 ci-validation 產物 735 檔，合計 828 檔、311,633,298 Bytes。刪除前核對完整路徑、重新解析點與資料庫檔；保留資料、備份、正式回歸測試、相依套件及使用中的 runtime／快取。先前歷史提及的相關臨時證據檔已依要求清理。
 
 驗證：Python 3.11 後端 97 項、前端 Node 7 項測試通過；Go test、vet、build 與 --check 通過。Go 靜態檔案測試改用工作區內暫存路徑以避開沙箱 Temp 權限，沒有放寬路徑安全檢查。已驗證實際登入與讀取；未使用正式資料庫新增測試存檔，真實並行寫入與完整瀏覽器遊玩仍未驗收。README 與 RPG.md 已同步此次操作方式及限制。
+
+## 2026-11-07｜獨立手動打卡模擬工具
+
+Phoenix 指定工具不併入主程式，後續確認寫入 dbo.AttendanceRecords，時間依本機執行當下逐人累加 1～600 秒。新增 backend/tools/manual-attendance 的 bat、PowerShell 與操作文件，批次迴圈產生亂數；使用內建 SqlClient 讀取既有 .env 與在職員工，排除 K002、K020，12:00 前上班、12:00 起下班，立即寫入產生的時間。沒有修改網站入口、API、Go 或資料表結構。
+
+提供 --preview、欄位檢查、參數化 SQL、員工交易鎖、同日同動作防重、無上班不補下班、時間順序及跨日檢查；SQL 失敗回復整批，提交結果未確認時需查詢後重試。SourceIp 為 SIMULATOR，Remark 註明模擬，Readme.md 已同步。
+
+驗證：PowerShell 5.1 語法與 UTF-8 BOM 檢查通過；backend/tests/manual-attendance.tests.ps1 驗證上午／下午、12 點界線、UTC、間隔邊界、錯誤／排除／重複名單、跨日，並實際執行正式批次檔的亂數子程序，20 位員工離線預覽通過。git diff --check 通過。實際 .bat --preview 因此環境無法連線 SQL Server 而停止，未完成真實資料庫讀取、SQL 寫入及並行驗收；沒有新增正式打卡紀錄。
+
+## 2026-11-08｜README 編譯與專案現況說明
+
+依 Phoenix 要求補充 Readme.md：網站以 ./backend/cmd/erp 套件編譯，入口為 backend/cmd/erp/main.go，並說明 Windows／Linux 輸出檔、容器建置、待替換執行檔及先前 .codex-tmp/erp-site-publish.exe 的用途。明確記錄執行 go build 前須提醒，完成後回報產出路徑與部署／重啟狀態；內嵌 queries.json／normalized_queries.json 變更須重新編譯並重啟，另區分 Python、前端、.env 與 SQL 腳本的套用方式。
+
+同步整理 MIS 冒險共用樣式、分頁、深淺色與手機版、試跑對話框、發布交易、UUID 與流水號分離、日期輸出、建表計算欄位及種子版本行為；補發布未回傳流水號與 TypeError 的排查說明。更新工作面板俄羅斯方塊的五個預覽、儲存／交換與鍵盤操作，標明冒險面板仍在整合，並補前端及獨立打卡工具測試入口。
+
+驗證：核對現有程式、啟動腳本、Dockerfile、測試與工具文件；README 相對文件連結與 Markdown 程式碼區塊檢查通過，git diff --check 通過。本次僅更新文件，未執行 go build、套用 SQL、替換執行檔或重啟服務，未重跑程式測試。

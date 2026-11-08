@@ -4082,12 +4082,12 @@ textarea::placeholder {
     padding: 14px var(--public-layout-gutter);
 }
 
-.public-body .public-content > section {
+.public-body .public-content>section {
     padding: 72px var(--public-layout-gutter);
     scroll-margin-top: 100px;
 }
 
-.public-body .public-content > .public-hero {
+.public-body .public-content>.public-hero {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 32px 48px;
     min-height: 0;
@@ -4176,7 +4176,7 @@ textarea::placeholder {
     padding: 0 24px 28px;
 }
 
-.public-body .sector-card > img {
+.public-body .sector-card>img {
     display: block;
     width: calc(100% + 48px);
     max-width: none;
@@ -4201,13 +4201,13 @@ textarea::placeholder {
     overflow-wrap: anywhere;
 }
 
-.public-body .staff-grid > .empty,
-.public-body .staff-grid > .error-note,
-.public-body .public-stats > .error-note {
+.public-body .staff-grid>.empty,
+.public-body .staff-grid>.error-note,
+.public-body .public-stats>.error-note {
     grid-column: 1 / -1;
 }
 
-.public-body .public-content > #meet {
+.public-body .public-content>#meet {
     padding-top: 0;
     padding-bottom: 0;
 }
@@ -4218,7 +4218,7 @@ textarea::placeholder {
     padding: 48px;
 }
 
-.public-body #visit .cta-banner > div {
+.public-body #visit .cta-banner>div {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
     align-items: start;
@@ -4226,7 +4226,7 @@ textarea::placeholder {
     width: 100%;
 }
 
-.public-body #visit .cta-banner > div > * {
+.public-body #visit .cta-banner>div>* {
     grid-column: 1;
     min-width: 0;
 }
@@ -4252,7 +4252,7 @@ textarea::placeholder {
 }
 
 @media (max-width: 980px) {
-    .public-body .public-content > .public-hero {
+    .public-body .public-content>.public-hero {
         grid-template-columns: minmax(0, 1fr);
         gap: 24px;
     }
@@ -4273,7 +4273,7 @@ textarea::placeholder {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .public-body #visit .cta-banner > div {
+    .public-body #visit .cta-banner>div {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -4289,7 +4289,7 @@ textarea::placeholder {
         --public-layout-gutter: 20px;
     }
 
-    .public-body .public-content > section {
+    .public-body .public-content>section {
         padding-block: 48px;
         scroll-margin-top: 80px;
     }

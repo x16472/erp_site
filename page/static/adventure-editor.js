@@ -137,7 +137,7 @@ async function loadWorlds() {
 function updateWorldStatusBadge(isOpen) {
     if (advStatusPill) {
         advStatusPill.textContent = isOpen ? '已開放遊玩' : '未開放草稿';
-        advStatusPill.className = `adv-status-pill ${isOpen ? '' : 'closed'}`;
+        advStatusPill.className = 'tag';
     }
 }
 
@@ -187,11 +187,11 @@ function renderSubnavFlows() {
     if (!advFlowSubnavList || !currentDraft) return;
     const flows = currentDraft.content?.flowcharts || {};
     advFlowSubnavList.innerHTML = Object.entries(flows).map(([fid, f]) => `
-        <button type="button" class="adv-subnav-item ${fid === currentFlowId && currentSection === 'flowcharts' ? 'active' : ''}" data-flow-id="${esc(fid)}">
+        <button type="button" class="catalog-item ${fid === currentFlowId && currentSection === 'flowcharts' ? 'active' : ''}" data-flow-id="${esc(fid)}">
             🔀 ${esc(f.name || fid)}
         </button>
     `).join('') + `
-        <button type="button" class="adv-subnav-item" id="advCreateFlowBtn" style="color: var(--accent, #2563eb); font-weight: 700;">
+        <button type="button" class="catalog-item" id="advCreateFlowBtn">
             + 新增流程圖
         </button>
     `;
@@ -228,6 +228,7 @@ function clearCanvas() {
 /** 繪製圖形化流程圖（DOM 節點與 SVG 連線） */
 function renderCanvasGraph(flow) {
     if (advNodeListView) advNodeListView.hidden = true;
+    advCanvasViewport.hidden = false;
     clearCanvas();
 
     const nodes = flow.nodes || {};
@@ -370,6 +371,7 @@ function applyTransform() {
 function renderNodeListView(flow) {
     if (!advNodeListView || !advNodeListTableBody) return;
     advNodeListView.hidden = false;
+    advCanvasViewport.hidden = true;
     const nodes = flow.nodes || {};
 
     const nodeOptions = Object.keys(nodes).map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
@@ -377,11 +379,11 @@ function renderNodeListView(flow) {
     advNodeListTableBody.innerHTML = Object.entries(nodes).map(([nid, node]) => `
         <tr data-node-id="${esc(nid)}">
             <td><b>${esc(nid)}</b></td>
-            <td><span class="adv-status-pill">${esc(node.type)}</span></td>
+            <td><span class="tag">${esc(node.type)}</span></td>
             <td>${esc(node.text || node.label || node.stat || node.enemy_id || '-')}</td>
             <td>
                 ${node.type !== 'end' ? `
-                    <select class="adv-select adv-inline-next" data-node-id="${esc(nid)}" style="width: 140px;">
+                    <select class="adv-inline-next" data-node-id="${esc(nid)}">
                         <option value="">(無)</option>
                         ${Object.keys(nodes).map(k => `<option value="${esc(k)}" ${k === node.next_node_id ? 'selected' : ''}>${esc(k)}</option>`).join('')}
                     </select>
@@ -416,6 +418,7 @@ function renderResourceWorkspace() {
     if (advNodeListView) advNodeListView.hidden = true;
     clearCanvas();
 
+    advCanvasViewport.hidden = true;
     const content = currentDraft?.content || {};
 
     if (currentSection === 'world_settings') {
@@ -429,13 +432,13 @@ function renderResourceWorkspace() {
         advInspectorTitle.textContent = '員工角色映射管理';
         const npcs = content.npcs || {};
         advInspectorBody.innerHTML = `
-            <p class="adventure-muted" style="margin-top: 0;">將在職員工安排為劇中 NPC。發布時會保存角色快照；若同事本人進入遊戲，將自動替換為虛構替代角色。</p>
+            <p class="eyebrow">將在職員工安排為劇中 NPC。發布時會保存角色快照；若同事本人進入遊戲，將自動替換為虛構替代角色。</p>
             ${Object.entries(npcs).map(([nid, npc]) => `
-                <div style="border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem;">
+                <div class="field">
                     <b>NPC 槽位：${esc(npc.slot_name || nid)}</b>
-                    <div class="adv-form-group" style="margin-top: 0.4rem;">
+                    <div class="field">
                         <label>映射員工</label>
-                        <select class="adv-select adv-staff-map-select" data-npc-id="${esc(nid)}">
+                        <select class="adv-staff-map-select" data-npc-id="${esc(nid)}">
                             <option value="">(未映射，使用虛構角色)</option>
                             ${staffOptions.map(s => `
                                 <option value="${esc(s.employee_id)}" ${s.employee_id === npc.mapped_employee_id ? 'selected' : ''}>
@@ -444,9 +447,9 @@ function renderResourceWorkspace() {
                             `).join('')}
                         </select>
                     </div>
-                    <div class="adv-form-group">
+                    <div class="field">
                         <label>虛構替代角色姓名 (本人入戲時替換)</label>
-                        <input type="text" class="adv-input adv-fallback-name" data-npc-id="${esc(nid)}" value="${esc(npc.fallback_character?.name || '')}">
+                        <input type="text" class="adv-fallback-name" data-npc-id="${esc(nid)}" value="${esc(npc.fallback_character?.name || '')}">
                     </div>
                 </div>
             `).join('')}
@@ -477,7 +480,7 @@ function renderResourceWorkspace() {
     } else {
         advInspectorTitle.textContent = `資源管理：${currentSection}`;
         content[currentSection] ??= {};
-        renderFields(advInspectorBody, content[currentSection], pushUndo, () => {}, {});
+        renderFields(advInspectorBody, content[currentSection], pushUndo, () => { }, {});
     }
 
 }
@@ -700,7 +703,7 @@ function bindEditorEvents() {
             if (res.valid) {
                 alert('✓ 劇本結構驗證通過！無懸空連線與缺少出口錯誤。');
             } else {
-                alert('✗ 劇本驗證失敗，發現以下錯誤：\n\n- ' + res.errors.join('\n- '));
+                alert('✗ 劇本驗證失敗，發現以下錯誤：\r\n- ' + res.errors.join('\r\n- '));
             }
         } catch (err) {
             alert('驗證請求失敗：' + err.message);
@@ -709,14 +712,14 @@ function bindEditorEvents() {
 
     // 正式發布
     advPublishBtn?.addEventListener('click', async () => {
-        if (!confirm(`確定要將世界【${currentWorldNo}】的目前草稿發布為正式版本嗎？\n發布後將建立不可變版本快照並對員工開放遊玩。`)) return;
+        if (!confirm(`確定要將世界【${currentWorldNo}】的目前草稿發布為正式版本嗎？\r\n發布後將建立不可變版本快照並對員工開放遊玩。`)) return;
         try {
             if (isDirty && !(await saveDraft())) return;
             const res = await adminRequest('/api/admin/adventure/publish', {
                 world_no: currentWorldNo,
                 expected_revision: currentDraftRevision,
             });
-            alert(`★ 成功發布版本：【${res.version_no}】！世界已正式開放遊玩。`);
+            alert(`★ 成功發布版本：【${res.version_display_no || "—"}】！世界已正式開放遊玩。`);
             await loadWorlds();
             await loadDraft(currentWorldNo);
         } catch (err) {
@@ -744,8 +747,8 @@ function bindEditorEvents() {
         } catch (error) { advSimTrace.textContent = error.message; }
         finally { simPending = false; advSimRunBtn.disabled = false; }
     }
-    advTestRunBtn?.addEventListener('click', async () => { advSimModal.hidden = false; await stepSimulation(true); });
-    advSimCloseBtn?.addEventListener('click', () => { advSimModal.hidden = true; });
+    advTestRunBtn?.addEventListener('click', async () => { advSimModal.showModal(); await stepSimulation(true); });
+    advSimCloseBtn?.addEventListener('click', () => { advSimModal.close(); });
     advSimRunBtn?.addEventListener('click', () => stepSimulation());
     const resetSimulation = document.createElement('button'); resetSimulation.type = 'button';
     resetSimulation.textContent = '重設試跑'; resetSimulation.className = 'btn second';

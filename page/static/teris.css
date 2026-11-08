@@ -35,7 +35,8 @@
     color: #e94560;
 }
 
-#pl4 #teris-next-canvas {
+#pl4 #teris-next-canvas,
+#pl4 #teris-hold-canvas {
     display: block;
     margin: 0 auto;
     border-radius: 6px;

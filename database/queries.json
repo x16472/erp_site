@@ -710,12 +710,12 @@
     "read_only": true
   },
   "domain.adventure_saves.1": {
-    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName FROM dbo.AdventureSaves s JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo WHERE s.EmployeeNo = ? AND s.IsActive = 1 ORDER BY s.WorldNo, s.SlotIndex",
+    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName, s.Id AS SaveDisplayId, v.Id AS VersionDisplayId FROM dbo.AdventureSaves s JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo JOIN dbo.AdventureVersions v ON v.WorldNo = s.WorldNo AND v.VersionNo = s.VersionNo WHERE s.EmployeeNo = ? AND s.IsActive = 1 ORDER BY s.WorldNo, s.SlotIndex",
     "dynamic": 0,
     "read_only": true
   },
   "domain.adventure_saves.2": {
-    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName FROM dbo.AdventureSaves s JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo WHERE s.SaveNo = ? AND s.EmployeeNo = ? AND s.IsActive = 1",
+    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName, s.Id AS SaveDisplayId, v.Id AS VersionDisplayId FROM dbo.AdventureSaves s JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo JOIN dbo.AdventureVersions v ON v.WorldNo = s.WorldNo AND v.VersionNo = s.VersionNo WHERE s.SaveNo = ? AND s.EmployeeNo = ? AND s.IsActive = 1",
     "dynamic": 0,
     "read_only": true
   },
@@ -775,7 +775,7 @@
     "read_only": false
   },
   "domain.admin_adventure_publish.1": {
-    "sql": "INSERT INTO dbo.AdventureVersions (WorldNo, VersionNo, FormatVersion, Content, PublishedBy) VALUES (?, ?, 1, ?, ?)",
+    "sql": "INSERT INTO dbo.AdventureVersions (WorldNo, VersionNo, FormatVersion, Content, PublishedBy) OUTPUT inserted.Id VALUES (?, ?, 1, ?, ?)",
     "dynamic": 0,
     "read_only": false
   },
@@ -790,7 +790,7 @@
     "read_only": true
   },
   "domain.adventure_saves.lock": {
-    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName FROM dbo.AdventureSaves s WITH (UPDLOCK, HOLDLOCK) JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo WHERE s.SaveNo = ? AND s.EmployeeNo = ? AND s.IsActive = 1",
+    "sql": "SELECT s.SaveNo, s.EmployeeNo, s.WorldNo, s.SlotIndex, s.VersionNo, s.Revision, s.CharacterSnapshot, s.StateJson, s.IsActive, s.CreateTime, w.WorldName, s.Id AS SaveDisplayId, v.Id AS VersionDisplayId FROM dbo.AdventureSaves s WITH (UPDLOCK, HOLDLOCK) JOIN dbo.AdventureWorlds w ON w.WorldNo = s.WorldNo JOIN dbo.AdventureVersions v ON v.WorldNo = s.WorldNo AND v.VersionNo = s.VersionNo WHERE s.SaveNo = ? AND s.EmployeeNo = ? AND s.IsActive = 1",
     "dynamic": 0,
     "read_only": false
   },

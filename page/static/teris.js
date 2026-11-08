@@ -3,12 +3,16 @@
     const ctx = teris_canvas.getContext('2d');
     const nextCanvas = document.getElementById('teris-next-canvas');
     const nextCtx = nextCanvas.getContext('2d');
+    const holdCanvas = document.getElementById('teris-hold-canvas');
+    const holdCtx = holdCanvas.getContext('2d');
     const overlay = document.getElementById('teris-overlay');
     const terisPanel = teris_canvas.closest('.panel');
 
     const COLS = 10;
     const ROWS = 20;
     const BLOCK = 30;
+    const NEXT_COUNT = 5;
+    const PREVIEW_HEIGHT = 90;
     // 方塊顏色
     const COLORS = [
         null,
@@ -31,7 +35,7 @@
         [[6, 0, 0], [6, 6, 6], [0, 0, 0]],                   // J
         [[0, 0, 7], [7, 7, 7], [0, 0, 0]],                   // L
     ];
-    let board, piece, nextPiece, score, highScore, level, lines, animId, lastTime, dropCounter, dropInterval;
+    let board, piece, nextPieces, heldType, holdUsed, score, highScore, level, lines, animId, lastTime, dropCounter, dropInterval;
     let gameOver = true;
     let paused = false;
 
@@ -120,13 +124,47 @@
         });
     }
 
-    function drawNextPiece() {
+    function drawPreview(type, context, canvas, offsetY = 0) {
+        const shape = SHAPES[type];
+        const cells = [];
+        shape.forEach((row, r) => row.forEach((value, c) => {
+            if (value) cells.push({ x: c, y: r });
+        }));
+        const minX = Math.min(...cells.map(cell => cell.x));
+        const maxX = Math.max(...cells.map(cell => cell.x));
+        const minY = Math.min(...cells.map(cell => cell.y));
+        const maxY = Math.max(...cells.map(cell => cell.y));
+        const offX = (canvas.width / BLOCK - (maxX - minX + 1)) / 2 - minX;
+        const offY = (PREVIEW_HEIGHT / BLOCK - (maxY - minY + 1)) / 2 - minY;
+        cells.forEach(cell => drawBlock(context, cell.x + offX, cell.y + offY + offsetY / BLOCK, type));
+    }
+
+    function drawNextPieces() {
         nextCtx.fillStyle = '#0d1b2a';
         nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
-        const shape = nextPiece.shape;
-        const offX = Math.floor((4 - shape[0].length) / 2) - nextPiece.x + 0.2;
-        const offY = Math.floor((4 - shape.length) / 2) - nextPiece.y + 0.5;
-        drawPiece(nextPiece, nextCtx, offX, offY);
+        nextPieces.forEach((type, index) => drawPreview(type, nextCtx, nextCanvas, index * PREVIEW_HEIGHT));
+    }
+
+    function drawHoldPiece() {
+        holdCtx.fillStyle = '#0d1b2a';
+        holdCtx.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
+        if (heldType !== null) drawPreview(heldType, holdCtx, holdCanvas);
+        holdCanvas.style.opacity = holdUsed ? '0.45' : '1';
+    }
+
+    function holdPiece() {
+        if (holdUsed) return;
+        const outgoingType = piece.type;
+        if (heldType === null) {
+            spawnPiece();
+        } else {
+            piece = createPiece(heldType);
+            if (collide(board, piece)) endGame();
+        }
+        heldType = outgoingType;
+        holdUsed = true;
+        dropCounter = 0;
+        drawHoldPiece();
     }
 
     function collide(board, p) {
@@ -228,11 +266,11 @@
     }
 
     function spawnPiece() {
-        piece = nextPiece;
-        piece.x = Math.floor(COLS / 2) - Math.floor(piece.shape[0].length / 2);
-        piece.y = 0;
-        nextPiece = createPiece(randomType());
-        drawNextPiece();
+        piece = createPiece(nextPieces.shift());
+        nextPieces.push(randomType());
+        holdUsed = false;
+        drawNextPieces();
+        drawHoldPiece();
         if (collide(board, piece)) {
             endGame();
         }
@@ -269,7 +307,9 @@
         lastTime = 0;
         gameOver = false;
         paused = false;
-        nextPiece = createPiece(randomType());
+        heldType = null;
+        holdUsed = false;
+        nextPieces = Array.from({ length: NEXT_COUNT }, randomType);
         spawnPiece();
         overlay.style.display = 'none';
         document.getElementById('teris-pause-btn').disabled = false;
@@ -330,6 +370,12 @@
             case 'p':
             case 'P':
                 togglePause();
+                break;
+            case 'c':
+            case 'C':
+            case 'Shift':
+                e.preventDefault();
+                if (!paused && !e.repeat) holdPiece();
                 break;
         }
     });

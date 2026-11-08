@@ -59,7 +59,7 @@ export function renderFields(container, model, beforeChange, afterChange, option
         if (depth > 20) return;
         for (const [key, child] of Object.entries(value)) {
             if (['x', 'y', 'mapped_employee_snapshot'].includes(key)) continue;
-            const row = document.createElement('div'); row.className = 'adv-form-group';
+            const row = document.createElement('div'); row.className = 'field';
             const title = document.createElement('label');
             title.textContent = `${labels[key] || key}${Array.isArray(value) ? `（${Number(key) + 1}）` : ''}`;
             row.append(title);
@@ -81,7 +81,7 @@ export function renderFields(container, model, beforeChange, afterChange, option
                     if (typeof child === 'boolean') { input.type = 'checkbox'; input.checked = child; }
                     else { input.type = typeof child === 'number' ? 'number' : 'text'; input.value = child ?? ''; }
                 }
-                input.className = 'adv-input'; input.setAttribute('aria-label', title.textContent);
+                input.setAttribute('aria-label', title.textContent);
                 if (key === 'type' && options.lockType && depth === 0) input.disabled = true;
                 input.addEventListener('change', () => {
                     const next = typeof child === 'boolean' ? input.checked : typeof child === 'number' ? Number(input.value) : input.value;
@@ -109,7 +109,7 @@ export function renderFields(container, model, beforeChange, afterChange, option
         if (Array.isArray(value)) {
             parent.append(button('新增一筆', () => { mutate(() => value.push(newArrayValue(path[path.length - 1]))); rerender(); }));
         } else {
-            const keyInput = document.createElement('input'); keyInput.placeholder = '新增欄位或資源識別碼'; keyInput.className = 'adv-input';
+            const keyInput = document.createElement('input'); keyInput.placeholder = '新增欄位或資源識別碼';
             keyInput.setAttribute('aria-label', '新增欄位或資源識別碼');
             const type = document.createElement('select'); type.setAttribute('aria-label', '新欄位型別');
             for (const kind of ['文字', '數字', '布林', '物件', '清單']) {
@@ -118,7 +118,7 @@ export function renderFields(container, model, beforeChange, afterChange, option
             parent.append(keyInput, type, button('新增欄位', () => {
                 const key = keyInput.value.trim();
                 if (!key || forbiddenKeys.has(key) || Object.hasOwn(value, key)) return;
-                mutate(() => { value[key] = ({文字: '', 數字: 0, 布林: false, 物件: {}, 清單: []})[type.value]; }); rerender();
+                mutate(() => { value[key] = ({ 文字: '', 數字: 0, 布林: false, 物件: {}, 清單: [] })[type.value]; }); rerender();
             }));
         }
     }

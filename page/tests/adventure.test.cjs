@@ -87,3 +87,24 @@ test('作者可透過表單增加選項，不必輸入 JSON', () => {
     assert.equal(ctx.model.choices.length, 1);
     assert.equal(ctx.model.choices[0].cost.gold, 0);
 });
+
+
+test('存檔卡片顯示流水號，繼續冒險仍使用 UUID', () => {
+    const cards = [];
+    const save = {
+        world_no: 'DEMO_TOWN', slot_index: 1, save_no: 'SAVE_internal_uuid', version_no: 'VER_internal_uuid',
+        save_display_no: 'SAVE_000004', version_display_no: 'V000002', revision: 1, character: {},
+    };
+    const ctx = vm.createContext({
+        advSlotsGrid: { innerHTML: '', appendChild: card => cards.push(card) },
+        activeWorldNo: 'DEMO_TOWN', esc: value => String(value),
+        document: { createElement: () => ({}) }, saves: [save],
+    });
+    const player = source('adventure.js');
+    vm.runInContext(player.slice(player.indexOf('function renderSlots('), player.indexOf('async function openCreateModal(')), ctx);
+    vm.runInContext('renderSlots(saves)', ctx);
+    assert.match(cards[0].innerHTML, /存檔：SAVE_000004/);
+    assert.match(cards[0].innerHTML, /版本：V000002/);
+    assert.match(cards[0].innerHTML, /data-save-no="SAVE_internal_uuid"/);
+    assert.doesNotMatch(cards[0].innerHTML.replace(/<[^>]*>/g, ''), /internal_uuid/);
+});

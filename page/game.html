@@ -298,7 +298,8 @@
                             <div class="adventure-modal-content">
                                 <div class="adventure-modal-header">
                                     <h3>建立新冒險角色</h3>
-                                    <button type="button" class="adventure-close-btn" id="advModalCloseBtn">&times;</button>
+                                    <button type="button" class="adventure-close-btn"
+                                        id="advModalCloseBtn">&times;</button>
                                 </div>
                                 <div class="adventure-modal-body">
                                     <div class="adventure-player-preview" id="advPlayerPreview">
@@ -326,7 +327,8 @@
                             <div class="adventure-nav-info">
                                 <button type="button" class="btn second" id="advBackToSaves">◀ 返回存檔清單</button>
                                 <span class="adventure-current-info" id="advCurrentInfo">
-                                    <b id="advWorldNameDisplay">陌生小鎮</b> · 槽位 <span id="advSlotIndexDisplay">1</span> · 修訂 <span id="advRevDisplay">1</span>
+                                    <b id="advWorldNameDisplay">陌生小鎮</b> · 槽位 <span id="advSlotIndexDisplay">1</span> ·
+                                    修訂 <span id="advRevDisplay">1</span>
                                 </span>
                             </div>
                             <div class="adventure-top-status">
@@ -385,19 +387,28 @@
                                 <div class="adventure-combat-arena" id="advCombatArena" hidden>
                                     <div class="adventure-combat-header">
                                         <h3>⚔️ 戰鬥進行中</h3>
-                                        <span class="adventure-combat-round">回合 <span id="advCombatRound">1</span></span>
+                                        <span class="adventure-combat-round">回合 <span
+                                                id="advCombatRound">1</span></span>
                                     </div>
                                     <div class="adventure-combat-fighters">
                                         <!-- 玩家狀態條 -->
                                         <div class="adventure-combat-side player-side">
                                             <div class="adventure-fighter-name" id="advFighterPlayerName">玩家</div>
                                             <div class="adventure-bar-container">
-                                                <div class="adventure-bar-label"><span>生命 (HP)</span><span id="advCombatPlayerHpVal">100/100</span></div>
-                                                <div class="adventure-bar-track"><div class="adventure-bar-fill hp" id="advCombatPlayerHpBar" style="width: 100%;"></div></div>
+                                                <div class="adventure-bar-label"><span>生命 (HP)</span><span
+                                                        id="advCombatPlayerHpVal">100/100</span></div>
+                                                <div class="adventure-bar-track">
+                                                    <div class="adventure-bar-fill hp" id="advCombatPlayerHpBar"
+                                                        style="width: 100%;"></div>
+                                                </div>
                                             </div>
                                             <div class="adventure-bar-container">
-                                                <div class="adventure-bar-label"><span>精力 (EP)</span><span id="advCombatPlayerEpVal">100/100</span></div>
-                                                <div class="adventure-bar-track"><div class="adventure-bar-fill ep" id="advCombatPlayerEpBar" style="width: 100%;"></div></div>
+                                                <div class="adventure-bar-label"><span>精力 (EP)</span><span
+                                                        id="advCombatPlayerEpVal">100/100</span></div>
+                                                <div class="adventure-bar-track">
+                                                    <div class="adventure-bar-fill ep" id="advCombatPlayerEpBar"
+                                                        style="width: 100%;"></div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="adventure-combat-vs">VS</div>
@@ -405,8 +416,12 @@
                                         <div class="adventure-combat-side enemy-side">
                                             <div class="adventure-fighter-name" id="advFighterEnemyName">野獸</div>
                                             <div class="adventure-bar-container">
-                                                <div class="adventure-bar-label"><span>敵人生命</span><span id="advCombatEnemyHpVal">40/40</span></div>
-                                                <div class="adventure-bar-track"><div class="adventure-bar-fill enemy-hp" id="advCombatEnemyHpBar" style="width: 100%;"></div></div>
+                                                <div class="adventure-bar-label"><span>敵人生命</span><span
+                                                        id="advCombatEnemyHpVal">40/40</span></div>
+                                                <div class="adventure-bar-track">
+                                                    <div class="adventure-bar-fill enemy-hp" id="advCombatEnemyHpBar"
+                                                        style="width: 100%;"></div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -427,7 +442,8 @@
                                 <div class="adventure-log-panel" id="advLogPanel">
                                     <div class="adventure-log-header">
                                         <h3>冒險敘事紀錄</h3>
-                                        <button type="button" class="adventure-btn-text" id="advLoadMoreHistory">載入更早紀錄</button>
+                                        <button type="button" class="adventure-btn-text"
+                                            id="advLoadMoreHistory">載入更早紀錄</button>
                                     </div>
                                     <div class="adventure-log-stream" id="advLogStream"></div>
                                 </div>
@@ -442,7 +458,8 @@
                                     </div>
                                     <div class="adventure-char-body">
                                         <div class="adventure-char-profile">
-                                            <img class="adventure-char-avatar" id="advCharAvatar" src="static/appicon.png" alt="主角頭像">
+                                            <img class="adventure-char-avatar" id="advCharAvatar"
+                                                src="static/appicon.png" alt="主角頭像">
                                             <div class="adventure-char-meta">
                                                 <b class="adventure-char-name" id="advCharName">王大明</b>
                                                 <span class="adventure-char-dept" id="advCharDept">營運部 · 專員</span>
@@ -455,12 +472,18 @@
                                                 <span>生命 (HP)</span>
                                                 <span class="adventure-vital-val" id="advCharHpText">100 / 100</span>
                                             </div>
-                                            <div class="adventure-bar-track"><div class="adventure-bar-fill hp" id="advCharHpBar" style="width: 100%;"></div></div>
+                                            <div class="adventure-bar-track">
+                                                <div class="adventure-bar-fill hp" id="advCharHpBar"
+                                                    style="width: 100%;"></div>
+                                            </div>
                                             <div class="adventure-vital-row">
                                                 <span>精力 (EP)</span>
                                                 <span class="adventure-vital-val" id="advCharEpText">100 / 100</span>
                                             </div>
-                                            <div class="adventure-bar-track"><div class="adventure-bar-fill ep" id="advCharEpBar" style="width: 100%;"></div></div>
+                                            <div class="adventure-bar-track">
+                                                <div class="adventure-bar-fill ep" id="advCharEpBar"
+                                                    style="width: 100%;"></div>
+                                            </div>
                                             <div class="adventure-vital-row gold">
                                                 <span>持有金幣</span>
                                                 <span class="adventure-gold-val" id="advCharGold">50 金幣</span>
@@ -468,12 +491,18 @@
                                         </div>
                                         <!-- 四大屬性與攻防 -->
                                         <div class="adventure-stats-grid">
-                                            <div class="adventure-stat-item"><span>攻擊力</span><b id="advStatAtk">10</b></div>
-                                            <div class="adventure-stat-item"><span>防禦力</span><b id="advStatDef">5</b></div>
-                                            <div class="adventure-stat-item"><span>力量</span><b id="advStatStr">10</b></div>
-                                            <div class="adventure-stat-item"><span>敏捷</span><b id="advStatAgi">10</b></div>
-                                            <div class="adventure-stat-item"><span>智力</span><b id="advStatInt">10</b></div>
-                                            <div class="adventure-stat-item"><span>魅力</span><b id="advStatCha">10</b></div>
+                                            <div class="adventure-stat-item"><span>攻擊力</span><b id="advStatAtk">10</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>防禦力</span><b id="advStatDef">5</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>力量</span><b id="advStatStr">10</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>敏捷</span><b id="advStatAgi">10</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>智力</span><b id="advStatInt">10</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>魅力</span><b id="advStatCha">10</b>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -486,7 +515,8 @@
                                     </div>
                                     <div class="adventure-card-body">
                                         <div class="adventure-equipment-strip" id="advEquipmentStrip">
-                                            <div class="adventure-equip-slot">武器：<span id="advEquipWeapon">無</span></div>
+                                            <div class="adventure-equip-slot">武器：<span id="advEquipWeapon">無</span>
+                                            </div>
                                             <div class="adventure-equip-slot">防具：<span id="advEquipArmor">無</span></div>
                                         </div>
                                         <div class="adventure-inventory-list" id="advInventoryList"></div>

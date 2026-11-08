@@ -37,13 +37,21 @@ IF OBJECT_ID(N'dbo.AdventureVersions', N'U') IS NULL
 CREATE TABLE dbo.[AdventureVersions] (
     [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [WorldNo] NVARCHAR(50) NOT NULL DEFAULT (SPACE(0)),
-    [VersionNo] NVARCHAR(50) NOT NULL DEFAULT (SPACE(0)),
+    [VersionNo] NVARCHAR(50) NOT NULL DEFAULT (N'VER_' + REPLACE(CONVERT(NVARCHAR(36), NEWID()), N'-', N'')),
     [FormatVersion] INT NOT NULL DEFAULT (1),
     [Content] NVARCHAR(MAX) NOT NULL DEFAULT (SPACE(0)),
     [PublishedBy] NVARCHAR(50) NOT NULL DEFAULT (SPACE(0)),
     [Remark] NVARCHAR(250) NOT NULL DEFAULT (SPACE(0)),
     [CreateTime] DATETIME2 NOT NULL DEFAULT (GETDATE())
 );
+GO
+-- UUID 用於關聯；顯示編號由固定 Id 計算，六碼以上不截斷。
+IF COL_LENGTH(N'dbo.AdventureVersions', N'VersionDisplayNo') IS NULL
+ALTER TABLE dbo.[AdventureVersions] ADD [VersionDisplayNo] AS (
+    N'V' + CASE WHEN [Id] < 1000000
+        THEN RIGHT(N'000000' + CONVERT(NVARCHAR(10), [Id]), 6)
+        ELSE CONVERT(NVARCHAR(10), [Id]) END
+) PERSISTED;
 GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name=N'UX_AdventureVersions_WorldNo_VersionNo' AND object_id=OBJECT_ID(N'dbo.AdventureVersions'))
 CREATE UNIQUE INDEX UX_AdventureVersions_WorldNo_VersionNo ON dbo.[AdventureVersions](WorldNo, VersionNo);
@@ -52,7 +60,7 @@ GO
 IF OBJECT_ID(N'dbo.AdventureSaves', N'U') IS NULL
 CREATE TABLE dbo.[AdventureSaves] (
     [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [SaveNo] NVARCHAR(50) NOT NULL DEFAULT (SPACE(0)),
+    [SaveNo] NVARCHAR(50) NOT NULL DEFAULT (N'SAVE_' + REPLACE(CONVERT(NVARCHAR(36), NEWID()), N'-', N'')),
     [EmployeeNo] NVARCHAR(50) NOT NULL DEFAULT (SPACE(0)),
     [WorldNo] NVARCHAR(50) NOT NULL DEFAULT (SPACE(0)),
     [SlotIndex] INT NOT NULL DEFAULT (1),
@@ -64,6 +72,14 @@ CREATE TABLE dbo.[AdventureSaves] (
     [Remark] NVARCHAR(250) NOT NULL DEFAULT (SPACE(0)),
     [CreateTime] DATETIME2 NOT NULL DEFAULT (GETDATE())
 );
+GO
+-- UUID 用於關聯；顯示編號由固定 Id 計算，六碼以上不截斷。
+IF COL_LENGTH(N'dbo.AdventureSaves', N'SaveDisplayNo') IS NULL
+ALTER TABLE dbo.[AdventureSaves] ADD [SaveDisplayNo] AS (
+    N'SAVE_' + CASE WHEN [Id] < 1000000
+        THEN RIGHT(N'000000' + CONVERT(NVARCHAR(10), [Id]), 6)
+        ELSE CONVERT(NVARCHAR(10), [Id]) END
+) PERSISTED;
 GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name=N'UX_AdventureSaves_Employee_World_Slot' AND object_id=OBJECT_ID(N'dbo.AdventureSaves'))
 CREATE UNIQUE INDEX UX_AdventureSaves_Employee_World_Slot ON dbo.[AdventureSaves](EmployeeNo, WorldNo, SlotIndex);

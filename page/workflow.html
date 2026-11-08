@@ -7,8 +7,9 @@
     <title>工作面板｜銀盾共同體營運中心</title>
     <script src="./static/theme.js"></script>
     <link rel="stylesheet" href="./static/style.css">
-    <link rel="stylesheet" href="./static/teris.css">
     <link rel="stylesheet" href="./static/python.css">
+    <link rel="stylesheet" href="./static/teris.css">
+    <link rel="stylesheet" href="./static/adventure.css">
     <link rel="icon" href="./static/ico/Graphicloads-100-Flat-2-Pen.ico" type="image/x-icon">
 </head>
 
@@ -38,6 +39,7 @@
                     <button data-panel="pl2">Golang&nbsp;Playground</button>
                     <button data-panel="pl3">Python&nbsp;Playground</button>
                     <button data-panel="pl4">俄羅斯方塊&nbsp;Teris</button>
+                    <button data-panel="pl5">俄羅斯方塊&nbsp;Teris</button>
                 </nav>
                 <span class="api-state ok" id="playerState">工作區就緒</span>
                 <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
@@ -158,6 +160,7 @@ func main() {
                         <p>執行環境使用瀏覽器快取；程式碼與輸入留在此瀏覽器，不會傳送到外部編譯服務或安裝到網站後端。</p>
                     </div>
                 </section>
+                <!-- 第三個分頁：俄羅斯方塊 Teris -->
                 <section class="panel workflow-panel" id="pl3">
                     <div id="python_canvas">
                         <div class="card-head">
@@ -211,6 +214,10 @@ for number in range(1, 4):
                         <!-- 左側面板 -->
                         <div class="left-panel">
                             <div class="panel-box">
+                                <h3>儲存方塊</h3>
+                                <canvas id="teris-hold-canvas" width="120" height="90" aria-label="已儲存的方塊"></canvas>
+                            </div>
+                            <div class="panel-box">
                                 <h3>分數</h3>
                                 <div class="value" id="teris-score">0</div>
                             </div>
@@ -242,8 +249,9 @@ for number in range(1, 4):
                         <!-- 右側面板 -->
                         <div class="right-panel">
                             <div class="panel-box">
-                                <h3>下一個</h3>
-                                <canvas id="teris-next-canvas" width="100" height="100"></canvas>
+                                <h3>接下來五個</h3>
+                                <canvas id="teris-next-canvas" width="120" height="450"
+                                    aria-label="接下來五個方塊，由上至下依序出場"></canvas>
                             </div>
                             <button class="btn" id="teris-start-btn">開始遊戲</button>
                             <button class="btn" id="teris-pause-btn" disabled>暫停</button>
@@ -253,19 +261,299 @@ for number in range(1, 4):
                                 <span class="key">↑</span> 旋轉<br />
                                 <span class="key">↓</span> 加速<br />
                                 <span class="key">Space</span> 直落<br />
+                                <span class="key">C / Shift</span> 儲存／交換<br />
                                 <span class="key">P</span> 暫停
                             </div>
                         </div>
                     </div>
                 </section>
+                <search-panel class="panel" id="pl5">
+                    <!-- 冒險入口：世界與存檔選擇 -->
+                    <div class="adventure-entry" id="adventureEntry">
+                        <div class="adventure-hero">
+                            <div class="adventure-hero-badge">ISLAND TRANSIT RPG</div>
+                            <h1 class="adventure-hero-title" id="advWorldTitle">穿越冒險：未知世界</h1>
+                            <p class="adventure-hero-desc" id="advWorldDesc">
+                                員工以本人身分穿越進入故事世界，與同事映射的劇中人物展開互動，探索不同抉擇帶來的命運走向。
+                            </p>
+                        </div>
+
+                        <!-- 存檔槽位列表 -->
+                        <div class="adventure-slots-section">
+                            <div class="adventure-section-header">
+                                <h2>存檔槽位（每位員工三個獨立存檔）</h2>
+                                <span class="adventure-muted">同世界獨立存檔，進度與選擇互不干擾</span>
+                            </div>
+                            <div class="adventure-slots-grid" id="advSlotsGrid">
+                                <!-- 由 JS 動態繪製 3 個欄位 -->
+                            </div>
+                        </div>
+
+                        <!-- 建立新存檔彈窗 (Modal) -->
+                        <div class="adventure-modal" id="advCreateModal" hidden>
+                            <div class="adventure-modal-backdrop" id="advModalCloseBackdrop"></div>
+                            <div class="adventure-modal-content">
+                                <div class="adventure-modal-header">
+                                    <h3>建立新冒險角色</h3>
+                                    <button type="button" class="adventure-close-btn"
+                                        id="advModalCloseBtn">&times;</button>
+                                </div>
+                                <div class="adventure-modal-body">
+                                    <div class="adventure-player-preview" id="advPlayerPreview">
+                                        <!-- 顯示員工姓名、部門、照片 -->
+                                    </div>
+                                    <div class="adventure-field-group">
+                                        <label class="adventure-label">選擇初始身世特長：</label>
+                                        <div class="adventure-traits-list" id="advTraitsList">
+                                            <!-- 特長選項單選卡片 -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="adventure-modal-footer">
+                                    <button type="button" class="btn second" id="advCancelCreate">取消</button>
+                                    <button type="button" class="btn primary" id="advConfirmCreate">開始穿越冒險</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 遊戲主畫面（當選定存檔後顯示） -->
+                    <div class="adventure-game" id="adventureGame" hidden>
+                        <!-- 頂部控制列 -->
+                        <div class="adventure-top-controls">
+                            <div class="adventure-nav-info">
+                                <button type="button" class="btn second" id="advBackToSaves">◀ 返回存檔清單</button>
+                                <span class="adventure-current-info" id="advCurrentInfo">
+                                    <b id="advWorldNameDisplay">陌生小鎮</b> · 槽位 <span id="advSlotIndexDisplay">1</span> ·
+                                    修訂 <span id="advRevDisplay">1</span>
+                                </span>
+                            </div>
+                            <div class="adventure-top-status">
+                                <span class="adventure-save-status" id="advSaveStatus">狀態就緒</span>
+                            </div>
+                        </div>
+
+                        <!-- 手機版分頁抽屜切換器 (<=680px 可見) -->
+                        <div class="adventure-mobile-tabs" id="advMobileTabs">
+                            <button type="button" class="adventure-m-tab active" data-sub="scene">場景</button>
+                            <button type="button" class="adventure-m-tab" data-sub="char">角色</button>
+                            <button type="button" class="adventure-m-tab" data-sub="bag">背包</button>
+                            <button type="button" class="adventure-m-tab" data-sub="map">地圖</button>
+                            <button type="button" class="adventure-m-tab" data-sub="quests">手札</button>
+                            <button type="button" class="adventure-m-tab" data-sub="log">歷程</button>
+                        </div>
+
+                        <!-- 冒險雙欄布局 -->
+                        <div class="adventure-layout">
+                            <!-- 主互動舞台 -->
+                            <div class="adventure-main-stage" id="advMainStage">
+                                <!-- 場景資訊卡 -->
+                                <div class="adventure-scene-card" id="advSceneCard">
+                                    <div class="adventure-scene-head">
+                                        <div>
+                                            <div class="adventure-time-badge" id="advTimeBadge">早晨</div>
+                                            <h2 class="adventure-loc-title" id="advLocTitle">鎮口廣場</h2>
+                                        </div>
+                                        <div class="adventure-turn-counter">
+                                            第 <span id="advTurnCounter">1</span> 回合
+                                        </div>
+                                    </div>
+                                    <p class="adventure-loc-desc" id="advLocDesc">石砌廣場中央有一座乾涸的噴泉，四周人來人往。</p>
+
+                                    <!-- 場景人物與物件標籤 -->
+                                    <div class="adventure-scene-elements">
+                                        <div class="adventure-elem-group">
+                                            <span class="adventure-elem-title">在場人物：</span>
+                                            <div class="adventure-npc-pills" id="advNpcPills"></div>
+                                        </div>
+                                        <div class="adventure-elem-group">
+                                            <span class="adventure-elem-title">環境物件：</span>
+                                            <div class="adventure-obj-pills" id="advObjPills"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 對話 / 流程圖互動區 -->
+                                <div class="adventure-dialogue-box" id="advDialogueBox" hidden>
+                                    <div class="adventure-dialogue-speaker" id="advSpeakerName">杜恩（守衛長）</div>
+                                    <div class="adventure-dialogue-text" id="advDialogueText"></div>
+                                    <div class="adventure-dialogue-choices" id="advDialogueChoices"></div>
+                                </div>
+
+                                <!-- 戰鬥競技場 (回合制) -->
+                                <div class="adventure-combat-arena" id="advCombatArena" hidden>
+                                    <div class="adventure-combat-header">
+                                        <h3>⚔️ 戰鬥進行中</h3>
+                                        <span class="adventure-combat-round">回合 <span
+                                                id="advCombatRound">1</span></span>
+                                    </div>
+                                    <div class="adventure-combat-fighters">
+                                        <!-- 玩家狀態條 -->
+                                        <div class="adventure-combat-side player-side">
+                                            <div class="adventure-fighter-name" id="advFighterPlayerName">玩家</div>
+                                            <div class="adventure-bar-container">
+                                                <div class="adventure-bar-label"><span>生命 (HP)</span><span
+                                                        id="advCombatPlayerHpVal">100/100</span></div>
+                                                <div class="adventure-bar-track">
+                                                    <div class="adventure-bar-fill hp" id="advCombatPlayerHpBar"
+                                                        style="width: 100%;"></div>
+                                                </div>
+                                            </div>
+                                            <div class="adventure-bar-container">
+                                                <div class="adventure-bar-label"><span>精力 (EP)</span><span
+                                                        id="advCombatPlayerEpVal">100/100</span></div>
+                                                <div class="adventure-bar-track">
+                                                    <div class="adventure-bar-fill ep" id="advCombatPlayerEpBar"
+                                                        style="width: 100%;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="adventure-combat-vs">VS</div>
+                                        <!-- 敵人狀態條 -->
+                                        <div class="adventure-combat-side enemy-side">
+                                            <div class="adventure-fighter-name" id="advFighterEnemyName">野獸</div>
+                                            <div class="adventure-bar-container">
+                                                <div class="adventure-bar-label"><span>敵人生命</span><span
+                                                        id="advCombatEnemyHpVal">40/40</span></div>
+                                                <div class="adventure-bar-track">
+                                                    <div class="adventure-bar-fill enemy-hp" id="advCombatEnemyHpBar"
+                                                        style="width: 100%;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 戰鬥操作按鈕 -->
+                                    <div class="adventure-combat-actions" id="advCombatActions"></div>
+                                </div>
+                                <!-- 自由探索可用行動區 (按鈕清單) -->
+                                <div class="adventure-actions-panel" id="advActionsPanel">
+                                    <div class="adventure-actions-header">
+                                        <h3>可用行動</h3>
+                                        <span class="adventure-muted">點選結構化指令推進冒險</span>
+                                    </div>
+                                    <div class="adventure-actions-grid" id="advActionsGrid"></div>
+                                </div>
+                                <!-- 敘事歷史紀錄 -->
+                                <div class="adventure-log-panel" id="advLogPanel">
+                                    <div class="adventure-log-header">
+                                        <h3>冒險敘事紀錄</h3>
+                                        <button type="button" class="adventure-btn-text"
+                                            id="advLoadMoreHistory">載入更早紀錄</button>
+                                    </div>
+                                    <div class="adventure-log-stream" id="advLogStream"></div>
+                                </div>
+                            </div>
+                            <!-- 側欄資訊區 (桌面固定在右，手機依分頁抽屜切換) -->
+                            <div class="adventure-sidebar" id="advSidebar">
+                                <!-- 角色屬性卡 -->
+                                <div class="adventure-card adventure-char-card" id="advSubChar">
+                                    <div class="adventure-card-head">
+                                        <h4>主角身分與屬性</h4>
+                                    </div>
+                                    <div class="adventure-char-body">
+                                        <div class="adventure-char-profile">
+                                            <img class="adventure-char-avatar" id="advCharAvatar"
+                                                src="static/appicon.png" alt="主角頭像">
+                                            <div class="adventure-char-meta">
+                                                <b class="adventure-char-name" id="advCharName">王大明</b>
+                                                <span class="adventure-char-dept" id="advCharDept">營運部 · 專員</span>
+                                                <span class="adventure-char-trait" id="advCharTrait">健步如飛</span>
+                                            </div>
+                                        </div>
+                                        <!-- HP, EP, 金幣 -->
+                                        <div class="adventure-vitals">
+                                            <div class="adventure-vital-row">
+                                                <span>生命 (HP)</span>
+                                                <span class="adventure-vital-val" id="advCharHpText">100 / 100</span>
+                                            </div>
+                                            <div class="adventure-bar-track">
+                                                <div class="adventure-bar-fill hp" id="advCharHpBar"
+                                                    style="width: 100%;"></div>
+                                            </div>
+                                            <div class="adventure-vital-row">
+                                                <span>精力 (EP)</span>
+                                                <span class="adventure-vital-val" id="advCharEpText">100 / 100</span>
+                                            </div>
+                                            <div class="adventure-bar-track">
+                                                <div class="adventure-bar-fill ep" id="advCharEpBar"
+                                                    style="width: 100%;"></div>
+                                            </div>
+                                            <div class="adventure-vital-row gold">
+                                                <span>持有金幣</span>
+                                                <span class="adventure-gold-val" id="advCharGold">50 金幣</span>
+                                            </div>
+                                        </div>
+                                        <!-- 四大屬性與攻防 -->
+                                        <div class="adventure-stats-grid">
+                                            <div class="adventure-stat-item"><span>攻擊力</span><b id="advStatAtk">10</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>防禦力</span><b id="advStatDef">5</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>力量</span><b id="advStatStr">10</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>敏捷</span><b id="advStatAgi">10</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>智力</span><b id="advStatInt">10</b>
+                                            </div>
+                                            <div class="adventure-stat-item"><span>魅力</span><b id="advStatCha">10</b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 背包與裝備 -->
+                                <div class="adventure-card" id="advSubBag">
+                                    <div class="adventure-card-head">
+                                        <h4>背包與裝備</h4>
+                                        <span class="adventure-badge" id="advBagCount">0 件</span>
+                                    </div>
+                                    <div class="adventure-card-body">
+                                        <div class="adventure-equipment-strip" id="advEquipmentStrip">
+                                            <div class="adventure-equip-slot">武器：<span id="advEquipWeapon">無</span>
+                                            </div>
+                                            <div class="adventure-equip-slot">防具：<span id="advEquipArmor">無</span></div>
+                                        </div>
+                                        <div class="adventure-inventory-list" id="advInventoryList"></div>
+                                    </div>
+                                </div>
+
+                                <!-- 地圖與導航 -->
+                                <div class="adventure-card" id="advSubMap">
+                                    <div class="adventure-card-head">
+                                        <h4>世界地圖</h4>
+                                    </div>
+                                    <div class="adventure-card-body">
+                                        <div class="adventure-map-grid" id="advMapGrid"></div>
+                                    </div>
+                                </div>
+
+                                <!-- 故事手札 (任務、關係、線索) -->
+                                <div class="adventure-card" id="advSubQuests">
+                                    <div class="adventure-card-head">
+                                        <h4>故事手札</h4>
+                                    </div>
+                                    <div class="adventure-card-body">
+                                        <div class="adventure-journal-tabs">
+                                            <button type="button" class="adv-j-tab active" data-j="quests">任務</button>
+                                            <button type="button" class="adv-j-tab" data-j="relations">人物關係</button>
+                                            <button type="button" class="adv-j-tab" data-j="clues">已知線索</button>
+                                        </div>
+                                        <div class="adventure-journal-content" id="advJournalContent"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </search-panel>
             </div>
         </main>
     </div>
     <script type="module" src="./static/panel.js"></script>
     <script src="./static/SD_ProMpt.js" defer></script>
-    <script src="./static/teris.js" defer></script>
     <script src="./static/python.js" defer></script>
     <script src="./static/golang.js" defer></script>
+    <script src="./static/teris.js" defer></script>
+    <script src="./static/adventure.js"></script>
 </body>
 
 </html>

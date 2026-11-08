@@ -15,7 +15,7 @@
 | 營運填報 | 日報提交、個人紀錄搜尋、日期／狀態篩選、重新整理、補件回覆及管理端審閱 |
 | 教育訓練 | 分類練習、伺服器校時倒數模擬考、自動儲存與到期交卷、續作、錯題本及術科申論 |
 | 文件與題庫 | 來源文件同步與狀態維護、題目草稿審核、科目與章節維護、題目發布與停用 |
-| 工作面板 | 分頁工具、Python 3.11 瀏覽器 Playground 與 Go WASM Playground |
+| 工作面板 | SD 參數讀取、Python 3.11 瀏覽器 Playground、Go WASM Playground 與俄羅斯方塊 |
 | 企業宣導 | YouTube、BiliBili、ニコニコ、Douyin、TikTok 分頁播放與標題解析，以及 YouTube 縮圖下載 |
 | 穿越冒險 RPG | 員工身分穿越異世界冒險，同事映射為劇中 NPC，包含探險、對話、生活打工、回合戰鬥與多結局章節；MIS 提供視覺化劇本工作區 |
 | MIS 後台 | 官網設定、資料表查閱、營運與申論審核、教育資料管理、冒險世界劇本設計與版本發布 |
@@ -119,6 +119,8 @@ docker compose logs --tail 100 erp_service cloudflared
 
 ## Windows 本機執行
 
+手動模擬打卡另使用獨立的 [批次工具](backend/tools/manual-attendance/Readme.md)，點兩下 `backend/tools/manual-attendance/simulate-attendance.bat` 即可執行。工具直接寫入 `dbo.AttendanceRecords`，不啟動網站、不併入主程式；上午為上班、下午為下班，以執行當下本機時間逐人累加 1～600 秒，排除 K002、K020 與停用員工。可加 `--preview` 只預覽、不寫入。
+
 需要 Go 1.23+ 與 Python 3.11；啟動腳本不會自動下載套件或重新編譯。
 
 ```powershell
@@ -144,6 +146,36 @@ Windows 的 `start.bat` 預設啟用 `--allow-lan-http`，供內網 IP 直接使
 
 初始化遇到舊版實體表會拒絕執行，不會覆寫既有資料。
 
+### Go 編譯入口與更新方式
+
+網站執行檔由 `./backend/cmd/erp` 套件編譯，入口是 [main.go](backend/cmd/erp/main.go)。`go build` 會一起編譯此套件引用的 `backend/internal/`、`backend/rpc/` 與 `database/` 等相依套件；輸出檔名不代表原始碼入口。請在專案根目錄指定套件建置，不要只編譯單一 `main.go`。
+
+| 用途 | 編譯指令 | 啟動使用的檔案 |
+| --- | --- | --- |
+| Windows 網站 | `go build -trimpath -o bin/erp-site.exe ./backend/cmd/erp` | `start.bat` 使用 `bin/erp-site.exe` |
+| Linux／systemd 網站 | `go build -trimpath -o bin/erp-site ./backend/cmd/erp` | `start.sh` 使用 `bin/erp-site`；須在目標平台建置或設定相符的交叉編譯環境 |
+| Alpine 容器網站 | `docker compose build erp_service` | Dockerfile 在建置階段編譯 Linux 執行檔，再放入網站映像 |
+
+`database/queries.go` 透過 `go:embed` 內嵌 `queries.json` 與 `normalized_queries.json`。修改這兩份 SQL 查詢目錄後，必須重新編譯 Go、替換執行檔並重啟服務；只修改 JSON 或只重啟舊執行檔都不會更新內嵌查詢。Python 與 Go 查詢契約有一起變更時，應在同一次更新中套用。
+
+| 修改內容 | 套用方式 |
+| --- | --- |
+| Go 原始碼、內嵌 SQL 查詢目錄 | 重新編譯、替換執行檔並重啟；容器須重新建置映像並更新容器 |
+| Python 業務程式 | 本機／systemd 重啟服務，讓 Go 重新啟動 Python；容器內原始碼來自映像，須重新建置並更新容器 |
+| HTML、CSS、JavaScript | 本機更新靜態檔案後重新載入瀏覽器，必要時清除快取；容器內資源來自映像時須重新建置並更新容器 |
+| `.env` | 更新設定後重啟服務；單獨調整執行期掛載的 `.env` 不需要重新編譯 Go |
+| `database/*.sql` 建表／種子腳本 | 由維護人員確認後明確執行；修改檔案或編譯不會自動套用 DDL 與種子資料 |
+
+網站仍在執行時，可先產生待替換檔案，避免直接覆寫使用中的執行檔：
+
+```powershell
+go build -trimpath -o bin/erp-site.next.exe ./backend/cmd/erp
+```
+
+編譯成功後，於維護時段停止原服務、保留原執行檔備份，將待替換檔改為 `bin/erp-site.exe`，再沿用原本參數啟動。重啟後檢查 `/api/health` 並重新登入。`.codex-tmp/erp-site-publish.exe` 是先前排查發布問題時的暫存編譯產物，不會被 `start.bat` 自動選用；`.codex-tmp/` 已排除於 Git 與 Docker 建置內容。
+
+協作時若要執行 `go build`，應事先提醒 Phoenix，完成後說明編譯入口、輸出路徑，以及是否已替換執行檔或重啟；編譯成功不代表已部署。
+
 ## 頁面與使用流程
 
 | 頁面 | 使用方式 |
@@ -153,7 +185,7 @@ Windows 的 `start.bat` 預設啟用 `--allow-lan-http`，供內網 IP 直接使
 | `/home.html` | 員工工作台、出勤狀態與常用入口 |
 | `/sales.html` | 提交營運日報、查看審閱結果與回覆補件 |
 | `/exam.html` | 學科刷題、模擬考、未完成題組續作、錯題本與術科申論 |
-| `/workflow.html` | 工作面板、Python 3.11 與 Go 瀏覽器 Playground |
+| `/workflow.html` | SD 參數讀取、Python 3.11 與 Go 瀏覽器 Playground、俄羅斯方塊 |
 | `/game.html` | 穿越冒險 RPG、五個影音平台分頁、影片標題、原站連結與 YouTube 縮圖下載 |
 | `/staff.html` | 員工組織、明細、部門與打卡紀錄管理 |
 | `/mis.html` | 官網設定、資料查閱、營運與教育訓練管理、冒險世界劇本設計與版本發布 |
@@ -165,6 +197,8 @@ Windows 的 `start.bat` 預設啟用 `--allow-lan-http`，供內網 IP 直接使
 員工管理採組織架構、員工清單與員工明細三區介面，提供搜尋與停用員工篩選。員工照片支援 JPEG、PNG 與 WebP，單張上限為 5 MB。
 
 工作面板可由側邊導覽及員工工作台的快捷入口開啟。包含 [Python Playground](page/docs/python-playground.md) 與 [Go Playground](page/docs/golang-playground.md)。兩者在瀏覽器執行，套件安裝／快取不會修改後端環境；Go WASM 為附屬程式，來源檔是 `page/tools/go-playground/playground_js_wasm.go`，與網站入口 `backend/cmd/erp/main.go` 分開建置。
+
+俄羅斯方塊提供接下來五個方塊預覽，以及 `C`／`Shift` 儲存或交換方塊；每次方塊落定前只能儲存／交換一次。方向鍵控制移動與旋轉，空白鍵直落，`P` 暫停。切離遊戲分頁會自動暫停，輸入欄位取得焦點時不接管鍵盤事件。`workflow.html` 另有仍在整合中的冒險面板，RPG 的使用入口以 `/game.html` 為準。
 
 ### 多平台宣導影音
 
@@ -205,7 +239,15 @@ YouTube 使用 `/api/youtube/resolve` 與 oEmbed 取得影片資訊，前端設�
 
 MIS「冒險世界」提供草稿、員工映射、型別化資源表單、節點連線、驗證、單步試跑與發布。進階作者操作、通用事件排程與完整瀏覽器驗收仍列於 `agents/RPG.md`，不視為整份規劃已完成。
 
-`database/AdventureTables.sql` 與全新安裝的 `CreateTables.sql` 同步定義五張 RPG 表。RPG 欄位使用 NOT NULL，文字預設為 SPACE(0)；必要編號與 JSON 另由後端檢查。既有資料庫若要收緊欄位，可先預覽 `database/HardenAdventureColumns.sql`；預設 `@Apply = 0`，含 NULL 的資料不會被腳本自行填值。示範內容位於 `database/SeedAdventure.sql`，只供人工選擇匯入，不由啟動覆寫世界或玩家存檔。本輪未套用這些 SQL 至 Company。
+編輯器與其他 MIS 分頁共用啟用／隱藏模式，進入「冒險世界」才初始化。畫布、節點及連線保留專用 CSS，工具列、導覽、表單、表格與試跑視窗沿用 `style.css` 共用樣式，支援全域深淺色與手機版；窄螢幕保留資源導覽與屬性編輯區。試跑使用原生對話框，可按 Esc 關閉，測試狀態不寫入正式存檔。
+
+發布時先儲存尚未儲存的變更，再以目前草稿修訂號請求發布。後端在交易內鎖定草稿、確認修訂號、取得員工角色快照並驗證劇本，建立不可變版本後更新世界目前版本。既有存檔繼續使用原版本，新存檔使用目前發布版本。
+
+存檔與版本的內部識別維持 UUID，畫面另顯示由資料列 Id 產生的穩定流水號，例如 `SAVE_000004`、`V000002`。API 的 `save_no`、`version_no` 保留內部識別，`save_display_no`、`version_display_no` 供介面呈現；顯示編號不取代資料關聯，也不會重寫既有識別。冒險存檔清單及歷程輸出日期時會明確轉成 ISO 字串，並保留空值。
+
+`database/AdventureTables.sql` 與全新安裝的 `CreateTables.sql` 同步定義五張 RPG 表。RPG 一般欄位使用 NOT NULL，文字預設為 SPACE(0)；版本主檔 `VersionNo` 與存檔主檔 `SaveNo` 預設產生帶前綴的 UUID，關聯欄位仍由寫入端指定。必要編號與 JSON 另由後端檢查。兩份腳本另以欄位存在檢查加入 `SaveDisplayNo`／`VersionDisplayNo` 持久化計算欄位，依 Id 顯示流水號，超過六碼不截斷。
+
+既有資料庫若要收緊欄位，可先預覽 `database/HardenAdventureColumns.sql`；預設 `@Apply = 0`，含 NULL 的資料不會被腳本自行填值。示範內容位於 `database/SeedAdventure.sql`，新建版本使用 UUID，重跑時沿用既有版本識別，在交易內補齊缺少資料，保留玩家存檔與既有世界版本關聯。這些 SQL 只供人工選擇執行，不由一般啟動自動套用。
 
 ## 影音解析 API
 
@@ -252,7 +294,10 @@ Go 與 Python 測試分別位於 `backend/internal/`、`database/` 與 `backend/
 go test ./...
 go vet ./...
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -p "test_*.py" -v
+node --test page/tests/*.test.cjs
 ```
+
+前端測試需要 Node.js；網站本身不依賴 Node.js 執行。冒險回歸測試涵蓋 UUID 與顯示流水號分離、日期 JSON 輸出、發布修訂衝突、發布未回傳流水號時回復交易，以及前端繼續冒險時沿用內部存檔識別。俄羅斯方塊測試涵蓋預覽佇列、儲存／交換及鍵盤限制。手動打卡工具的獨立離線檢查見其 [操作文件](backend/tools/manual-attendance/Readme.md)。
 
 現有測試涵蓋題目解析、OCR 缺失回報、訓練輸入驗證、模擬考答案保護、CSRF 驗證、員工僅讀取資料庫，以及請求內資料庫連線重用。
 
@@ -282,6 +327,8 @@ docker compose config --quiet
 | 找不到 `.venv` 或缺少套件 | 重新執行本機環境安裝命令；確認從專案根目錄啟動 |
 | 啟動失敗或容器反覆重新啟動 | 查看 `docker compose logs --tail 100 erp_service`，確認 Go 執行檔、Python 3.11、`.env` 與資料庫連線 |
 | 網站開啟但 API 回應 503 | 使用 `/api/health` 檢查 SQL Server；確認執行環境可連線到設定的資料庫位址與連接埠 |
+| 冒險發布顯示「發布版本未回傳流水號」 | 確認執行中的 Go 已重新編譯並內嵌最新 `database/queries.json`；發布 INSERT 必須包含 `OUTPUT inserted.Id`。停止舊服務、替換正確執行檔並重啟；容器須重新建置映像並更新容器。此錯誤分支會回復交易，不更新世界版本 |
+| 日誌只有 `Python API 未預期錯誤：TypeError` | 此紀錄僅包含錯誤類別，不能單憑該行判定原因；先確認觸發的 API 與畫面訊息。冒險日期輸出及發布回傳 Id 已有回歸測試，仍須核對實際執行的 Python 與 Go 是否同步更新 |
 | 80 埠已被占用 | 本機改用 8080；容器部署則檢查主機既有服務與 Compose 的連接埠設定 |
 | SOP 清單沒有來源文件 | 確認 `data/exam/` 中存在支援的檔案；目前 image 未打包該目錄 |
 | 掃描 PDF 或舊版 DOC 無法解析 | 確認 Tesseract 語言資料或文件轉檔工具已安裝且可被程式找到 |

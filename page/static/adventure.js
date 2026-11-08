@@ -169,7 +169,8 @@ function renderSlots(saves) {
                     <h3 class="adventure-slot-title">${esc(existing.character?.display_name || '冒險者')}</h3>
                     <div class="adventure-slot-meta">
                         身分：${esc(existing.character?.department || '')} · ${esc(existing.character?.position || '')}<br>
-                        版本：${esc(existing.version_no)} · 修訂號 ${existing.revision}
+                        存檔：${esc(existing.save_display_no || "—")}<br>
+                        版本：${esc(existing.version_display_no || "—")} · 修訂號 ${existing.revision}
                     </div>
                     <div class="adventure-slot-stats">
                         <span>第 ${existing.turn} 回合</span>

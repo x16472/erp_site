@@ -1403,6 +1403,11 @@ def adventure_world_traits(world_no: str, version_no: str) -> list[dict[str, Any
             for t in content.get("traits", [])]
 
 
+def _adventure_display_no(prefix: str, identity: Any) -> str:
+    """使用資料列流水號顯示，UUID 保留供內部識別與關聯。"""
+    return f"{prefix}{int(identity):06d}" if identity is not None else ""
+
+
 def adventure_saves(employee_id: str) -> list[dict[str, Any]]:
     """取得指定員工的所有冒險存檔清單。"""
     rows = _fetch("domain.adventure_saves.1", (employee_id,))
@@ -1412,6 +1417,8 @@ def adventure_saves(employee_id: str) -> list[dict[str, Any]]:
         char = json.loads(r["CharacterSnapshot"] or "{}")
         saves.append({
             "save_no": r["SaveNo"],
+            "save_display_no": _adventure_display_no("SAVE_", r.get("SaveDisplayId")),
+            "version_display_no": _adventure_display_no("V", r.get("VersionDisplayId")),
             "employee_no": r["EmployeeNo"],
             "world_no": r["WorldNo"],
             "world_name": r["WorldName"],
@@ -1425,7 +1432,7 @@ def adventure_saves(employee_id: str) -> list[dict[str, Any]]:
             "max_hp": state.get("character", {}).get("max_hp", 100),
             "gold": state.get("character", {}).get("gold", 50),
             "character": char,
-            "create_time": r["CreateTime"],
+            "create_time": _json_value(r["CreateTime"]),
         })
     return saves
 
@@ -1567,6 +1574,8 @@ def adventure_view(save: dict[str, Any], script: dict[str, Any], state: dict[str
 
     return {
         "save_no": save_no,
+        "save_display_no": _adventure_display_no("SAVE_", save.get("SaveDisplayId")),
+        "version_display_no": _adventure_display_no("V", save.get("VersionDisplayId")),
         "world_no": world_no,
         "world_name": save.get("WorldName", ""),
         "slot_index": save["SlotIndex"],
@@ -1622,7 +1631,7 @@ def adventure_history(save_no: str, employee_id: str, before_turn: int = 0, limi
             "roll_result": json.loads(r["RollResult"] or "{}"),
             "state_diff": json.loads(r["StateDiff"] or "{}"),
             "response": json.loads(r["ResponseJson"] or "{}"),
-            "create_time": r["CreateTime"],
+            "create_time": _json_value(r["CreateTime"]),
         })
     return results
 
@@ -1699,7 +1708,7 @@ def adventure_action(
                 "state_diff": state_diff,
             }
 
-            save = dict(zip(("SaveNo", "EmployeeNo", "WorldNo", "SlotIndex", "VersionNo", "Revision", "CharacterSnapshot", "StateJson", "IsActive", "CreateTime", "WorldName"), save_rows[0]))
+            save = dict(zip(("SaveNo", "EmployeeNo", "WorldNo", "SlotIndex", "VersionNo", "Revision", "CharacterSnapshot", "StateJson", "IsActive", "CreateTime", "WorldName", "SaveDisplayId", "VersionDisplayId"), save_rows[0]))
             save["Revision"] = next_revision
             response_payload.update(adventure_view(save, script, new_state))
 
@@ -1853,11 +1862,17 @@ def admin_publish_draft(world_no: str, expected_revision: int, published_by: str
             errors = adventure.validate_draft(content)
             if errors:
                 raise ValueError("劇本驗證未通過：" + "；".join(errors))
-            version_no = f"v{expected_revision}.{uuid.uuid4().hex[:12]}"
+            version_no = "VER_" + uuid.uuid4().hex
             cursor.execute("domain.admin_adventure_publish.1", world_no, version_no,
                            json.dumps(content, ensure_ascii=False), published_by)
+            published_version = cursor.fetchone()
+            if not published_version or published_version[0] is None:
+                db.rollback()
+                raise DatabaseUnavailable("發布版本未回傳流水號，請重新編譯並重啟 Go 服務後再試。")
+            version_display_no = _adventure_display_no("V", published_version[0])
             cursor.execute("domain.admin_adventure_publish.2", version_no, world_no)
             db.commit()
-        return {"world_no": world_no, "version_no": version_no, "published": True}
+        return {"world_no": world_no, "version_no": version_no,
+                "version_display_no": version_display_no, "published": True}
     except database.Error as exc:
         raise DatabaseUnavailable("發布世界版本失敗。") from exc

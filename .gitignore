@@ -5,6 +5,7 @@ image-tag.txt
 .deps/
 .venv/
 .vscode/
+.codex-tmp/
 __pycache__/
 *.pyc
 data
