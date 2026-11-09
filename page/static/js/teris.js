@@ -67,7 +67,7 @@
         context.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, BLOCK - 2);
 
         // 光澤效果
-        context.fillStyle = 'rgba(255,255,255,0.25)';
+        context.fillStyle = 'rgba(143, 0, 124, 0.25)';
         context.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, 6);
         context.fillRect(x * BLOCK + 1, y * BLOCK + 1, 6, BLOCK - 2);
 
@@ -280,7 +280,7 @@
         gameOver = true;
         cancelAnimationFrame(animId);
         overlay.style.display = 'flex';
-        overlay.innerHTML = `<div>💥 遊戲結束</div><div class="sub">分數：${score}</div><div class="sub">按「開始遊戲」重試</div>`;
+        overlay.innerHTML = `<div>💥&nbsp;遊戲結束</div><div class="sub">分數：${score}</div><div class="sub">按「開始遊戲」重試</div>`;
         document.getElementById('teris-pause-btn').disabled = true;
     }
 
@@ -325,7 +325,7 @@
         document.getElementById('teris-pause-btn').textContent = paused ? '繼續' : '暫停';
         if (paused) {
             overlay.style.display = 'flex';
-            overlay.innerHTML = `<div>⏸ 已暫停</div><div class="sub">按「繼續」或 P 繼續遊戲</div>`;
+            overlay.innerHTML = `<div>⏸&nbsp;已暫停</div><div class="sub">按「繼續」或 P&nbsp;繼續遊戲</div>`;
             cancelAnimationFrame(animId);
         } else {
             overlay.style.display = 'none';

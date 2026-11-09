@@ -357,7 +357,7 @@ def _migrate_business_seed_data(cursor) -> None:
 
 def _normalize_company_departments(cursor) -> None:
     """確保六個短名稱部門存在，並停用沒有在職員工的部門。"""
-    for department_name in ("營運部", "製造部", "財務部", "資訊部", "福利部", "後勤部"):
+    for department_name in ("營運部", "製造部", "財務部", "資訊部", "福利部", "業務部"):
         cursor.execute(
             'domain._normalize_company_departments.1',
             department_name,

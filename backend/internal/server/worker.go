@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"erp-site/backend/rpc"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -130,7 +131,8 @@ func (w *Worker) Close() error {
 	select {
 	case <-w.Done:
 	case <-time.After(6 * time.Second):
-		if err := w.command.Process.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+		if err := w.command.Process.Kill();
+		 err != nil && !errors.Is(err, os.ErrProcessDone) {
 			result = errors.Join(result, err)
 		}
 		<-w.Done
