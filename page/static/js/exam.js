@@ -187,7 +187,7 @@ async function saveCurrent(showMessage = true) {
     const session = activeSession, question = sessionQuestion(), answers = answerValues(question);
     const payload = { session_id: session.id, order: question.order, response: { answers }, flagged: Boolean(question.flagged) };
     question.response = { answers };
-    const task = pendingSave.catch(() => {}).then(() => writeRequest('/api/training/session/answer', payload));
+    const task = pendingSave.catch(() => { }).then(() => writeRequest('/api/training/session/answer', payload));
     pendingSave = task;
     const result = await task;
     if (activeSession !== session || session.status === 'submitted') return result;
@@ -225,7 +225,7 @@ async function submitSession(timeout = false) {
     submissionPending = true;
     $('#submitSession').disabled = true;
     try {
-        if (timeout) await pendingSave.catch(() => {});
+        if (timeout) await pendingSave.catch(() => { });
         else await saveCurrent(false);
         const result = await writeRequest('/api/training/session/submit', { session_id: activeSession.id });
         renderResult(result);

@@ -8,7 +8,7 @@
     <script src="./static/js/theme.js"></script>
     <link rel="stylesheet" href="./static/css/style.css?v=20261101-floating-2">
     <link rel="stylesheet" href="./static/css/exam-floating.css?v=20261101-floating-2">
-    <link rel="icon" href="./static/ico/Github-Octicons-Cache-16.ico" type="image/x-icon">
+    <link rel="icon" href="./static/ico/Graphicloads-100-Flat-2-Pen.ico" type="image/x-icon">
 </head>
 
 <body>
@@ -31,13 +31,15 @@
         </aside>
         <main class="portal-main">
             <header class="portal-topbar">
-                <span class="top-kicker">Training&nbsp;&amp;&nbsp;Assessment</span>
+                <span class="top-kicker">Training</span>
                 <nav class="admin-tabs" id="domainTabs" aria-label="題庫領域">
                     <button class="active" data-domain="academic">學科刷題</button>
                     <button data-domain="practical">術科申論</button>
+                    <button data-domain="sop_doc">SOP&nbsp;文件</button>
                 </nav>
                 <span class="api-state" id="apiState">載入題庫資料</span>
-                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式" aria-pressed="false">切換深色</button>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
+                    aria-pressed="false">切換深色</button>
             </header>
             <div class="portal-content">
                 <section id="academicPanel">
@@ -132,7 +134,8 @@
                                 <strong id="countdown" role="timer" aria-label="模擬考剩餘時間">--:--</strong>
                             </div>
                         </header>
-                        <progress class="progress" id="sessionProgress" value="0" max="100" aria-label="題組作答進度"></progress>
+                        <progress class="progress" id="sessionProgress" value="0" max="100"
+                            aria-label="題組作答進度"></progress>
                         <div class="session-layout workspace-layout">
                             <aside class="question-navigator" id="questionNavigator" aria-label="題號導覽"></aside>
                             <article class="portal-card question-stage">
@@ -154,7 +157,8 @@
                     </section>
                     <section class="portal-card full" id="wrongView" hidden>
                         <div class="card-head">
-                            <div><span class="eyebrow">WRONG QUESTIONS</span>
+                            <div>
+                                <span class="eyebrow">WRONG&nbsp;QUESTIONS</span>
                                 <h2>錯題本</h2>
                                 <p>答對後仍會保留，只有手動移除才會離開錯題本。</p>
                             </div>
@@ -174,10 +178,21 @@
                         <div class="empty">正在載入術科題目…</div>
                     </div>
                 </section>
+                <section id="practicalPanel" hidden>
+                    <div class="training-hero">
+                        123
+                    </div>
+                </section>
             </div>
         </main>
     </div>
-    <aside class="exam-floating-tools" id="examFloatingTools" aria-label="計時與題號浮動面板" hidden></aside>
-    <script type="module" src="./static/js/exam.js?v=20261101-floating-2"></script>
+    <aside class="exam-floating-tools" id="examFloatingTools" aria-label="計時與題號浮動面板" hidden>
+
+    </aside>
 </body>
+<footer>
+    <p class="portal-foot">銀盾共同體營運中心 &copy;2024</p>
+</footer>
+<script type="module" src="./static/js/exam.js"></script>
+
 </html>

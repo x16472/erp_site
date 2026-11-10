@@ -218,12 +218,12 @@ for number in range(1, 4):
                             </div>
                             <div class="controls-info">
                                 <h3>操作說明</h3>
-                                <span class="key">←→</span> 移動<br />
-                                <span class="key">↑</span> 旋轉<br />
-                                <span class="key">↓</span> 加速<br />
-                                <span class="key">Space</span> 直落<br />
-                                <span class="key">C / Shift</span> 儲存／交換<br />
-                                <span class="key">P</span> 暫停
+                                <span class="key">←→</span>移動<br />
+                                <span class="key">↑</span>旋轉<br />
+                                <span class="key">↓</span>加速<br />
+                                <span class="key">Space</span>直落<br />
+                                <span class="key">C / Shift</span>儲存／交換<br />
+                                <span class="key">P</span>暫停
                             </div>
                             <button class="btn" id="teris-start-btn">開始遊戲</button>
                             <button class="btn" id="teris-pause-btn" disabled>暫停</button>
@@ -236,7 +236,7 @@ for number in range(1, 4):
                             <canvas id="teris_canvas" width="300" height="600" tabindex="0"
                                 aria-label="俄羅斯方塊遊戲區"></canvas>
                             <div id="teris-overlay" style="width:300px;height:600px;top:0;left:0;">
-                                <div>🎮 俄羅斯方塊</div>
+                                <div>🎮&nbsp;俄羅斯方塊</div>
                                 <div class="sub">按「開始遊戲」開始</div>
                             </div>
                         </div>
@@ -281,7 +281,6 @@ for number in range(1, 4):
                                 員工以本人身分穿越進入故事世界，與同事映射的劇中人物展開互動，探索不同抉擇帶來的命運走向。
                             </p>
                         </div>
-
                         <!-- 存檔槽位列表 -->
                         <div class="adventure-slots-section">
                             <div class="adventure-section-header card-head">
@@ -325,10 +324,11 @@ for number in range(1, 4):
                         <!-- 頂部控制列 -->
                         <div class="adventure-top-controls card-head">
                             <div class="adventure-nav-info actions">
-                                <button type="button" class="btn second" id="advBackToSaves">◀ 返回存檔清單</button>
+                                <button type="button" class="btn second" id="advBackToSaves">◀&emsp;返回存檔清單</button>
                                 <span class="adventure-current-info" id="advCurrentInfo">
-                                    <b id="advWorldNameDisplay">陌生小鎮</b> · 槽位 <span id="advSlotIndexDisplay">1</span> ·
-                                    修訂 <span id="advRevDisplay">1</span>
+                                    <b id="advWorldNameDisplay"></b>
+                                    &emsp;槽位：&emsp;<span id="advSlotIndexDisplay">1</span>
+                                    &emsp;修訂：&emsp;<span id="advRevDisplay">1</span>
                                 </span>
                             </div>
                             <div class="adventure-top-status">

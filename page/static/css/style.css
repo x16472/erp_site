@@ -807,7 +807,7 @@ footer a {
 .top-kicker {
     display: block;
     color: var(--muted);
-    letter-spacing: .12em;
+    letter-spacing: .2em;
 }
 
 .api-state {
@@ -2318,11 +2318,6 @@ footer a {
     min-width: 150px;
 }
 
-.employee-access-brand .top-kicker {
-    margin-top: 30px;
-    color: var(--on-brand-muted);
-}
-
 .employee-access-brand p {
     max-width: 620px;
     color: var(--on-brand);
@@ -3680,12 +3675,6 @@ textarea::placeholder {
         width: 80px;
     }
 
-    .employee-access-brand .top-kicker,
-    .employee-access-brand h1,
-    .employee-access-brand p {
-        margin: 0;
-    }
-
     .employee-access-brand .btn {
         grid-column: 1 / -1;
         justify-self: start;
@@ -3957,10 +3946,6 @@ textarea::placeholder {
         order: 3;
         flex-basis: 100%;
         max-width: 100%;
-    }
-
-    .portal-topbar .top-kicker {
-        flex-basis: auto;
     }
 
     .portal-topbar>.api-state {
@@ -4425,6 +4410,7 @@ html:has(.public-body .contact-dialog[open]) {
         padding: 24px 20px;
     }
 }
+
 /* 工作面板冒險沿用共用元件；此處只補充配置與狀態顯示。 */
 #pl5 .adventure-slots-grid {
     display: grid;
@@ -4441,7 +4427,7 @@ html:has(.public-body .contact-dialog[open]) {
     min-width: 0;
 }
 
-#pl5 .adventure-entry > div + div,
+#pl5 .adventure-entry>div+div,
 #pl5 .adventure-top-controls {
     margin-top: var(--panel-space);
 }
@@ -4484,6 +4470,15 @@ html:has(.public-body .contact-dialog[open]) {
     accent-color: var(--blue);
 }
 
+#pl5 .adventure-main-stage {
+    overflow: auto;
+}
+
+#pl5 .adventure-sidebar .adventure-card+.adventure-card {
+    padding-top: var(--panel-space);
+    border-top: 1px solid var(--line);
+}
+
 #advCreateModal {
     width: min(640px, calc(100vw - 32px));
     max-height: calc(100dvh - 32px);
@@ -4503,13 +4498,4 @@ html:has(.public-body .contact-dialog[open]) {
         flex-wrap: wrap;
         margin-bottom: var(--panel-space);
     }
-}
-
-#pl5 .adventure-main-stage {
-    overflow: auto;
-}
-
-#pl5 .adventure-sidebar .adventure-card + .adventure-card {
-    padding-top: var(--panel-space);
-    border-top: 1px solid var(--line);
 }
