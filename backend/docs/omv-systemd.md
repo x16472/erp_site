@@ -2,9 +2,7 @@
 
 此文件保留為主機直接執行的替代方案。2026-11-03 起主要部署改為 Alpine Linux 容器與 Cloudflare Tunnel，請見 [Jenkins 與 OMV 容器部署](jenkins-omv.md)；兩種方案不可同時占用 8080。
 
-此文件保留為主機直接執行的替代方案。2026-11-03 起主要部署改為 Alpine Linux 容器與 Cloudflare Tunnel，請見 [Jenkins 與 OMV 容器部署](jenkins-omv.md)；兩種方案不可同時占用 8080。
-
-部署目標為 OMV 主機 `10.10.0.4`，網站由主機上的 Go 提供，Python 3.11 由 Go 以 gRPC 管理，連線至同一主機 Docker 容器對外發布的 MSSQL `10.10.0.4:1433`。網站預設只監聽 `127.0.0.1:8080`，由 HTTPS 反向代理提供瀏覽器入口；工作階段 Cookie 強制設定 Secure。若直接由 Go 提供 HTTPS，請設定 `WEB_HOST`、`ERP_TLS_CERT` 與 `ERP_TLS_KEY`，並確認憑證對應實際網域。非回送位址的明文 HTTP 監聽需明確指定 `ERP_TLS_PROXY=1`，且必須另以防火牆或網路隔離限制來源。
+部署目標為 OMV 主機 `10.10.0.4`，網站由主機上的 Go 提供，Python 3.11 由 Go 以 gRPC 管理，連線至同一主機 Docker 容器對外發布的 MSSQL `10.10.0.4:1433`。網站預設只監聽 `127.0.0.1:8080`，由 HTTPS 反向代理提供瀏覽器入口；HTTPS／tls-proxy 模式的工作階段 Cookie 會設定 Secure；內網 HTTP 模式不設定 Secure。若直接由 Go 提供 HTTPS，請設定 `WEB_HOST`、`ERP_TLS_CERT` 與 `ERP_TLS_KEY`，並確認憑證對應實際網域。目前 start.sh 明確啟用內網 HTTP 模式，僅供直接私有／回送來源測試；正式 HTTPS 代理部署仍須設定 `ERP_TLS_PROXY=1` 並隔離代理至網站之間的連線。
 
 以下為在 OMV 上手動執行的部署步驟，範例專案路徑為 `/opt/erp_site`。若使用 OMV 資料磁碟的實際路徑，請一併調整所有命令，以及服務範本中的 `RequiresMountsFor`、`WorkingDirectory` 和 `ExecStart`。
 
@@ -75,7 +73,7 @@ sudo systemctl status erp-site.service --no-pager
 sudo journalctl -u erp-site.service -n 100 --no-pager
 ```
 
-服務啟動時辨識資料庫結構，不執行 DDL；Go 一次性執行 database/SeedEmployees.sql 初始化員工與部門，後續不覆寫人工維護結果，也不讀取 CSV。文件預設自動同步，可用 --skip-doc-sync 略過。全新資料庫先明確執行 `bash start.sh --init-db`；確認部署資料庫正確後再啟動。網站程式直接由 systemd 執行，SQL Server 仍由既有 Docker 容器提供。
+服務啟動時辨識資料庫結構，不執行 DDL；Go 會執行可重入的 SeedEmployees.sql 與 SeedOperationCategories.sql，只補必要初始資料，不覆寫人工維護結果，也不讀取 CSV。--sync-docs 模式不執行這兩份初始腳本。文件預設自動同步，可用 --skip-doc-sync 略過。全新資料庫先明確執行 `bash start.sh --init-db`；確認部署資料庫正確後再啟動。網站程式直接由 systemd 執行，SQL Server 仍由既有 Docker 容器提供。
 
 服務會等網路上線並排在 Docker 服務之後啟動，但這不代表 MSSQL 已就緒。若資料庫版本辨識因 MSSQL 尚未就緒而失敗，systemd 會每 10 秒重試；其他啟動錯誤也會持續重試，需從 journal 檢查原因。`systemctl status` 顯示 active 僅代表程序已啟動，請繼續確認健康 API：
 
@@ -83,7 +81,7 @@ sudo journalctl -u erp-site.service -n 100 --no-pager
 curl --fail --show-error http://127.0.0.1:8080/api/health
 ```
 
-內網用戶也需能連線至 OMV 的 TCP 8080。若此埠已占用，可修改服務範本的 `WEB_PORT`，重新安裝範本後執行 `daemon-reload` 與 `restart`。
+範本只監聽回送位址，瀏覽器入口須經 HTTPS 反向代理；不需要讓內網用戶直接連線 TCP 8080。若此埠已占用，可修改服務範本的 `WEB_PORT`，重新安裝範本後執行 `daemon-reload` 與 `restart`。
 
 ## 4. 維護
 
@@ -98,3 +96,9 @@ sudo journalctl -u erp-site.service -f
 手動前景執行可使用 `bash start.sh`；可傳入既有後端參數，例如 `bash start.sh --port 8081 --skip-doc-sync`。命令列參數會覆寫監聽環境變數。`--skip-doc-sync` 僅略過文件同步，仍會辨識資料庫版本；不執行結構初始化。
 
 目前 OMV SSH 主機指紋未通過 Phoenix 核對，依指示暫停連線；尚未在遠端安裝或啟動本次 Go 服務。部署帳號設定由 .env 的 DokerPublishName／DokerPublishPassword 提供，不將值寫入文件或記錄。
+
+## 本次前端與題庫更新
+
+更新時須同步 `page/static/js/` 全部模組，包含新增的 `canvas/` 子目錄。自動測試已依指示移除；發布前以瀏覽器確認頁面操作。內嵌題庫新增查詢已調整，需先重新編譯 Go，再重啟服務；不執行題目重編腳本或重新初始化既有資料庫；缺少 QuestionNo／外鍵的既有資料須先完成 question-bank.md 所載的一次性還原。
+
+SOP 查閱頁位於 `exam.html`；查閱使用既有員工 API。若目錄空白，先由 MIS 確認來源同步與文件啟用狀態，查閱頁不會自行啟動來源同步。更新後檢查科目／章節篩選及既有續作、申論、錯題本；真實資料庫的關聯驗收須在核准環境另外進行。

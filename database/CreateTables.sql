@@ -303,9 +303,6 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name=N'UX_TrainingChapters_2' AND object_id=OBJECT_ID(N'dbo.TrainingChapters'))
 CREATE UNIQUE INDEX [UX_TrainingChapters_2] ON dbo.[TrainingChapters] ([SubjectNo],[ChapterCode]);
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name=N'UX_TrainingQuestions_1' AND object_id=OBJECT_ID(N'dbo.TrainingQuestions'))
-CREATE UNIQUE INDEX [UX_TrainingQuestions_1] ON dbo.[TrainingQuestions] ([QuestionNo]);
-GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name=N'UX_TrainingSessions_1' AND object_id=OBJECT_ID(N'dbo.TrainingSessions'))
 CREATE UNIQUE INDEX [UX_TrainingSessions_1] ON dbo.[TrainingSessions] ([SessionNo]);
 GO
@@ -351,9 +348,6 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_TrainingQuestions_ChapterNo')
 ALTER TABLE dbo.[TrainingQuestions] WITH CHECK ADD CONSTRAINT [FK_TrainingQuestions_ChapterNo] FOREIGN KEY ([ChapterNo]) REFERENCES dbo.[TrainingChapters] ([ChapterNo]);
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_TrainingAnswers_QuestionNo')
-ALTER TABLE dbo.[TrainingAnswers] WITH CHECK ADD CONSTRAINT [FK_TrainingAnswers_QuestionNo] FOREIGN KEY ([QuestionNo]) REFERENCES dbo.[TrainingQuestions] ([QuestionNo]);
-GO
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_TrainingAnswers_EmployeeNo')
 ALTER TABLE dbo.[TrainingAnswers] WITH CHECK ADD CONSTRAINT [FK_TrainingAnswers_EmployeeNo] FOREIGN KEY ([EmployeeNo]) REFERENCES dbo.[Employees] ([EmployeeNo]);
 GO
@@ -369,14 +363,142 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_TrainingSessionQuestions_SessionNo')
 ALTER TABLE dbo.[TrainingSessionQuestions] WITH CHECK ADD CONSTRAINT [FK_TrainingSessionQuestions_SessionNo] FOREIGN KEY ([SessionNo]) REFERENCES dbo.[TrainingSessions] ([SessionNo]) ON DELETE CASCADE;
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_TrainingSessionQuestions_QuestionNo')
-ALTER TABLE dbo.[TrainingSessionQuestions] WITH CHECK ADD CONSTRAINT [FK_TrainingSessionQuestions_QuestionNo] FOREIGN KEY ([QuestionNo]) REFERENCES dbo.[TrainingQuestions] ([QuestionNo]);
-GO
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_TrainingWrongQuestions_EmployeeNo')
 ALTER TABLE dbo.[TrainingWrongQuestions] WITH CHECK ADD CONSTRAINT [FK_TrainingWrongQuestions_EmployeeNo] FOREIGN KEY ([EmployeeNo]) REFERENCES dbo.[Employees] ([EmployeeNo]);
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_TrainingWrongQuestions_QuestionNo')
-ALTER TABLE dbo.[TrainingWrongQuestions] WITH CHECK ADD CONSTRAINT [FK_TrainingWrongQuestions_QuestionNo] FOREIGN KEY ([QuestionNo]) REFERENCES dbo.[TrainingQuestions] ([QuestionNo]);
+BEGIN TRY
+    BEGIN TRANSACTION;
+    -- BEGIN TrainingQuestionNoContract
+    -- 建表與歷史修復須同步本區塊；只保護結構，不重編既有資料。
+    DECLARE @QuestionContractRows BIGINT;
+    SELECT @QuestionContractRows=COUNT_BIG(*) FROM dbo.TrainingQuestions WITH (TABLOCKX,HOLDLOCK);
+    IF EXISTS (
+        SELECT 1 FROM dbo.TrainingQuestions
+        WHERE QuestionNo IS NULL OR TRY_CONVERT(INT,QuestionNo) IS NULL OR TRY_CONVERT(INT,QuestionNo)<1
+           OR CONVERT(VARBINARY(100),QuestionNo)
+              <> CONVERT(VARBINARY(100),CONVERT(NVARCHAR(50),TRY_CONVERT(INT,QuestionNo)))
+    )
+        THROW 51010, N'存在無效的 QuestionNo，請先核對歷史資料；建置不會自動改號。', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name=N'UX_TrainingQuestions_1' AND object_id=OBJECT_ID(N'dbo.TrainingQuestions'))
+        CREATE UNIQUE INDEX UX_TrainingQuestions_1 ON dbo.TrainingQuestions(QuestionNo);
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.indexes i
+        WHERE i.object_id=OBJECT_ID(N'dbo.TrainingQuestions') AND i.name=N'UX_TrainingQuestions_1'
+          AND i.is_unique=1 AND i.is_disabled=0 AND i.has_filter=0 AND i.ignore_dup_key=0
+          AND (SELECT COUNT(*) FROM sys.index_columns ic
+               WHERE ic.object_id=i.object_id AND ic.index_id=i.index_id AND ic.key_ordinal>0)=1
+          AND EXISTS (SELECT 1 FROM sys.index_columns ic JOIN sys.columns c
+                      ON c.object_id=ic.object_id AND c.column_id=ic.column_id
+                      WHERE ic.object_id=i.object_id AND ic.index_id=i.index_id AND ic.key_ordinal=1 AND c.name=N'QuestionNo')
+    )
+        THROW 51010, N'UX_TrainingQuestions_1 定義不符，請先確認索引；不會自動覆寫。', 1;
+
+    IF OBJECT_ID(N'dbo.FK_TrainingAnswers_QuestionNo',N'F') IS NULL
+        ALTER TABLE dbo.TrainingAnswers WITH CHECK ADD CONSTRAINT FK_TrainingAnswers_QuestionNo
+            FOREIGN KEY(QuestionNo) REFERENCES dbo.TrainingQuestions(QuestionNo) ON UPDATE NO ACTION ON DELETE NO ACTION;
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.foreign_keys fk
+        WHERE fk.object_id=OBJECT_ID(N'dbo.FK_TrainingAnswers_QuestionNo',N'F')
+          AND fk.parent_object_id=OBJECT_ID(N'dbo.TrainingAnswers')
+          AND fk.referenced_object_id=OBJECT_ID(N'dbo.TrainingQuestions')
+          AND fk.update_referential_action=0 AND fk.delete_referential_action=0
+          AND (SELECT COUNT(*) FROM sys.foreign_key_columns fc WHERE fc.constraint_object_id=fk.object_id)=1
+          AND EXISTS (SELECT 1 FROM sys.foreign_key_columns fc
+                      JOIN sys.columns pc ON pc.object_id=fc.parent_object_id AND pc.column_id=fc.parent_column_id
+                      JOIN sys.columns rc ON rc.object_id=fc.referenced_object_id AND rc.column_id=fc.referenced_column_id
+                      WHERE fc.constraint_object_id=fk.object_id AND pc.name=N'QuestionNo' AND rc.name=N'QuestionNo')
+    )
+        THROW 51010, N'FK_TrainingAnswers_QuestionNo 定義不符，必須以 QuestionNo 關聯主檔。', 1;
+    ALTER TABLE dbo.TrainingAnswers WITH CHECK CHECK CONSTRAINT FK_TrainingAnswers_QuestionNo;
+
+    IF OBJECT_ID(N'dbo.FK_TrainingSessionQuestions_QuestionNo',N'F') IS NULL
+        ALTER TABLE dbo.TrainingSessionQuestions WITH CHECK ADD CONSTRAINT FK_TrainingSessionQuestions_QuestionNo
+            FOREIGN KEY(QuestionNo) REFERENCES dbo.TrainingQuestions(QuestionNo) ON UPDATE NO ACTION ON DELETE NO ACTION;
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.foreign_keys fk
+        WHERE fk.object_id=OBJECT_ID(N'dbo.FK_TrainingSessionQuestions_QuestionNo',N'F')
+          AND fk.parent_object_id=OBJECT_ID(N'dbo.TrainingSessionQuestions')
+          AND fk.referenced_object_id=OBJECT_ID(N'dbo.TrainingQuestions')
+          AND fk.update_referential_action=0 AND fk.delete_referential_action=0
+          AND (SELECT COUNT(*) FROM sys.foreign_key_columns fc WHERE fc.constraint_object_id=fk.object_id)=1
+          AND EXISTS (SELECT 1 FROM sys.foreign_key_columns fc
+                      JOIN sys.columns pc ON pc.object_id=fc.parent_object_id AND pc.column_id=fc.parent_column_id
+                      JOIN sys.columns rc ON rc.object_id=fc.referenced_object_id AND rc.column_id=fc.referenced_column_id
+                      WHERE fc.constraint_object_id=fk.object_id AND pc.name=N'QuestionNo' AND rc.name=N'QuestionNo')
+    )
+        THROW 51010, N'FK_TrainingSessionQuestions_QuestionNo 定義不符，必須以 QuestionNo 關聯主檔。', 1;
+    ALTER TABLE dbo.TrainingSessionQuestions WITH CHECK CHECK CONSTRAINT FK_TrainingSessionQuestions_QuestionNo;
+
+    IF OBJECT_ID(N'dbo.FK_TrainingWrongQuestions_QuestionNo',N'F') IS NULL
+        ALTER TABLE dbo.TrainingWrongQuestions WITH CHECK ADD CONSTRAINT FK_TrainingWrongQuestions_QuestionNo
+            FOREIGN KEY(QuestionNo) REFERENCES dbo.TrainingQuestions(QuestionNo) ON UPDATE NO ACTION ON DELETE NO ACTION;
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.foreign_keys fk
+        WHERE fk.object_id=OBJECT_ID(N'dbo.FK_TrainingWrongQuestions_QuestionNo',N'F')
+          AND fk.parent_object_id=OBJECT_ID(N'dbo.TrainingWrongQuestions')
+          AND fk.referenced_object_id=OBJECT_ID(N'dbo.TrainingQuestions')
+          AND fk.update_referential_action=0 AND fk.delete_referential_action=0
+          AND (SELECT COUNT(*) FROM sys.foreign_key_columns fc WHERE fc.constraint_object_id=fk.object_id)=1
+          AND EXISTS (SELECT 1 FROM sys.foreign_key_columns fc
+                      JOIN sys.columns pc ON pc.object_id=fc.parent_object_id AND pc.column_id=fc.parent_column_id
+                      JOIN sys.columns rc ON rc.object_id=fc.referenced_object_id AND rc.column_id=fc.referenced_column_id
+                      WHERE fc.constraint_object_id=fk.object_id AND pc.name=N'QuestionNo' AND rc.name=N'QuestionNo')
+    )
+        THROW 51010, N'FK_TrainingWrongQuestions_QuestionNo 定義不符，必須以 QuestionNo 關聯主檔。', 1;
+    ALTER TABLE dbo.TrainingWrongQuestions WITH CHECK CHECK CONSTRAINT FK_TrainingWrongQuestions_QuestionNo;
+
+    EXEC(N'CREATE OR ALTER TRIGGER dbo.TR_TrainingQuestions_PermanentQuestionNo
+    ON dbo.TrainingQuestions
+    AFTER INSERT, UPDATE, DELETE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        IF NOT EXISTS (SELECT 1 FROM inserted) AND NOT EXISTS (SELECT 1 FROM deleted)
+            RETURN;
+
+        -- 保留停用與軟刪除資料，才能持續保留已發出的編號與歷史關聯。
+        IF EXISTS (SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.Id=d.Id WHERE i.Id IS NULL)
+            THROW 51011, N''題目永久編號不得刪除；請使用停用或軟刪除。'', 1;
+        IF EXISTS (
+            SELECT 1 FROM inserted i JOIN deleted d ON d.Id=i.Id
+            WHERE ISNULL(CONVERT(VARBINARY(100),i.QuestionNo),0x)
+               <> ISNULL(CONVERT(VARBINARY(100),d.QuestionNo),0x)
+        )
+            THROW 51012, N''QuestionNo 是永久編號，建立後不得修改。'', 1;
+
+        IF EXISTS (
+            SELECT 1 FROM inserted
+            WHERE QuestionNo IS NULL OR TRY_CONVERT(INT,QuestionNo) IS NULL OR TRY_CONVERT(INT,QuestionNo)<1
+               OR CONVERT(VARBINARY(100),QuestionNo)
+                  <> CONVERT(VARBINARY(100),CONVERT(NVARCHAR(50),TRY_CONVERT(INT,QuestionNo)))
+        )
+            THROW 51013, N''QuestionNo 必須是標準格式的正整數編號。'', 1;
+
+        IF EXISTS (SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.Id=i.Id WHERE d.Id IS NULL)
+        BEGIN
+            DECLARE @PreviousQuestionNo BIGINT;
+            SELECT @PreviousQuestionNo=ISNULL(MAX(TRY_CONVERT(BIGINT,q.QuestionNo)),0)
+            FROM dbo.TrainingQuestions q WITH (TABLOCKX,HOLDLOCK)
+            WHERE NOT EXISTS (
+                SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.Id=i.Id
+                WHERE d.Id IS NULL AND i.Id=q.Id
+            );
+            IF EXISTS (
+                SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.Id=i.Id
+                WHERE d.Id IS NULL AND TRY_CONVERT(BIGINT,i.QuestionNo)<=@PreviousQuestionNo
+            )
+                THROW 51014, N''新增題目只能使用大於既有最大題號的新編號，不得補號或重用。'', 1;
+        END;
+    END;');
+    ENABLE TRIGGER dbo.TR_TrainingQuestions_PermanentQuestionNo ON dbo.TrainingQuestions;
+    -- END TrainingQuestionNoContract
+    COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
 GO
 IF OBJECT_ID(N'dbo.AdventureWorlds', N'U') IS NULL
 CREATE TABLE dbo.[AdventureWorlds] (

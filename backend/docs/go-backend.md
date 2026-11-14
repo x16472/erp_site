@@ -24,7 +24,7 @@ Go 停止時先停止背景 SOP 同步與長時間同步請求，取消其資料
 
 ## 驗證
 
-Go 測試涵蓋 SQL 參數綁定、查詢白名單、唯讀限制、交易所有權與回復、取消傳遞、型別處理、HTTP 方法與 Cookie、靜態路徑及請求上限。Python 測試涵蓋原業務回歸與真正的本機 gRPC 契約。這些測試不取代真實 SQL Server 遷移、跨語言程序及部署驗收。
+依 Phoenix 指示移除自動測試程式與模擬資料庫相依套件。正式資料庫行為仍由 database/data.go、查詢目錄及結構腳本負責；建置前執行 go vet ./... 與 go build ./...，發布前另確認實際頁面與 API 操作。
 
 修改 protobuf 後使用 requirements-dev.txt 與固定版本 protoc-gen-go／protoc-gen-go-grpc 執行 backend/tools/generate_rpc.py；產生檔不手動修改。實作參考 [gRPC Go 官方文件](https://grpc.io/docs/languages/go/basics/) 與 [Microsoft SQL Server Go 驅動](https://github.com/microsoft/go-mssqldb)。
 
@@ -34,3 +34,11 @@ Go 測試涵蓋 SQL 參數綁定、查詢白名單、唯讀限制、交易所有
 模擬考建立時透過 Go 資料庫層取得 SQL Server UTC 快照，明確寫入開始與到期時間；讀取題組及儲存答案也以 SQL Server UTC 判斷期限。API 回傳帶時區的 expires_at 與 server_time，前端以單調時鐘倒數並每 60 秒重新校時，不以瀏覽器本機日期直接判斷到期。已交卷的題組仍依原規則提供檢討，未交卷不揭露答案。
 
 GET /api/operations/categories 提供員工可填報的資料庫類別，與既有員工驗證一致。日報與個人紀錄分開載入，提交成功後即使紀錄刷新失敗，也保留成功訊息；使用者可重新整理，避免重複送出。
+
+## SOP 查閱與題庫編號
+
+`exam.html` 的 SOP 文件分頁使用員工驗證保護的 `GET /api/manuals` 目錄與 `GET /api/manuals/document?id=...` 章節 API，只回傳啟用文件。前端提供分類、搜尋、章節定位與重新讀取，不會因為開啟查閱頁而同步來源或寫入資料庫。章節文字以純文字呈現，文件中的 HTML 不會當作程式執行。
+
+題庫的實體 Id 與 QuestionNo 分開分配。相容檢視表及 API 的題目 id 仍代表 QuestionNo，三張作答相關資料表及快照沿用該值；新增題目必須回傳 QuestionNo。MIS 題庫資料表查閱會排除內部編號欄位，CRUD API 仍保留操作所需的識別值。詳細關聯及部署方式見 [題庫維護](question-bank.md)。
+
+前端 HTML 僅載入 `static/js/script.js`，共用 API 在 `api.js`，各頁由入口選擇控制器初始化。Canvas 功能與 module Worker 在 `static/js/canvas/`；Go WASM 資源仍在 `static/golang-runtime/`。部署請同步完整目錄，不能只更新 HTML 或只複製原先位置的 Worker。

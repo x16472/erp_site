@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>企業入口網站&nbsp;Silver&nbsp;Shield</title>
     <meta name="description" content="銀盾共同體以家族為核心，以誠信與慷慨連結商務、製造、服務與資源產業。">
-    <script src="./static/js/theme.js"></script>
     <link rel="stylesheet" href="./static/css/style.css">
     <link rel="icon" href="./static/ico/Business-Company-building.ico" type="image/x-icon">
+    <script type="module" src="./static/js/script.js"></script>
 </head>
 
-<body class="public-body" data-theme="shield">
+<body data-page="index" class="public-body" data-theme="shield">
     <div class="portal-shell public-shell">
         <main class="portal-main public-main">
             <header class="portal-topbar public-header">
@@ -146,10 +146,12 @@
                 <section id="meet">
                     <div class="cta-banner">
                         <div>
-                            <span class="eyebrow">COME AND SEE</span>
+                            <span class="eyebrow">MEET&nbsp;OUR&nbsp;TEAM</span>
                             <h2>讓專業團隊成為您的可靠後盾</h2>
                             <h4>北門─羅瓦德運河大橋區</h4>
                             <p>歡迎商業夥伴提出採購、製造、場域、技術或長期合作需求，由營運團隊安排專責窗口。</p>
+                            <button class="btn red contact-open" id="contactOpen" type="button" aria-haspopup="dialog"
+                                aria-controls="contactDialog">洽詢合作需求</button>
                         </div>
                     </div>
                 </section>
@@ -157,11 +159,12 @@
                     <div class="cta-banner">
                         <div>
                             <span class="eyebrow">COME AND SEE</span>
-                            <h2>讓專業團隊成為您的可靠後盾</h2>
-                            <h4>北門─羅瓦德運河大橋區</h4>
-                            <p>歡迎商業夥伴提出採購、製造、場域、技術或長期合作需求，由營運團隊安排專責窗口。</p>
-                            <button class="btn red contact-open" id="contactOpen" type="button" aria-haspopup="dialog"
-                                aria-controls="contactDialog">洽詢合作需求</button>
+                            <div>
+                                <h3>聯繫我們</h3>
+                                <a class="btn second contact-open" href="mailto:dog0830430@gmail.com">Gmail信箱</a>
+                                <br>
+                                <a class="btn second contact-open" href="tel:+886910366734">手機</a>
+                            </div>
                             <iframe
                                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3618.040033650518!2d121.16941751164306!3d24.930706077791232!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34682361c065cbe9%3A0xc24080034849b3e3!2z5Yue5YuV6YOo5Yue5YuV5Yqb55m85bGV572y5qGD56u56IuX5YiG572y5bm8542F6IG35qWt6KiT57e05aC0!5e0!3m2!1szh-TW!2stw!4v1786915477769!5m2!1szh-TW!2stw"
                                 class="location-map" allowfullscreen="" loading="lazy"
@@ -174,7 +177,6 @@
 
         </main>
     </div>
-
     <dialog class="contact-dialog" id="contactDialog" aria-labelledby="contactTitle"
         aria-describedby="contactDescription">
         <form id="contactForm" action="mailto:dog0830430@gmail.com" method="post" enctype="text/plain">
@@ -218,7 +220,6 @@
         </form>
     </dialog>
 </body>
-<script type="module" src="./static/js/index.js" defer></script>
 <footer class="public-footer">
     <div>
         <h3>銀盾共同體</h3>

@@ -8,11 +8,11 @@
 
 1. 建立標籤為 `linux-docker` 的 Linux x86-64 agent，準備 Git、Docker Engine（Linux 容器）及 Docker Compose v2；Jenkins 執行帳號需能操作 Docker daemon。
 2. 安裝 Jenkins Pipeline 與 Git 外掛。建立 Pipeline from SCM，或使用 Multibranch Pipeline，Script Path 設為根目錄 `Jenkinsfile`。私有 repository 的 SCM 憑證在 Jenkins 設定。
-3. agent 需能下載官方 Go／Node／Python 映像、Alpine 套件、Go modules、PyPI 套件及 MuPDF 原始碼。預留原生編譯所需記憶體與磁碟空間。
-4. pipeline 依序 checkout、檢查 Compose、執行 `go_test`、`frontend_test`、`python_test` 建置目標，再建置 `runtime`。測試失敗會停止；同一 job 不並行，整體逾時為 120 分鐘。
-5. 成功後網站映像保留於 agent 使用的 Docker daemon，標籤為 `erp-site:ci-<BUILD_NUMBER>-<完整 Git commit>`。Jenkins 保存 `image-tag.txt`、`image-id.txt`，不保存映像 tar、不推送 registry、不自動部署。Docker 測試階段可使用快取；相關來源或套件變更時會重新執行。
+3. agent 需能下載官方 Go／Python 映像、Alpine 套件、Go modules、PyPI 套件及 MuPDF 原始碼。預留原生編譯所需記憶體與磁碟空間。
+4. pipeline 依序 checkout、檢查 Compose、執行 `go_check` 的 go vet 靜態檢查，再透過 `docker compose build erp_service` 建置 `runtime`。檢查或建置失敗會停止；同一 job 不並行，整體逾時為 120 分鐘。
+5. 成功後網站映像保留於 agent 使用的 Docker daemon，標籤為 `erp-site:ci-<BUILD_NUMBER>-<完整 Git commit>`。Jenkins 保存 `image-tag.txt`、`image-id.txt`，不保存映像 tar、不推送 registry、不自動部署。Docker 建置階段可使用快取；相關來源或套件變更時會重新執行。
 
-建置不需要網站 `.env`、MSSQL 連線或 Cloudflare token。所有測試在容器中執行，agent 不需安裝 Go、Python、Node。`.dockerignore` 排除 `.env`、`secrets/`、本機 venv 與 CI 中繼檔案。Jenkins 的紀錄保留設定不會清除 Docker 映像或快取，磁碟清理由維運規劃。
+建置不需要網站 `.env`、MSSQL 連線或 Cloudflare token。靜態檢查與建置在容器中執行，agent 不需安裝 Go 或 Python。自動測試程式及其 Docker 目標已依 Phoenix 指示移除。`.dockerignore` 排除 `.env`、`secrets/`、本機 venv 與 CI 中繼檔案。Jenkins 的紀錄保留設定不會清除 Docker 映像或快取，磁碟清理由維運規劃。
 
 PyMuPDF 1.26.4 的 [PyPI 發行檔](https://pypi.org/project/pymupdf/1.26.4/#files) 未提供 musllinux wheel，因此 `python_build` 階段安裝編譯工具建立 wheel，最終映像不帶入編譯工具。未更動既有 Python 相依版本；不能將此配置視為已支援 ARM。
 
@@ -62,3 +62,9 @@ curl --fail --show-error http://127.0.0.1:8080/api/health
 更新程式需重建映像並重新建立網站容器；更新 `.env` 後需重啟網站。更新 token 檔後可用 `docker compose up -d --force-recreate cloudflared` 重新建立 Tunnel 容器，讓檔案掛載更新。`docker compose down` 保留照片 volume；不要使用 `down -v`，除非確定要刪除照片資料。
 
 本次未操作遠端 OMV、既有 MSSQL 或 Cloudflare 帳號。先前 SSH 主機指紋尚待核對的限制維持有效。
+
+## 前端模組與教育訓練更新檢查
+
+前端使用瀏覽器原生 ESM；發布前以實際瀏覽器確認模組載入與操作。runtime 必須包含整個 `page/`：HTML 僅引用 `static/js/script.js`，入口再載入 API、主題、分頁及各頁控制器；Canvas 模組與 module Worker 位於 `static/js/canvas/`。Go WASM 配套檔仍在 `static/golang-runtime/`，Python Worker 保留 Pyodide 0.25.1／Python 3.11 的固定版本。
+
+本次題庫程式更新需重建映像以更新 Go 內嵌 SQL，正常結構不需資料重編或增加應用帳號的 ALTER 權限。既有資料庫若已遺失 QuestionNo 或外鍵，需另外完成一次性關聯修復，詳見題庫維護文件。重新建立容器後，確認題庫的科目與章節連動、內部編號不顯示，以及 exam.html 的 SOP 目錄與章節查閱。健康 API 成功不代表這些介面流程已驗收；既有作答關聯另見 [題庫維護](question-bank.md)。

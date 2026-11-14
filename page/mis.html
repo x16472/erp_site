@@ -5,13 +5,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>後台管理區｜銀盾共同體營運中心</title>
-    <script src="./static/js/theme.js"></script>
     <link rel="stylesheet" href="./static/css/style.css">
     <link rel="stylesheet" href="./static/css/adventure-editor.css">
     <link rel="icon" href="./static/ico/calc_calculator_10824.ico" type="image/x-icon">
+    <script type="module" src="./static/js/script.js"></script>
 </head>
 
-<body>
+<body data-page="mis">
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
@@ -292,8 +292,12 @@
                     <section class="admin-panel" id="questionPanel">
                         <div class="staff-manager-workspace workspace-layout">
                             <aside class="organization-pane" aria-label="題庫操作與分類變更">
+                                <span class="eyebrow">題庫操作與分類變更</span>
                                 <section class="maintenance-bulk-section" aria-labelledby="questionBulkTitle">
-                                    <h2 id="questionBulkTitle">變更科目章節</h2>
+                                    <div>
+                                        <span class="eyebrow">針對多選控制</span>
+                                        <h2 id="questionBulkTitle">變更科目章節與狀態</h2>
+                                    </div>
                                     <p class="hint">勾選右側題目後，套用分類或狀態變更。</p>
                                     <label class="field">
                                         <span>科目</span>
@@ -322,8 +326,8 @@
                                 <p id="questionSelectionSummary" aria-live="polite">已勾選 0 題</p>
                                 <div class="organization-head">
                                     <div>
-                                        <span class="eyebrow">QUESTION CONTROLS</span>
-                                        <h2>題庫操作</h2>
+                                        <span class="eyebrow">針對單選控制</span>
+                                        <h2>題目操作</h2>
                                     </div>
                                 </div>
                                 <div class="maintenance-actions" id="questionControls" role="group" aria-label="目前題目操作">
@@ -339,7 +343,8 @@
                                         disabled>以來源重新匯入</button>
                                 </div>
                                 <p id="questionStatus" aria-live="polite"></p>
-                                <p class="hint" id="questionControlSummary" aria-live="polite">目前為新增題目；請從右側清單選取要編輯的題目。
+                                <p class="hint" id="questionControlSummary" aria-live="polite">
+                                    目前為新增題目；請從右側清單選取要編輯的題目。
                                 </p>
                             </aside>
                             <div class="staff-master-detail">
@@ -350,12 +355,20 @@
                                             <h2>題庫 <span class="tag" id="questionCount">0 題</span></h2>
                                         </div>
                                         <div class="staff-directory-actions">
+                                            <label class="field">
+                                                <span>篩選科目</span>
+                                                <select id="questionSubjectFilter"><option value="">全部科目</option></select>
+                                            </label>
+                                            <label class="field">
+                                                <span>篩選章節</span>
+                                                <select id="questionChapterFilter" disabled><option value="">請先選擇科目</option></select>
+                                            </label>
                                             <label class="staff-search">
                                                 <span class="sr-only">搜尋題目、科目或章節</span>
                                                 <input id="questionSearch" type="search" placeholder="搜尋題目、科目或章節">
                                             </label>
                                             <label class="field">
-                                                <span class="sr-only">篩選題目狀態</span>
+                                                <span>篩選題目狀態</span>
                                                 <select id="questionStatusFilter">
                                                     <option value="">全部狀態</option>
                                                     <option value="draft">草稿</option>
@@ -371,7 +384,6 @@
                                                 <tr>
                                                     <th><input id="selectAllQuestions" type="checkbox"
                                                             aria-label="勾選目前顯示的全部題目"></th>
-                                                    <th>編號</th>
                                                     <th>題目</th>
                                                     <th>科目</th>
                                                     <th>章節</th>
@@ -381,7 +393,7 @@
                                             </thead>
                                             <tbody id="questionList">
                                                 <tr>
-                                                    <td colspan="7" class="empty">載入中…</td>
+                                                    <td colspan="6" class="empty">載入中…</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -475,7 +487,7 @@
                                 <select id="advWorldSelect"></select>
                                 <span class="tag" id="advStatusPill">未開放草稿</span>
                                 <span class="eyebrow">修訂號：<b id="advDraftRev">1</b></span>
-                                <span class="error-note" id="advDirtyTag" hidden>● 有未儲存修改</span>
+                                <span class="error-note" id="advDirtyTag" hidden>●&nbsp;有未儲存修改</span>
                             </div>
                             <div class="training-home-actions">
                                 <button type="button" class="btn second" id="advUndoBtn" title="復原&nbsp;(Ctrl+Z)">↶
@@ -498,11 +510,11 @@
                                 <button type="button" class="catalog-item" data-nav="staff_mapping">👥 員工角色映射</button>
 
                                 <div class="eyebrow">故事內容</div>
-                                <button type="button" class="catalog-item" data-nav="locations">📍 地點與出口</button>
-                                <button type="button" class="catalog-item" data-nav="npcs">👤 NPC 設定</button>
-                                <button type="button" class="catalog-item" data-nav="items">🎒 道具與裝備</button>
-                                <button type="button" class="catalog-item" data-nav="quests">📜 任務進程</button>
-                                <button type="button" class="catalog-item" data-nav="enemies">⚔️ 敵人怪物</button>
+                                <button type="button" class="catalog-item" data-nav="locations">📍&nbsp;地點與出口</button>
+                                <button type="button" class="catalog-item" data-nav="npcs">👤&nbsp;NPC 設定</button>
+                                <button type="button" class="catalog-item" data-nav="items">🎒&nbsp;道具與裝備</button>
+                                <button type="button" class="catalog-item" data-nav="quests">📜&nbsp;任務進程</button>
+                                <button type="button" class="catalog-item" data-nav="enemies">⚔️&nbsp;敵人怪物</button>
 
                                 <div class="eyebrow">事件流程圖</div>
                                 <button type="button" class="catalog-item active" data-nav="flowcharts">🔀
@@ -613,7 +625,5 @@
     <div class="toast" id="toast" role="status"></div>
 
 </body>
-<script type="module" src="./static/js/mis.js"></script>
-<script type="module" src="./static/js/adventure-editor.js"></script>
 
 </html>

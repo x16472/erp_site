@@ -22,8 +22,8 @@
 
 ## 檔案
 
-- `page/static/js/golang.js`：介面、指令歷史、Worker 生命週期及格式化回填。
-- `page/static/js/golang-worker.js`：載入 WASM、瀏覽器快取、輸出緩衝與每次輸出上限。
+- `page/static/js/canvas/golang.js`：介面、指令歷史、Worker 生命週期及格式化回填。
+- `page/static/js/canvas/golang-worker.js`：載入 WASM、瀏覽器快取、輸出緩衝與每次輸出上限。
 - `page/static/golang-runtime/`：壓縮 WASM、配對的官方 `wasm_exec.js` 與 Go／Yaegi 授權文件，部署時須一併包含。
 - `page/static/css/python.css`：Python 與 Go 共用排版，以各自的根元素限定範圍，沿用 `style.css` 的元件與色彩。
 - `page/tools/go-playground/`：僅用於建置前端 WASM 的原始碼、固定依賴與建置腳本；不提供伺服器功能。來源檔為 `playground_js_wasm.go`，與網站入口 `backend/cmd/erp/main.go` 區分；頁面編輯器中的 `main.go` 是使用者練習檔名。
@@ -43,3 +43,5 @@
 以 Edge 實測範例程式、UTF-8 標準輸入、語法錯誤、panic、多行 REPL、格式化、即時輸出、goroutine／channel、輸出上限、瀏覽器快取、背景工作釋放、停止無窮迴圈及重啟、遊戲鍵盤隔離、390px 手機版面與深色模式；範例執行過程沒有外部編譯請求。
 
 官方參考：[Yaegi v0.16.1 說明與限制](https://github.com/traefik/yaegi/tree/v0.16.1)、[配對的 Go 1.22.12 JavaScript 執行環境](https://github.com/golang/go/blob/go1.22.12/misc/wasm/wasm_exec.js)。
+
+HTML 由 script.js 統一啟動 workflow.js；Worker 以 import.meta.url 解析位置，使用 module 模式載入。搬移時須連同 canvas/ 子目錄與 Go WASM 配套資源一起部署。

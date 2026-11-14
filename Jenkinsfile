@@ -29,21 +29,9 @@ pipeline {
             }
         }
 
-        stage('Go tests and vet') {
+        stage('Go static checks') {
             steps {
-                sh 'docker build --platform linux/amd64 -f dockerfile --target go_test .'
-            }
-        }
-
-        stage('Frontend tests') {
-            steps {
-                sh 'docker build --platform linux/amd64 -f dockerfile --target frontend_test .'
-            }
-        }
-
-        stage('Python tests on Alpine') {
-            steps {
-                sh 'docker build --platform linux/amd64 -f dockerfile --target python_test .'
+                sh 'docker build --platform linux/amd64 -f dockerfile --target go_check .'
             }
         }
 
@@ -53,7 +41,7 @@ pipeline {
                     set -eu
                     docker compose -f docker-compose.yml build erp_service
                     docker image inspect --format '{{.Id}}' "$ERP_IMAGE" > image-id.txt
-                    printf '%s\\n' "$ERP_IMAGE" > image-tag.txt
+                    printf '%s\n' "$ERP_IMAGE" > image-tag.txt
                 '''
                 archiveArtifacts artifacts: 'image-id.txt,image-tag.txt', fingerprint: true
             }

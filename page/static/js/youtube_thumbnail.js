@@ -1,5 +1,5 @@
 // 1. 全域設定與核心邏輯分類 (Config)
-const YoutubeThumbnailApp = {
+export const YoutubeThumbnailApp = {
     STORAGE_KEY: "youtube_thumbnails_v2",
     MAX_ITEMS: 8,
     ID_RE: /^[A-Za-z0-9_-]{11}$/,
@@ -171,7 +171,3 @@ const YoutubeThumbnailApp = {
         }
     }
 };
-// ==========================================
-// 4. 最後手動執行初始化
-// ==========================================
-YoutubeThumbnailApp.UI.initEvents();

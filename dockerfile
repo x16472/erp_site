@@ -7,16 +7,11 @@ COPY backend/internal/ ./backend/internal/
 COPY backend/rpc/ ./backend/rpc/
 COPY database/ ./database/
 
-FROM go_source AS go_test
-RUN go test ./... && go vet ./...
+FROM go_source AS go_check
+RUN go vet ./...
 
-FROM go_source AS go_build
+FROM go_check AS go_build
 RUN CGO_ENABLED=0 go build -trimpath -o /out/erp-site ./backend/cmd/erp
-
-FROM node:22-alpine3.22 AS frontend_test
-WORKDIR /app
-COPY page/ ./page/
-RUN node --test page/tests/*.test.cjs
 
 FROM python:3.11-alpine3.22 AS python_build
 # 固定版 PyMuPDF 沒有 musllinux wheel，保留原版本並在建置階段編譯。
@@ -45,10 +40,6 @@ RUN python -m venv /app/.venv \
     && rm -rf /wheels
 COPY backend/src/ ./backend/src/
 COPY backend/__init__.py ./backend/__init__.py
-
-FROM app_base AS python_test
-COPY backend/tests/ ./backend/tests/
-RUN /app/.venv/bin/python -m unittest discover -s backend/tests -p 'test_*.py' -v
 
 FROM app_base AS runtime
 COPY --from=go_build /out/erp-site ./bin/erp-site

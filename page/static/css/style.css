@@ -2190,6 +2190,42 @@ footer a {
     overflow-wrap: anywhere;
 }
 
+#questionPanel .staff-directory-toolbar {
+    display: block;
+}
+
+#questionPanel .staff-master-detail {
+    grid-template-rows: minmax(420px, 50vh) minmax(390px, auto);
+}
+
+#questionPanel .staff-directory-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    align-items: end;
+}
+
+#questionPanel .staff-search {
+    grid-column: 1 / -1;
+    order: 1;
+}
+
+#questionPanel .staff-search input {
+    width: 100%;
+}
+
+.manual-section-content {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding: var(--panel-space);
+}
+
+.manual-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: var(--panel-space);
+}
+
 .question-text-cell .text-action {
     padding: 0;
     border: 0;

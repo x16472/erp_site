@@ -24,13 +24,15 @@
 ## 檔案與隔離
 
 - `page/workflow.html`：保留原有外殼與分頁，僅填入第三分頁及調整遊戲相關 ID、資源引用。
-- `page/static/js/python.js`：`python_canvas` 介面、Worker 生命週期、命令歷史與 Cookie。
-- `page/static/js/python-worker.js`：Python 執行、套件安裝、標準輸入、輸出上限與公開資產快取。
+- `page/static/js/canvas/python.js`：`python_canvas` 介面、Worker 生命週期、命令歷史與 Cookie。
+- `page/static/js/canvas/python-worker.js`：Python 執行、套件安裝、標準輸入、輸出上限與公開資產快取。
 - `page/static/css/python.css`：限定 `python_canvas` 的少量排版，沿用共用色彩與元件。
-- `page/static/js/teris.js` 與 `page/static/css/teris.css`：畫布為 `teris_canvas`，其他 ID 使用 `teris-` 前綴；JavaScript 使用區域作用域，CSS 限定第四分頁。離開遊戲會暫停，鍵盤事件只作用於遊戲分頁。
+- `page/static/js/canvas/teris.js` 與 `page/static/css/teris.css`：畫布為 `teris_canvas`，其他 ID 使用 `teris-` 前綴；JavaScript 使用區域作用域，CSS 限定第四分頁。離開遊戲會暫停，鍵盤事件只作用於遊戲分頁。
 
 ## 已驗證
 
 以 Edge 實測 Python 3.11.3、程式執行、Python 例外、UTF-8 標準輸入、多行 REPL、`pip install pyfiglet==1.0.2`、Cookie、wheel 快取、重新整理還原、停止無窮迴圈與重啟、遊戲鍵盤隔離，以及 390px 手機寬度。
 
 官方參考：[Worker 整合](https://pyodide.org/en/0.25.1/usage/webworker.html)、[標準輸入與輸出](https://pyodide.org/en/0.25.1/usage/streams.html)。
+
+HTML 由 script.js 統一啟動 workflow.js；Worker 以 import.meta.url 解析位置，使用 module 模式載入。搬移時須連同 canvas/ 子目錄與 Go WASM 配套資源一起部署。

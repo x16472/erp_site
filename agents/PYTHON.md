@@ -20,5 +20,5 @@
 
 ## 專案結構偏好
 - 原始資料放 `data/raw/`,處理後資料放 `data/processed/`,兩者皆不進版控
-- 可重用後端模組放 `backend/src/`，後端測試與工具分別放 `backend/tests/`、`backend/tools/`，不在根目錄另設程式資料夾
+- 可重用後端模組放 `backend/src/`，開發與手動作業工具放 `backend/tools/`，不在根目錄另設程式資料夾；目前依 Phoenix 指示不保留自動測試程式
 - 相依套件統一記錄於 `requirements.txt` 或 `pyproject.toml`

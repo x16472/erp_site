@@ -25,8 +25,4 @@ simulate-attendance.bat --preview
 
 結果代碼：INSERTED 為已寫入；SKIP_DUPLICATE 為同日同動作已存在；SKIP_NO_CLOCK_IN 為尚未上班；SKIP_TIME_ORDER 為時間順序不符；SKIP_INACTIVE 為不適用員工。
 
-離線回歸檢查可於專案根目錄執行，不連線資料庫：
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/tests/manual-attendance.tests.ps1
-```
+手動打卡工具依 Phoenix 指示保留；自動測試程式已移除。執行前可使用上述 --preview 確認名單及計畫時間。

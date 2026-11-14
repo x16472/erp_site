@@ -2,7 +2,8 @@
  * Staff Tabs 控制器
  * 負責：按鈕 active 狀態切換 + 對應 panel 顯示/隱藏
  */
-const StaffTabs = {
+export const StaffTabs = {
+    initialized: false,
     // 選擇器集中管理，方便維護
     selectors: {
         tabsContainer: '#staffTabs',
@@ -12,6 +13,8 @@ const StaffTabs = {
     },
     /** 初始化：綁定事件 + 設定預設顯示 */
     init() {
+        if (this.initialized) return;
+        this.initialized = true;
         this.bindEvents();
         this.showActivePanel();
     },
@@ -44,11 +47,15 @@ const StaffTabs = {
      * @param {string} panelId
      */
     showPanel(panelId) {
-        document.querySelectorAll(this.selectors.panels)
-            .forEach(panel => {
-                panel.classList.toggle('active', panel.id === panelId);
-                panel.hidden = panel.id !== panelId;
-            });
+        const panels = [...document.querySelectorAll(this.selectors.panels)];
+        if (!panels.some(panel => panel.id === panelId)) return;
+        panels.forEach(panel => {
+            panel.classList.toggle('active', panel.id === panelId);
+            panel.hidden = panel.id !== panelId;
+        });
+        document.querySelector(this.selectors.tabsContainer)?.dispatchEvent(new CustomEvent('panelchange', {
+            detail: { panelId },
+        }));
     },
     /** 根據目前有 active 的按鈕，顯示對應 panel（頁面載入時用） */
     showActivePanel() {
@@ -58,5 +65,19 @@ const StaffTabs = {
         }
     }
 };
-// 頁面載入完成後初始化
-document.addEventListener('DOMContentLoaded', () => StaffTabs.init());
+
+export function bindTabs(tabList, {
+    buttonSelector = '[data-panel]',
+    panelSelector = '.admin-panel',
+} = {}) {
+    tabList.addEventListener('click', event => {
+        const button = event.target.closest(buttonSelector);
+        if (!button || !tabList.contains(button)) return;
+        tabList.querySelectorAll(buttonSelector).forEach(item => {
+            item.classList.toggle('active', item === button);
+        });
+        document.querySelectorAll(panelSelector).forEach(panel => {
+            panel.classList.toggle('active', panel.id === button.dataset.panel);
+        });
+    });
+}

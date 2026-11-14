@@ -182,6 +182,8 @@ def table_data(table_name: str, page: int = 1, page_size: int = 20) -> dict[str,
     page_size = min(50, max(5, int(page_size)))
     schema_name, verified_name = _resolve_table(table_name)
     columns = _fetch('domain.table_data.1', (schema_name, verified_name))
+    if verified_name == "Company_TrainingQuestion":
+        columns = [column for column in columns if column["name"].lower() not in {"id", "questionno", "question_id"}]
     for column in columns:
         column["classification"] = _classification(column["name"], verified_name)
 
@@ -357,7 +359,7 @@ def _migrate_business_seed_data(cursor) -> None:
 
 def _normalize_company_departments(cursor) -> None:
     """確保六個短名稱部門存在，並停用沒有在職員工的部門。"""
-    for department_name in ("營運部", "製造部", "財務部", "資訊部", "福利部", "業務部"):
+    for department_name in ("營運部", "製造部", "財務部", "資訊部", "研發部", "業務部"):
         cursor.execute(
             'domain._normalize_company_departments.1',
             department_name,
@@ -1228,7 +1230,7 @@ def save_compliance_question(item: dict[str, Any]) -> dict[str, Any]:
                      category, item["question"], options_json, correct_index, item["explanation"],
                      item["question_type"], answer_json, content_json, structure_json,
                      item["passage"] or None, item["status"], is_active).fetchone()[0]
-        return {**item, "id": question_id, "is_active": bool(is_active), "admin_locked": True}
+        return {**item, "id": int(question_id), "is_active": bool(is_active), "admin_locked": True}
     except database.Error as exc:
         raise DatabaseUnavailable("營運檢核題庫儲存失敗。") from exc
 

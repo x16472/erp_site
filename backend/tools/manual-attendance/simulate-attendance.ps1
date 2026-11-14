@@ -71,7 +71,7 @@ function New-AttendancePlan {
         if ($Lines[$index] -notmatch '^([A-Za-z0-9_-]{1,50}),(\d{1,9})(\.\d{1,3})?$') { throw '亂數檔案格式錯誤。' }
         $employee = $Matches[1]
         $offset = [int]$Matches[2]
-        if ($employee -cne $employees[$index] -or $employee -in @('K002', 'K020') -or $seen.ContainsKey($employee)) {
+        if ($employee -cne $employees[$index] -or $employee -in @('K002', 'K022') -or $seen.ContainsKey($employee)) {
             throw '名單含排除、重複或不符的員工編號。'
         }
         if ($offset -le $previous -or $offset - $previous -gt 600) { throw '員工間隔必須為 1 至 600 秒。' }
@@ -97,7 +97,7 @@ function Invoke-AttendanceTool {
             try {
                 $command.CommandText = @'
 SELECT EmployeeNo FROM dbo.Employees
-WHERE IsActive = 1 AND EmployeeNo NOT IN (N'K002', N'K020')
+WHERE IsActive = 1 AND EmployeeNo NOT IN (N'K002', N'K022')
 ORDER BY EmployeeNo;
 '@
                 $reader = $command.ExecuteReader()
@@ -143,7 +143,7 @@ ORDER BY EmployeeNo;
 DECLARE @Active INT;
 SELECT @Active = IsActive FROM dbo.Employees WITH (UPDLOCK, HOLDLOCK)
 WHERE EmployeeNo = @EmployeeNo;
-IF ISNULL(@Active, 0) <> 1 OR @EmployeeNo IN (N'K002', N'K020')
+IF ISNULL(@Active, 0) <> 1 OR @EmployeeNo IN (N'K002', N'K022')
     SELECT N'SKIP_INACTIVE';
 ELSE IF EXISTS (SELECT 1 FROM dbo.AttendanceRecords
     WHERE EmployeeNo = @EmployeeNo AND WorkDate = @WorkDate AND AttendanceAction = @Action)

@@ -363,3 +363,101 @@ Phoenix 指定工具不併入主程式，後續確認寫入 dbo.AttendanceRecord
 存檔選擇區使用工作面板版型；進入存檔後使用題庫維護、員工管理共用的 staff-manager-workspace、organization-pane 與 staff-master-detail，左側呈現角色與相關資訊，右上場景操作、右下敘事歷程。沿用 style.css 共用元件、主題與手機配置，不載入 adventure.css；建立角色改用原生 dialog，生命／精力使用原生 progress。MIS 流程畫布與後端程式未修改。README、前端版面維護、頁面指引及 RPG 文件同步目前入口與版型。
 
 驗證：最終 13 項前端測試通過；資源路徑、JavaScript 語法、分頁 ID 與綁定檢查、git diff --check 通過。曾有一次既有俄羅斯方塊出場阻擋測試失敗，該程式與測試未修改，後續重跑通過。使用不連線資料庫且拒絕寫入的本機假資料預覽，檢查桌面／390px、深淺色、原生對話框、存檔進入、分頁往返、角色與歷程切換，冒險頁無瀏覽器錯誤。未驗證正式登入、真實存檔寫入或完整戰鬥流程；未部署、編譯後端或重啟正式服務。
+
+## 2026-11-14｜JavaScript 模組、SOP 查閱與實際題庫關聯修復
+
+依 Phoenix 更新後的 prd_1_dnd.md 實作非 DND 項目；Phoenix 另要求「先不要做 DND」，本輪未建立 DND 功能或規劃文件。保留原有未提交的 PRD、部門、頁面、Jenkins 與手動打卡工具修改。
+
+所有 HTML 只引用 type="module" 的 script.js，由 body 的 data-page 選擇頁面控制器。各頁與工具以物件 init 建立私有狀態及分類函式，防止重複綁定。Theme 管理主題，panel.js 管理工作面板與後台分頁；API 拆到 api.js，避免頁面反向匯入啟動入口。SD 複製操作改用模組內事件。PRD 圖中的 workflow.html 在 JavaScript 目錄以 workflow.js 實作，HTML 仍位於 page/。
+
+```text
+page/static/js/
+├── script.js                 唯一 HTML 模組入口與頁面啟動
+├── api.js                    共用 API、驗證與文字處理
+├── theme.js                  主題狀態與主題色
+├── panel.js                  工作面板與後台分頁
+├── index.js                  官網控制器
+├── employee-login.js         員工入口控制器
+├── home.js                   員工工作台控制器
+├── sales.js                  日報控制器
+├── exam.js                   學科、術科與 SOP 分頁
+├── manuals.js                SOP 目錄、篩選與章節查閱
+├── workflow.js               組合工作面板工具
+├── game.js                   宣導影音控制器
+├── staff.js                  員工管理控制器
+├── mis.js                    MIS 控制器
+├── sd_prompt.js              SD 參數與複製工具
+├── youtube_thumbnail.js      YouTube 縮圖工具
+├── adventure.js              既有冒險玩家控制器
+├── adventure-editor.js       既有冒險編輯器控制器
+├── adventure-form.js         作者表單共用函式與範本
+└── canvas/
+    ├── setup.js              CanvasSurface 畫布與畫筆
+    ├── python.js             Python Playground 介面
+    ├── python-worker.js      Python module Worker
+    ├── golang.js             Go Playground 介面
+    ├── golang-worker.js      Go module Worker
+    └── teris.js              俄羅斯方塊控制器
+```
+
+Worker 使用 import.meta.url 與 type: module。Python 保留 Pyodide 0.25.1／Python 3.11，載入 pyodide.mjs；Go 以 module import 載入既有 wasm_exec.js，WASM 路徑調整為 ../../golang-runtime/。兩種 Playground 容器維持編輯器與終端機用途；真正的俄羅斯方塊 Canvas 透過 CanvasSurface 取得畫筆及 Theme 主題色。冒險只調整初始化方式，未新增遊戲規則。
+
+exam.html 的 SOP 分頁新增分類、搜尋、目錄、章節定位、展開閱讀、返回與重試，使用既有員工 API，不因開啟閱讀頁而同步來源。文字跳脫後呈現，快速切換文件或返回目錄時捨棄過期回應。實際 Company 的目前啟用 SOP 目錄為 0 筆；含內容的章節流程以獨立模擬 API 驗證，未捏造正式文件。
+
+MIS 題庫增加科目、章節、狀態與搜尋交集篩選，先選科目才啟用章節，切換科目清除舊章節與隱藏的批次勾選。篩選器改用可換行的格線，避免多個下拉選單擠在同一列；只調整題庫區域。清單、編輯提示及題庫資料表查閱不顯示內部 Id／QuestionNo，hidden、data 屬性與 API 識別保留。
+
+題庫新增不再強制 Id=QuestionNo：實體主鍵由 IDENTITY 產生，QuestionNo 在交易鎖內依既有數字最大值加一。人工新增、來源匯入及初始題目取號一致，新增回應回傳三張作答表使用的 QuestionNo，不使用 IDENTITY_INSERT。
+
+實際資料庫修復：
+
+- 初期僅做程式與模擬驗證，Phoenix 指出未檢查實際資料庫後，依指示連線 10.10.0.4:1433／Company。確認 178 題的 QuestionNo 全為 NULL、題庫唯一編號索引及三個作答外鍵缺少；既有申論 1 筆、作答題目 1,436 筆及錯題本 106 筆均失去題庫關聯。
+- Phoenix 明確要求將其他三表的 QuestionNo 對應 TrainingQuestions.QuestionNo。以歷史作答快照的題文、題型、科目及完整選項核對；題文只正規化空白、換行及全半形冒號，不用實體 Id 猜編號。預覽確認 178 個歷史編號都有唯一對照，才套用 database/RepairTrainingQuestionRelations.sql。
+- 在同一交易還原題庫 178 個 QuestionNo、補回唯一索引與三個 WITH CHECK 外鍵。例如 Id=1003 對應 QuestionNo=52，Id=1058 對應 QuestionNo=107；題目 Id 不重編，三張作答表與 SnapshotJson 不修改。
+- 修復後三個外鍵均啟用且受信任，三表孤兒關聯皆為 0，快照編號不一致為 0。三表修復前後的筆數與完整內容 SHA-256 雜湊完全相同；相容檢視表分別成功串回 1、1,436、106 筆。對照及雜湊證據存於未納版控的 data/processed/training-relations/。
+- 修復腳本預設 @Apply=0，只預覽，缺少或重複對照會停止；已修復的資料庫不需再次套用。舊 RenumberTrainingQuestions.sql 保留為歷史腳本，不屬於目前部署流程。
+
+驗證：
+
+- 前端 18 項測試、Python 3.11.9 全部 107 項測試、Go test／vet／build 與 --check 通過；所有前端 JavaScript 通過語法檢查。Go 快取權限限制以工作區既有 .deps/go-cache／tmp 解決。
+- 真實瀏覽器已驗證 SOP 模擬目錄／章節／純文字、MIS 篩選、俄羅斯方塊開始與切走暫停；Go WASM 與 Python 3.11.3 Worker 均實際執行頁面範例並正常輸出。
+- 實際 Company API 回傳 178 個有效且唯一的題目編號；ITS Database 68 題、ITS Artificial Intelligence 110 題。實際瀏覽器以 ACCESS_ONLY 員工登入與管理員驗證，確認題庫載入 178 題、Database 篩選 68 題、第一章篩選 5 題，編號欄位隱藏且章節連動正常；沒有提交題目編輯或新增測試作答。
+- 原本覆寫 bin 並正常啟動的動作遭自動審查拒絕，未執行。唯讀確認 EmployeeSeed.v1 標記及七種必要類別均存在後，改以暫存編譯檔在 127.0.0.1:18765 驗證，略過文件同步，未覆寫 bin/erp-site.exe。未操作遠端 OMV、SSH、容器部署或更改 .env。
+
+Readme.md、backend/docs 四份文件及前端版面／Playground 文件已同步。前端測試改用 ESM .mjs，Docker 測試目標同步更新。正式程式發布仍需由維運重新建置及啟動新版 Go，不能將暫存驗證程序視為部署。
+
+驗證結束後已停止本輪的模擬 API 與真實資料庫暫存網站程序，移除本輪的一次性診斷腳本、暫存執行檔與日誌；保留正式修復 SQL、測試、來源碼與 data/processed/training-relations/ 的對照及雜湊證據。
+
+## 2026-11-14 題庫永久主檔編號與建置腳本同步
+
+依 Phoenix 指示及 DATABASE.md，三張交易表的 QuestionNo 持續參照 TrainingQuestions.QuestionNo，不使用實體 Id。
+
+- 實際連線 Company 確認 UX_TrainingQuestions_1 為 QuestionNo 單欄、未篩選且啟用的唯一索引；三個外鍵參照欄位正確、啟用且受信任，更新與刪除均為 NO ACTION。
+- CreateTables.sql 與 RepairTrainingQuestionRelations.sql 同步唯一索引、外鍵實際定義驗證、WITH CHECK CHECK 及永久編號觸發程序；Go 測試防止兩份定義漂移。發現錯誤定義或無效既有題號時停止，不自動覆寫歷史資料。
+- 新增 TR_TrainingQuestions_PermanentQuestionNo：禁止修改已建立的題號（含未作答題目）、禁止實體刪除，允許既有停用／軟刪除與題文修改；新增只接受大於既有最大值的標準正整數，不得補號或重用。人工新增、來源匯入、初始題目沿用交易內 TABLOCKX／HOLDLOCK 的 MAX(QuestionNo)+1，包含軟刪除資料；補上取號註解，Id 仍由 IDENTITY 產生。
+- 已將上述題號結構保護區塊實際套用 Company，未重跑無關建表／種子。SQL Server 將 CREATE OR ALTER 儲存為 CREATE；正規化標頭與換行後，實際觸發程序與建表定義一致。
+- 掃描 database 全部九份 SQL。RenumberTrainingQuestions.sql 移除會重編題號、Id、快照及重設序列的舊實作，改為直接 THROW 拒絕；其他六份無題庫參照，不更動無關功能。Readme.md 與 backend/docs/question-bank.md 已同步永久編號規則及部署方式。
+
+驗證：
+
+- SQL Server 獨立測試結構以回復交易完成 24 項行為驗證：改號、刪除、重複、補號、格式、批次、軟刪除後取號、三表孤兒外鍵、重跑恢復啟用／信任及錯誤結構拒絕。全新建表與初始化連續重跑兩次，另執行三條實際新增 SQL，全部通過；沒有殘留測試結構或測試題目。
+- 實際題庫仍為 178 題，最大 QuestionNo=1169；正常下一號為 1170。題庫、1 筆申論作答、106 筆錯題的完整 SHA-256 雜湊在套用前後一致。驗證期間系統另新增 10 筆考卷題目（Id 2430~2439），原有 1436 筆 TrainingSessionQuestions 雜湊仍一致；新紀錄保留，三表孤兒關聯均為 0。
+- Go test ./...、go vet ./...、Python 107 項測試及相關檔案 git diff --check 通過。證據存於未納版控的 data/processed/training-relations/permanent-number-*-20261114.jsonl。
+- 本輪只套用題庫編號的資料庫結構與同步原始碼／文件，未修改 .env、重建或覆寫 bin、重啟網站、部署容器或操作 OMV。一次性診斷及驗證腳本清除，不新增通用資料庫搬移／盤點工具。
+
+## 2026-11-14 清除自動測試檔案與修正影音、工作面板 JS
+
+Phoenix 指示移除專案內帶 test 的測試程式，並明確確認保留手動打卡工具；另要求一併處理 game.html、workflow.html 的 JavaScript。
+
+- 清除 backend/tests（含 Python 測試及快取）、page/tests、database/data_test.go、database/seed_test.go。刪除前 Go 測試、Python 107 項、前端 18 項均通過。檢視 data.go 與測試程式後，確認連線、交易、型別、白名單及錯誤處理本來就在正式資料庫套件；測試檔只有斷言與模擬，不將測試工具混入正式程式。data.go 保留。
+- go.mod／go.sum 移除專案測試專用的 go-sqlmock。go mod tidy 因全域模組快取寫入權限及未備齊上游測試相依未完成，未為此額外下載；直接移除已無引用的專用套件，後續 go build -mod=readonly ./... 通過。requirements-dev.txt 是 gRPC 產生器用途，保留。
+- Docker 移除三個自動測試目標及 Node 映像，改為 go_check 執行 go vet，再建置正式 Go 與 Python 映像；Jenkins 移除測試階段，保留 Compose 檢查、Go 靜態檢查及映像建置。README、部署文件及專案規範同步移除失效入口；手動打卡程式與既有修改保留，只移除其文件中失效的自動測試指令。
+- game.js 整合五平台共同生命週期：開啟分頁時載入保存或預填網址，切換平台卸載舊 iframe，取消過期請求，失敗清除舊影片資訊，離頁中止請求。保留縮圖工具，移除影音頁已不存在的知識／SOP 程式。避免解析回應覆寫使用者正在輸入的新網址。
+- panel.js 完成顯示切換後發出 panelchange；workflow.js 依分頁獨立動態載入工具，單一工具失敗不阻擋其他面板。adventure.js 修正 HTML 無頭像元素時仍直接寫 src 的錯誤。SD 參數讀取補上 PNG 完整檔頭／區塊邊界、過期檔案結果處理、預覽 URL 釋放及明確 Scheduler 欄位解析。
+- 實際重現瀏覽器混用新 HTML 與舊 JS，造成影音初始化 storageKey 錯誤；Go 靜態服務對 HTML、JS、CSS 加入 Cache-Control: no-cache，更新時重新驗證。此後端變更正式發布仍須重建及重啟 Go，未覆寫 bin 或操作既有正式服務。
+
+驗證與清理：
+
+- Go vet、Go build -mod=readonly、--check、25 份前端 JS 與 15 份 Python 原始碼語法檢查通過。Compose config --quiet 返回成功，但出現本機 Docker 設定檔權限警告；未建置完整容器映像或執行 Jenkins。
+- 唯讀確認 Company 員工初始化標記及必要類別存在後，以暫存 Go 在本機 18766／18767 驗證，略過來源同步；使用 K001 ACCESS_ONLY 登入，未新增打卡、題目、作答或冒險存檔。
+- 真實瀏覽器確認 YouTube／BiliBili 標題與 iframe 載入、平台切換卸載舊播放器、無效網址錯誤與重新載入恢復；Go WASM 與 Python 3.11.3 均實際輸出範例結果。PNG 上傳可讀出提示詞、LoRA、Seed、Steps 與 Karras Scheduler；俄羅斯方塊可啟動且切頁自動暫停；冒險可載入三個空存檔槽，未建立新存檔。未逐一驗證其餘平台的第三方影片播放，損毀 PNG 防護經程式碼及語法檢查。
+- 工作區來源（排除 .deps、.venv、data、bin 與既有暫存區）最終掃描沒有 test 檔案或 Python 位元碼。移除本輪後端快取、兩個暫存 Go 執行檔、日誌及 PNG 驗證素材，停止本輪網站並關閉驗證分頁；沒有加入新的測試程式。驗證截圖 workflow-fixed.png／media-fixed.png 保留於本輪 visualizations 目錄。

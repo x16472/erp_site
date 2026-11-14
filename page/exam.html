@@ -5,13 +5,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>題庫練習｜銀盾共同體營運中心</title>
-    <script src="./static/js/theme.js"></script>
     <link rel="stylesheet" href="./static/css/style.css?v=20261101-floating-2">
     <link rel="stylesheet" href="./static/css/exam-floating.css?v=20261101-floating-2">
     <link rel="icon" href="./static/ico/Graphicloads-100-Flat-2-Pen.ico" type="image/x-icon">
+    <script type="module" src="./static/js/script.js"></script>
 </head>
 
-<body>
+<body data-page="exam">
     <div class="portal-shell">
         <aside class="portal-sidebar">
             <a class="portal-brand" href="home.html">
@@ -178,10 +178,29 @@
                         <div class="empty">正在載入術科題目…</div>
                     </div>
                 </section>
-                <section id="practicalPanel" hidden>
+                <section id="sop_doc" hidden>
                     <div class="training-hero">
-                        123
+                        <div>
+                            <span class="eyebrow">STANDARD OPERATING PROCEDURES</span>
+                            <h2>SOP 文件查閱</h2>
+                            <p>依分類或文件名稱尋找已同步的 SOP，選擇章節閱讀內容。</p>
+                        </div>
+                        <button class="btn second" type="button" data-manual-refresh>重新讀取</button>
                     </div>
+                    <div class="form-grid">
+                        <label class="field"><span>搜尋文件</span><input type="search" data-manual-search placeholder="文件名稱、分類或檔名"></label>
+                        <label class="field"><span>文件分類</span><select data-manual-category><option value="">全部分類</option></select></label>
+                    </div>
+                    <p data-manual-status role="status" aria-live="polite"></p>
+                    <div class="knowledge-grid" data-manual-list></div>
+                    <article class="portal-card full" data-manual-reader hidden>
+                        <div class="card-head">
+                            <div><h2 data-manual-title></h2><p class="hint" data-manual-meta></p></div>
+                            <button class="btn second" type="button" data-manual-back>返回文件目錄</button>
+                        </div>
+                        <nav class="actions manual-toc" data-manual-toc aria-label="SOP 章節目錄"></nav>
+                        <div data-manual-sections></div>
+                    </article>
                 </section>
             </div>
         </main>
@@ -193,6 +212,5 @@
 <footer>
     <p class="portal-foot">銀盾共同體營運中心 &copy;2024</p>
 </footer>
-<script type="module" src="./static/js/exam.js"></script>
 
 </html>

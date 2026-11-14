@@ -26,14 +26,13 @@
 
 前端採原生 HTML、共用 CSS 與 JavaScript ES Modules，不需要 Node.js 或前端打包工具。請透過 Go 提供的 HTTP 網址或 Cloudflare Tunnel 網址使用，讓模組載入、同來源 API 與工作階段驗證正常運作。
 
-共用與各頁 CSS 放在 `page/static/css/`，JavaScript 模組與 Worker 放在 `page/static/js/`。圖片、圖示、員工照片及 Go WASM 執行資源維持在 `page/static/` 原有子目錄；`page/static/golang-runtime/` 的配套 `wasm_exec.js` 隨執行資源保留。
+共用與各頁 CSS 放在 `page/static/css/`，JavaScript 模組放在 `page/static/js/`；Canvas 功能與 module Worker 集中在 `page/static/js/canvas/`。圖片、圖示、員工照片及 Go WASM 執行資源維持在 `page/static/` 原有子目錄；`page/static/golang-runtime/` 的配套 `wasm_exec.js` 隨執行資源保留。
 
-以員工登入頁為例，主題腳本先於樣式表載入：
+每個 HTML 僅引用 script.js，由 body 的 data-page 指定頁面控制器；主題與分頁由核心先初始化：
 
 ```html
-<script src="./static/js/theme.js"></script>
 <link rel="stylesheet" href="./static/css/style.css">
-<script type="module" src="./static/js/employee-login.js"></script>
+<script type="module" src="./static/js/script.js"></script>
 ```
 
 桌面與手機共用上述資源，手機版透過 CSS 媒體查詢調整配置。搬移檔案時也須核對模組 import、Worker、CSS 圖片與 Go 靜態路由；詳細規則見 [前端版面與主題維護](page/docs/frontend-layout.md)。
@@ -115,7 +114,7 @@ erp_site/
 
 網站使用 `python:3.11-alpine3.22`，Go 以多階段建置產生 Linux 執行檔，對外入口搭配 `cloudflare/cloudflared:2026.10.5`。目前支援 `linux/amd64`；既有 MSSQL 容器獨立運作，Compose 不建立或修改資料庫服務。
 
-- Jenkins agent 標籤為 `linux-docker`，安裝 Git、Docker Engine 與 Compose v2。pipeline 執行 Go test／vet、前端測試、Alpine Python 測試及網站映像建置。
+- Jenkins agent 標籤為 `linux-docker`，安裝 Git、Docker Engine 與 Compose v2。pipeline 執行 Go vet 靜態檢查與網站映像建置，自動測試檔案及其 CI 階段已依指示移除。
 - `.env` 於執行時唯讀掛載到 `/app/.env`，不進入映像；資料庫位址使用容器可連線的 OMV 主機位址與 MSSQL 已發布埠，不能使用 `127.0.0.1` 代表另一個容器。
 - `data/` 掛載至 `/app/data`；員工照片使用 `staff_photos` named volume，保留重建後的資料。
 - Go 監聽 `8080`，主機也發布 `8080`。Cloudflare Tunnel 使用同一 Compose 網路的 `http://erp_service:8080`。
@@ -132,7 +131,7 @@ docker compose ps
 docker compose logs --tail 100 erp_service cloudflared
 ```
 
-預設網站映像為 `erp-site:alpine`；Jenkins 使用個別建置標籤，詳細使用方式見部署文件。Jenkins 目前只測試與建置，不自動推送 registry、SSH 登入或更新正式容器。既有 systemd 網站若占用 8080，切換前需先由維運人員停用，避免兩份網站同時執行。
+預設網站映像為 `erp-site:alpine`；Jenkins 使用個別建置標籤，詳細使用方式見部署文件。Jenkins 目前只靜態檢查與建置，不自動推送 registry、SSH 登入或更新正式容器。既有 systemd 網站若占用 8080，切換前需先由維運人員停用，避免兩份網站同時執行。
 
 ## Windows 本機執行
 
@@ -246,7 +245,7 @@ YouTube 使用 `/api/youtube/resolve` 與 oEmbed 取得影片資訊，前端設�
 
 縮圖最近查詢最多保留 8 筆影片 ID，儲存在目前瀏覽器的 `localStorage`，可點選重新查詢或清除紀錄，不寫入 SQL Server。也可使用 `/game.html?url=影片網址或ID` 預填並啟動縮圖查詢；此參數只控制縮圖工具。
 
-目前 `game.html` 提供多平台影音與 YouTube 縮圖工具，未提供知識搜尋或 SOP 閱讀入口。後端仍保留文件查詢 API，來源文件管理與同步則位於 MIS。
+`game.html` 提供多平台影音與 YouTube 縮圖工具。SOP 閱讀入口位於 `exam.html` 的「SOP 文件」分頁，可搜尋文件、篩選分類及切換章節；只顯示已啟用文件，來源文件管理與同步仍位於 MIS。
 
 ### 員工穿越冒險與休閒 RPG
 
@@ -301,31 +300,22 @@ Tesseract 可透過 PATH 或 `C:\Program Files\Tesseract-OCR\tesseract.exe` 尋�
 .\start.bat --sync-docs
 ```
 
-MIS 的來源同步功能會同步 SOP 與題庫草稿，並回報解析警告及失敗來源。管理員確認草稿後再發布題目，也可維護科目、章節、題目狀態與批次設定。
+MIS 的來源同步功能會同步 SOP 與題庫草稿，並回報解析警告及失敗來源。管理員確認草稿後再發布題目，也可維護科目、章節、題目狀態與批次設定。題庫清單提供科目、章節、狀態及搜尋交集篩選，先選科目才載入章節。Id 與 QuestionNo 只供內部使用，畫面不顯示；QuestionNo 沿用三張作答相關表與快照的關聯，新增不再強制與實體 Id 相同。QuestionNo 由唯一索引與資料庫觸發程序保護，建立後不得修改；刪題保留原列，新增只從包含軟刪除題目的最大題號往後編，不補號或重用。建表與歷史修復腳本已同步，舊重編入口已停用。2026-11-14 已依歷史快照還原 Company 的 178 個遺失 QuestionNo，並補回三張作答表外鍵，未改寫既有作答內容。詳見 [題庫維護](backend/docs/question-bank.md)。
 
-## 測試與檢查
+## 建置與靜態檢查
 
-Go 與 Python 測試分別位於 `backend/internal/`、`database/` 與 `backend/tests/test_*.py`，在專案根目錄執行：
+依 Phoenix 指示，專案不保留 Go、Python 或前端自動測試程式，Jenkins 執行靜態檢查與映像建置。正式資料庫存取集中於 `database/data.go` 及同套件執行期檔案；測試斷言與模擬資料庫不併入正式程式。
+
+在專案根目錄檢查 Go 與相依套件：
 
 ```powershell
-go test ./...
 go vet ./...
-.\.venv\Scripts\python.exe -m unittest discover -s backend/tests -p "test_*.py" -v
-node --test page/tests/*.test.cjs
-```
-
-前端測試需要 Node.js；網站本身不依賴 Node.js 執行。冒險回歸測試涵蓋 UUID 與顯示流水號分離、日期 JSON 輸出、發布修訂衝突、發布未回傳流水號時回復交易，以及前端繼續冒險時沿用內部存檔識別。俄羅斯方塊測試涵蓋預覽佇列、儲存／交換及鍵盤限制。手動打卡工具的獨立離線檢查見其 [操作文件](backend/tools/manual-attendance/Readme.md)。
-
-現有測試涵蓋題目解析、OCR 缺失回報、訓練輸入驗證、模擬考答案保護、CSRF 驗證、員工僅讀取資料庫，以及請求內資料庫連線重用。
-
-影音測試另外涵蓋平台網址驗證、分集保留、來源標題解析、TikTok 影片對應與空白標題、僅原站連結、逾時、回應大小限制、禁止重新導向，以及 XML 實體拒絕處理。外部來源使用模擬回應，不代表第三方平台即時可用或影片可實際播放。
-
-檢查 Python 套件與 Compose 設定：
-
-```powershell
+go build ./...
 .\.venv\Scripts\python.exe -m pip check
 docker compose config --quiet
 ```
+
+前端採瀏覽器原生 ES Modules，網站及容器建置不依賴 Node.js。發布前應以實際頁面確認登入、題庫、影音與工作面板操作；編譯及靜態檢查通過不代表正式環境流程已驗收。手動打卡工具保留，操作方式見其 [操作文件](backend/tools/manual-attendance/Readme.md)。
 
 ## 權限與資料保護
 
@@ -345,7 +335,7 @@ docker compose config --quiet
 | 啟動失敗或容器反覆重新啟動 | 查看 `docker compose logs --tail 100 erp_service`，確認 Go 執行檔、Python 3.11、`.env` 與資料庫連線 |
 | 網站開啟但 API 回應 503 | 使用 `/api/health` 檢查 SQL Server；確認執行環境可連線到設定的資料庫位址與連接埠 |
 | 冒險發布顯示「發布版本未回傳流水號」 | 確認執行中的 Go 已重新編譯並內嵌最新 `database/queries.json`；發布 INSERT 必須包含 `OUTPUT inserted.Id`。停止舊服務、替換正確執行檔並重啟；容器須重新建置映像並更新容器。此錯誤分支會回復交易，不更新世界版本 |
-| 日誌只有 `Python API 未預期錯誤：TypeError` | 此紀錄僅包含錯誤類別，不能單憑該行判定原因；先確認觸發的 API 與畫面訊息。冒險日期輸出及發布回傳 Id 已有回歸測試，仍須核對實際執行的 Python 與 Go 是否同步更新 |
+| 日誌只有 `Python API 未預期錯誤：TypeError` | 此紀錄僅包含錯誤類別，不能單憑該行判定原因；先確認觸發的 API 與畫面訊息。冒險日期輸出及發布回傳 Id 仍須核對實際執行的 Python 與 Go 是否同步更新 |
 | 80 埠已被占用 | 本機改用 8080；容器部署則檢查主機既有服務與 Compose 的連接埠設定 |
 | SOP 清單沒有來源文件 | 確認 `data/exam/` 中存在支援的檔案；目前 image 未打包該目錄 |
 | 掃描 PDF 或舊版 DOC 無法解析 | 確認 Tesseract 語言資料或文件轉檔工具已安裝且可被程式找到 |
@@ -361,4 +351,4 @@ docker compose config --quiet
 
 修改 `.proto` 後，安裝 `requirements-dev.txt`、`protoc-gen-go@v1.36.5` 與 `protoc-gen-go-grpc@v1.5.1`，將 Go 工具目錄加入 PATH，再執行 `python backend/tools/generate_rpc.py`，同步提交兩種語言的產生檔。資料庫建表及 SQL 查詢目錄直接維護於 database/；本專案不再附帶資料庫搬移或演練工具。
 
-一般單元測試使用模擬 SQL 與本機 gRPC，操作方式見 [Go 後端設計](backend/docs/go-backend.md)，歷史施作與未完成事項見 [history.md](agents/history.md)。
+正式資料庫存取及部署方式見 [Go 後端設計](backend/docs/go-backend.md)；自動測試程式已移除，歷史施作與驗證紀錄保留於 [history.md](agents/history.md)。

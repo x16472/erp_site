@@ -261,5 +261,10 @@ func (g *Gateway) static(w http.ResponseWriter, r *http.Request) {
 	if contentType := mime.TypeByExtension(filepath.Ext(target)); contentType != "" {
 		w.Header().Set("Content-Type", contentType)
 	}
+	switch strings.ToLower(filepath.Ext(target)) {
+	case ".html", ".js", ".mjs", ".css":
+		// 模組路徑未帶版本號，更新頁面時須重新驗證，避免混用新 HTML 與舊 JavaScript。
+		w.Header().Set("Cache-Control", "no-cache")
+	}
 	http.ServeContent(w, r, stat.Name(), stat.ModTime(), file)
 }

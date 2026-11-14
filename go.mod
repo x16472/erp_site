@@ -3,7 +3,6 @@ module erp-site
 go 1.23.0
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/microsoft/go-mssqldb v1.8.0
 	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.5

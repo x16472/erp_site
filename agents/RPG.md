@@ -409,7 +409,6 @@ flowchart LR
 | 查詢目錄 | `database/queries.json`、`database/queries.go` |
 | 建表與種子 | `database/AdventureTables.sql`、`database/CreateTables.sql`、`database/SeedAdventure.sql` |
 | 既有表強化 | `database/HardenAdventureColumns.sql`，預設僅預覽，尚未套用 |
-| 回歸測試 | `backend/tests/test_adventure.py`、`backend/tests/test_adventure_api.py`、`page/tests/adventure.test.cjs` |
 
 ### 待辦順序與完成條件
 

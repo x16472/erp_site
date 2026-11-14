@@ -1,16 +1,16 @@
 # 專案協作規範
 
-本文件彙整 Phoenix 的長期偏好與本專案有效決策；實作與驗證紀錄寫入 history.md。最新明確指令優先，同一需求合併，衝突時採較新決策。
+本文件彙整 Phoenix 的長期偏好與本專案有效決策；實作與驗證紀錄寫入[history.md](history.md)。最新明確指令優先，同一需求合併，衝突時採較新決策。
 
 ## 溝通與工作範圍
 
 - 稱呼 Phoenix，以台灣繁體中文溝通及註解；直接說明結論、原因與驗證結果，避免粗體、浮誇開場與固定收尾。
 - 嚴守當次授權範圍。範圍外動作即使具備 Bypass permissions 也先交由人工判斷；不確定詞彙時直接指出。
 - 未指定開發工具時使用 Visual Studio Code；保留既有未提交修改，不以清理為由覆寫其他工作。
-- 程式碼縮排正確、命名明確；註解說明核心邏輯與陷阱的原因，長篇說明放 Markdown。不再要求逐行註解。
-- 依實作同步 Readme.md 與相關操作文件，將變更、測試及未驗證事項記入 history.md；不把模擬測試寫成正式環境驗收。
+- 程式碼縮排正確、命名明確；註解說明核心邏輯與陷阱的原因，長篇說明放 Markdown。不用特別逐行註解。
+- 依實作同步[Readme.md](/Readme.md)與相關操作文件，將變更、測試及未驗證事項記入[history.md](history.md)；不把模擬測試寫成正式環境驗收。
 
-## 技術與資料邊界
+## 技術與架構約束
 
 - 後端由 Go 主導：入口 backend/cmd/erp/main.go，可重用邏輯置 backend/internal/；database/data.go 統一管理 SQL Server。page/tools/go-playground/playground_js_wasm.go 僅為瀏覽器工具。
 - Python 3.11 業務以 gRPC 連接 Go，模組放 backend/src/erp，不自行開 HTTP 或直接連 SQL Server。遵循 GO.md、PYTHON.md、DATABASE.md。
@@ -18,11 +18,12 @@
 - `.env` 沿用實際設定，不公開或另建 `.env.example`；只有明確要求切換主要資料庫時才修改 DatabaseName，其餘欄位保留；MIS 使用 BackendWebAdminUser／BackendWebAdminPassword，由後端驗證。
 - 網站只寫入核准的應用資料表，既有外部資料不得任意編輯。前端經 API 取得資料，不填造營運紀錄或將憑證置於瀏覽器。
 - 資料庫相關執行期 Go 程式、查詢目錄、建表及初始資料集中 database/。資料庫搬移、回復、盤點、驗證工具與其演練測試已依指示移除，不自行重建或重新加入。一般啟動不得隱含搬移資料。
+- 前端採原生 HTML、共用 CSS 與 JavaScript ES Modules，經同來源 HTTP 使用；不再要求 JavaScript 全部內嵌或直接開本機 HTML。
+- 本專案不使用`Node.js`CJS 模組系統。請僅使用 Go、Python 或 TypeScript（ESM）來編寫所有程式碼與配置檔案。
 
 ## 產品與介面
 
-- 現行品牌為「銀盾共同體營運中心」，整合官網、員工工作台與 MIS；舊幼兒園品牌及園務定位已被取代。
-- 前端採原生 HTML、共用 CSS 與 JavaScript ES Modules，經同來源 HTTP 使用；不再要求 JavaScript 全部內嵌或直接開本機 HTML。
+- 現行品牌為「銀盾共同體營運中心」，整合官網、員工工作台與 MIS。
 - 延續 workflow、staff 的結構、共用樣式及導覽，不無故另建整套版型。支援手動深淺色、手機與平板布局（679／680~980／980px 為既有基準），官網四主題沿用現有變數。
 - exam 作答頁的剩餘時間及題號導覽於 680px 以上固定在右側，預留題目空間；手機版依 Phoenix 指示維持原配置，不套用此次浮動調整。
 - MIS 題庫採組織、清單、明細三區，共用 CRUD 操作置於上方。員工維護集中 staff，不在 MIS 重複建立；MIS 待審以員工與事件聯動呈現。
@@ -42,7 +43,7 @@
 ## 部署
 
 - start.bat、start.sh、dockerfile、docker-compose.yml 與 systemd 同步架構；啟動預先編譯的 Go，由 Go 管理 Python 子程序。
-- 2026-11-03 依 Phoenix 指定，容器部署改為 OMV 上的 Alpine Linux（目前 linux/amd64），搭配 cloudflare/cloudflared:2026.10.5 與既有 MSSQL 容器；取代先前 Windows IIS 容器配置。Python 使用 3.11 venv，網站監聽 8080，.env 與 Tunnel token 掛載而不烘焙至映像，文件與照片持久化。Jenkins 目前只測試及建置，不自動部署。
+- 2026-11-03 依 Phoenix 指定，容器部署改為 OMV 上的 Alpine Linux（目前 linux/amd64），搭配 cloudflare/cloudflared:2026.10.5 與既有 MSSQL 容器；取代先前 Windows IIS 容器配置。Python 使用 3.11 venv，網站監聽 8080，.env 與 Tunnel token 掛載而不烘焙至映像，文件與照片持久化。Jenkins 目前只靜態檢查及建置，不自動部署。
 - OMV 主機以 systemd 執行 Go，連接既有 Docker SQL Server；網站 8080、資料庫 1433 的規劃依現有文件，不擅改正式環境。
 
 ## 整理來源與適用方式
