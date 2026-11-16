@@ -53,6 +53,8 @@ MIS 題庫的檢視篩選與批次分類操作分開。先選科目才啟用章�
 
 `panel.js` 完成顯示切換後發出 panelchange，影音與工作面板依目標分頁更新。workflow.js 只載入目前開啟的工具模組，各分頁初始化失敗互不阻擋；Go／Python 的實際執行環境狀態顯示於各自面板。穿越冒險的頭像為選用元素，缺少圖片區域時仍可呈現角色與存檔。
 
+`game.js` 比照 `workflow.js` 依 `panelchange` 動態載入目前影音分頁，快取各分頁的載入結果，避免重複綁定。五個平台模組為 `media/youtube.js`、`media/bilibili.js`、`media/niconico.js`、`media/douyin.js`、`media/tiktok.js`；共用播放器位於 `media/player.js`，YouTube 縮圖模組位於 `media/youtube_thumbnail.js`。單一平台載入失敗不會阻擋其他分頁；離頁時中止已載入播放器的請求。
+
 影音頁五個平台使用相同的請求與播放器生命週期。首次開啟分頁會載入保存或表單預填的網址；切換時卸載隱藏播放器，避免背景聲音。新的解析請求取消舊請求，失敗時清除舊播放器及影片資訊；縮圖工具保留獨立操作。PNG 參數讀取會驗證完整檔頭與區塊邊界，切換檔案捨棄過期結果，預覽網址於替換或離開頁面時釋放。
 
 Go 對 HTML、JavaScript、CSS 回傳 Cache-Control: no-cache，讓瀏覽器重新驗證未帶版本號的模組，避免新 HTML 搭配舊 JS。套用此後端設定需重建及重啟 Go；首次切換既有舊快取時可使用強制重新整理。

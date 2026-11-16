@@ -333,7 +333,7 @@ export const TetrisGame = {
             document.getElementById('teris-pause-btn').textContent = paused ? '繼續' : '暫停';
             if (paused) {
                 overlay.style.display = 'flex';
-                overlay.innerHTML = `<div>⏸&nbsp;已暫停</div><div class="sub">按「繼續」或 P&nbsp;繼續遊戲</div>`;
+                overlay.innerHTML = `<div>⏸&nbsp;已暫停</div><div class="sub">按「繼續」或&nbsp;P&nbsp;繼續遊戲</div>`;
                 cancelAnimationFrame(animId);
             } else {
                 overlay.style.display = 'none';
@@ -354,34 +354,37 @@ export const TetrisGame = {
         document.addEventListener('keydown', e => {
             if (gameOver || !terisPanel.classList.contains('active') || e.isComposing ||
                 e.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
-            switch (e.key) {
+            switch (e.code) {
                 case 'ArrowLeft':
+                case 'KeyA':
                     e.preventDefault();
                     if (!paused) { piece.x--; if (collide(board, piece)) piece.x++; }
                     break;
                 case 'ArrowRight':
+                case 'KeyD':
                     e.preventDefault();
                     if (!paused) { piece.x++; if (collide(board, piece)) piece.x--; }
                     break;
                 case 'ArrowDown':
+                case 'KeyS':
                     e.preventDefault();
                     if (!paused) drop();
                     break;
                 case 'ArrowUp':
+                case 'KeyW':
                     e.preventDefault();
                     if (!paused) rotatePiece();
                     break;
-                case ' ':
+                case 'Space':
                     e.preventDefault();
                     if (!paused) hardDrop();
                     break;
-                case 'p':
-                case 'P':
+                case 'Pause':
+                case 'KeyP':
                     togglePause();
                     break;
-                case 'c':
-                case 'C':
-                case 'Shift':
+                case 'KeyC':
+                case 'KeyR':
                     e.preventDefault();
                     if (!paused && !e.repeat) holdPiece();
                     break;

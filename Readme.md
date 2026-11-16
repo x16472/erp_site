@@ -218,6 +218,8 @@ go build -trimpath -o bin/erp-site.exe ./backend/cmd/erp
 
 ### 多平台宣導影音
 
+影音模組比照工作面板依分頁延後載入：`game.js` 負責分頁協調，五個平台模組位於 `page/static/js/media/`，共用請求與播放器生命週期集中在 `media/player.js`；YouTube 縮圖工具位於 `media/youtube_thumbnail.js`，隨 YouTube 分頁載入。每個平台只初始化一次，切換時卸載舊播放器。
+
 在 `/game.html` 頂部分頁選擇平台，貼上對應網址並按「轉換並播放」。後端先驗證平台、網域與影片識別碼，再取得來源提供的標題並產生嵌入網址。
 
 | 平台 | 可解析的影片格式 | 僅提供原站連結的格式 |
@@ -228,7 +230,7 @@ go build -trimpath -o bin/erp-site.exe ./backend/cmd/erp
 | Douyin | 一般影片、`modal_id` 網址、分享影片與嵌入網址 | `v.douyin.com` 分享短網址、直播 |
 | TikTok | 一般影片、分享影片與播放器／嵌入網址 | 分享短網址、直播 |
 
-YouTube 使用 `/api/youtube/resolve` 與 oEmbed 取得影片資訊，前端設有 10 秒逾時。其他四個平台共用 `/api/media/resolve`，由 `backend/src/erp/media.py` 讀取固定來源的 API、XML 或嵌入頁面，前端設有 12 秒逾時。TikTok 優先讀取符合目前影片 ID 的說明，缺少資料時再嘗試 oEmbed，避免將其他影片或頁面標題當成影片標題。
+YouTube 使用 `/api/youtube/resolve` 與 oEmbed 取得影片資訊，前端設有 15 秒逾時。其他四個平台共用 `/api/media/resolve`，由 `backend/src/erp/media.py` 讀取固定來源的 API、XML 或嵌入頁面，前端設有 15 秒逾時。TikTok 優先讀取符合目前影片 ID 的說明，缺少資料時再嘗試 oEmbed，避免將其他影片或頁面標題當成影片標題。
 
 兩個解析 API 都需要員工工作階段與 CSRF Token。各平台最近成功載入的網址分別保存在目前瀏覽器的 `localStorage`，不寫入 SQL Server。YouTube 進入頁面時會載入上次網址或預設影片；其他平台先還原輸入值，首次切換到該分頁時才嘗試載入既有紀錄。
 

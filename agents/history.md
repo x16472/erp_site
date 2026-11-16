@@ -461,3 +461,11 @@ Phoenix 指示移除專案內帶 test 的測試程式，並明確確認保留手
 - 唯讀確認 Company 員工初始化標記及必要類別存在後，以暫存 Go 在本機 18766／18767 驗證，略過來源同步；使用 K001 ACCESS_ONLY 登入，未新增打卡、題目、作答或冒險存檔。
 - 真實瀏覽器確認 YouTube／BiliBili 標題與 iframe 載入、平台切換卸載舊播放器、無效網址錯誤與重新載入恢復；Go WASM 與 Python 3.11.3 均實際輸出範例結果。PNG 上傳可讀出提示詞、LoRA、Seed、Steps 與 Karras Scheduler；俄羅斯方塊可啟動且切頁自動暫停；冒險可載入三個空存檔槽，未建立新存檔。未逐一驗證其餘平台的第三方影片播放，損毀 PNG 防護經程式碼及語法檢查。
 - 工作區來源（排除 .deps、.venv、data、bin 與既有暫存區）最終掃描沒有 test 檔案或 Python 位元碼。移除本輪後端快取、兩個暫存 Go 執行檔、日誌及 PNG 驗證素材，停止本輪網站並關閉驗證分頁；沒有加入新的測試程式。驗證截圖 workflow-fixed.png／media-fixed.png 保留於本輪 visualizations 目錄。
+
+## 2026-11-15｜影音分頁 JS 拆分與延後載入
+
+Phoenix 確認 game.html 的 JS 比照 workflow.js，依影音分頁拆分並延後載入。game.js 改為平台載入協調器，YouTube、BiliBili、ニコニコ、Douyin、TikTok 各自放在 page/static/js/media/；media/player.js 保留既有共用解析、15 秒逾時、請求取消、CSRF、播放紀錄及 iframe 生命週期。youtube_thumbnail.js 原內容搬至 media/，僅由 YouTube 平台模組引用。HTML、CSS、API 契約與後端未修改。
+
+各分頁快取同一份初始化 Promise；快速切換時不重複綁定，不讓晚到的載入結果啟動隱藏播放器。切換先卸載舊 iframe，返回時恢復已取得的影片；模組失敗只影響該平台，離頁時中止已載入播放器的請求。同步 README、前端版面與頁面維護文件，修正舊縮圖模組路徑與現行載入行為。
+
+驗證：8 份本次 ESM 語法、13 處相對模組引用與大小寫檢查通過。以本機假資料與真實瀏覽器確認初次僅載入 YouTube／共用依賴，其他四平台首次切入才載入；第一輪所有平台及共用模組皆只請求一次。檢查快速切換、舊 iframe 卸載、返回還原、縮圖無效輸入、影片解析失敗後恢復。另模擬 Douyin 模組 HTTP 503，確認顯示該平台錯誤後仍能切入 BiliBili；未連線正式 API／資料庫或實際第三方影音。未新增自動測試檔、未改動後端或部署；預覽截圖存於 .codex-tmp/media-lazy-preview.png。

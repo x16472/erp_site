@@ -218,18 +218,16 @@ for number in range(1, 4):
                             </div>
                             <div class="controls-info">
                                 <h3>操作說明</h3>
-                                <span class="key">←→</span>移動<br />
-                                <span class="key">↑</span>旋轉<br />
-                                <span class="key">↓</span>加速<br />
+                                <span class="key">A&nbsp;或&nbsp;←&nbsp;</span>向左移動<br />
+                                <span class="key">D&nbsp;或&nbsp;→</span>向右移動<br />
+                                <span class="key">W&nbsp;或&nbsp;↑</span>旋轉<br />
+                                <span class="key">S&nbsp;或&nbsp;↓</span>加速<br />
                                 <span class="key">Space</span>直落<br />
-                                <span class="key">C / Shift</span>儲存／交換<br />
-                                <span class="key">P</span>暫停
+                                <span class="key">C&nbsp;或&nbsp;R</span>儲存／交換<br />
+                                <span class="key">P&nbsp;或&nbsp;Pause</span>暫停
                             </div>
                             <button class="btn" id="teris-start-btn">開始遊戲</button>
                             <button class="btn" id="teris-pause-btn" disabled>暫停</button>
-
-
-
                         </div>
                         <!-- 遊戲畫面 -->
                         <div class="canvas-container" id="teris-container">
@@ -291,7 +289,6 @@ for number in range(1, 4):
                                 <!-- 由 JS 動態繪製 3 個欄位 -->
                             </div>
                         </div>
-
                         <!-- 建立新存檔彈窗 (Modal) -->
                         <dialog class="portal-card" id="advCreateModal" aria-labelledby="advCreateTitle">
                             <div class="adventure-modal-content">
@@ -318,13 +315,14 @@ for number in range(1, 4):
                             </div>
                         </dialog>
                     </div>
-
                     <!-- 遊戲主畫面（當選定存檔後顯示） -->
                     <div class="adventure-game" id="adventureGame" hidden>
                         <!-- 頂部控制列 -->
                         <div class="adventure-top-controls card-head">
                             <div class="adventure-nav-info actions">
-                                <button type="button" class="btn second" id="advBackToSaves">◀&emsp;返回存檔清單</button>
+                                <button type="button" class="btn second" id="advBackToSaves">
+                                    ◀&emsp;返回存檔清單
+                                </button>
                                 <span class="adventure-current-info" id="advCurrentInfo">
                                     <b id="advWorldNameDisplay"></b>
                                     &emsp;槽位：&emsp;<span id="advSlotIndexDisplay">1</span>
@@ -335,7 +333,6 @@ for number in range(1, 4):
                                 <span class="adventure-save-status tag" id="advSaveStatus">狀態就緒</span>
                             </div>
                         </div>
-
                         <!-- 手機版分頁抽屜切換器 (<=680px 可見) -->
                         <div class="adventure-mobile-tabs admin-tabs" id="advMobileTabs">
                             <button type="button" class="adventure-m-tab active btn second" data-sub="scene">場景</button>
@@ -345,7 +342,6 @@ for number in range(1, 4):
                             <button type="button" class="adventure-m-tab btn second" data-sub="quests">手札</button>
                             <button type="button" class="adventure-m-tab btn second" data-sub="log">歷程</button>
                         </div>
-
                         <!-- 沿用員工管理與題庫維護的側欄、主區及明細配置 -->
                         <div class="staff-manager-workspace">
                             <aside class="organization-pane adventure-sidebar" id="advSidebar">

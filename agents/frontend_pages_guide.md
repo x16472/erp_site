@@ -16,7 +16,7 @@ HTML 路由本身可載入，保護主要由 API 執行。員工頁面透過 `re
 | `sales.html` | `sales.js` | 營運日報、個人填報歷程與補充回覆 |
 | `exam.html` | `exam.js` | 學科刷題、模考、續作、錯題本與術科申論 |
 | `workflow.html` | `panel.js`、`sd_prompt.js`、`golang.js`、`python.js`、`teris.js`、`adventure.js` | SD 參數、Go／Python Playground、俄羅斯方塊與穿越冒險（`pl5`） |
-| `game.html` | `panel.js`、`game.js`、`youtube_thumbnail.js` | 五平台影音與 YouTube 縮圖工具 |
+| `game.html` | `script.js` → `game.js` → `media/` 各平台模組 | 五平台影音與 YouTube 縮圖工具，依分頁延後載入 |
 | `staff.html` | `staff.js` | 組織、員工維護、部門與出勤管理 |
 | `mis.html` | `mis.js` | 官網設定、日報／申論審核、來源同步、題庫與資料查閱 |
 
@@ -64,21 +64,21 @@ HTML 路由本身可載入，保護主要由 API 執行。員工頁面透過 `re
 
 `workflow.html` 由 `panel.js` 切換 `pl1` 至 `pl5`，依序提供 SD 參數讀取、Go Playground、Python Playground、俄羅斯方塊及穿越冒險。`adventure.js` 以模組載入，首次切入 `pl5` 才初始化；往返分頁保留存檔狀態。存檔選擇區沿用工作面板版型，進入後沿用題庫維護及員工管理的側欄、主區、明細工作區；建立角色使用原生對話框，手機提供場景、角色、背包、地圖、手札與歷程切換。MIS 流程畫布保留專用 CSS。
 
-頁面仍引用 `game.js`、`youtube_thumbnail.js`，但缺少這些腳本預期的影音／縮圖 DOM；這不是已完成的影音整合。本次文件更新未修改此介面或腳本。
+工作面板由 `workflow.js` 載入自己的工具模組，影音與縮圖模組由 `game.html` 的 `game.js` 管理。
 
 ### 宣導影音與縮圖
 
-`game.html` 頂部提供 YouTube、BiliBili、ニコニコ、Douyin、TikTok 五個分頁。`panel.js` 控制顯示，`game.js` 管理播放器、標題、狀態與各平台本機播放紀錄。
+`game.html` 頂部提供 YouTube、BiliBili、ニコニコ、Douyin、TikTok 五個分頁。`panel.js` 控制顯示並發出 `panelchange`，`game.js` 比照 `workflow.js` 載入首次開啟的平台模組。五個平台各有 `media/` 模組，`media/player.js` 共用請求、標題、播放器生命週期與本機播放紀錄；各平台初始化結果會快取，快速切換不重複綁定。
 
-- YouTube 透過 `POST /api/youtube/resolve` 解析一般影片、Shorts、直播、分享及嵌入網址，前端逾時 10 秒。
-- 其他四平台透過 `POST /api/media/resolve`，送出 `platform` 與 `url`，前端逾時 12 秒；平台值為 `bilibili`、`niconico`、`douyin`、`tiktok`。
+- YouTube 透過 `POST /api/youtube/resolve` 解析一般影片、Shorts、直播、分享及嵌入網址，前端逾時 15 秒。
+- 其他四平台透過 `POST /api/media/resolve`，送出 `platform` 與 `url`，前端逾時 15 秒；平台值為 `bilibili`、`niconico`、`douyin`、`tiktok`。
 - BiliBili 保留分集；ニコニコ接受影片短網址；Douyin 與 TikTok 接受對應影片及嵌入格式。部分分享短網址與直播僅提供原站連結，完整格式與限制見 README。
 - 兩個 API 都要求員工工作階段與 CSRF。取得標題不保證可嵌入播放，來源限制時使用原站連結。
 - YouTube 預設載入上次或預設影片；其他平台切換至分頁時才嘗試載入既有紀錄。
-- `youtube_thumbnail.js` 直接向 `i.ytimg.com` 載入可用尺寸，提供預覽、下載與另存連結；最多保存 8 筆最近查詢，可清除。
+- `media/youtube_thumbnail.js` 隨 YouTube 分頁載入，直接向 `i.ytimg.com` 載入可用尺寸，提供預覽、下載與另存連結；最多保存 8 筆最近查詢，可清除。
 - 播放網址與縮圖紀錄只存目前瀏覽器的 `localStorage`；縮圖工具也可由 `?url=` 預填啟動，不會改動播放器。
 
-`game.js` 仍保留有條件初始化的知識／SOP 程式，後端也保留查詢 API，但目前 HTML 沒有對應搜尋與閱讀介面。
+影音頁不載入知識／SOP 程式；SOP 閱讀由 `exam.html` 的對應分頁與 `manuals.js` 處理。平台模組載入失敗時只顯示該平台的錯誤，仍可切換其他平台；切走時卸載舊 iframe，離頁時中止請求。
 
 ### 員工管理
 
