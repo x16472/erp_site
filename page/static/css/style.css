@@ -172,6 +172,7 @@ iframe {
     max-width: 100%;
 }
 
+/* 視覺隱藏原生元件，但保留無障礙與鍵盤操作（用於自訂檔案上傳按鈕） */
 .sr-only {
     position: absolute;
     width: 1px;
@@ -181,6 +182,7 @@ iframe {
 }
 
 .btn.second {
+    /*次要按鈕*/
     background: var(--accent-soft);
     color: var(--ink);
     padding: 6px 12px;
@@ -190,6 +192,7 @@ iframe {
 }
 
 .btn.red {
+    /*紅色按鈕*/
     background: var(--red);
 }
 
@@ -2055,7 +2058,7 @@ footer a {
     gap: 10px;
 }
 
-.staff-search input {
+.search input {
     width: min(290px, 28vw);
     padding: 8px 11px;
     border: 1px solid var(--line);
@@ -2204,12 +2207,12 @@ footer a {
     align-items: end;
 }
 
-#questionPanel .staff-search {
+#questionPanel .search {
     grid-column: 1 / -1;
     order: 1;
 }
 
-#questionPanel .staff-search input {
+#questionPanel .search input {
     width: 100%;
 }
 
@@ -3919,11 +3922,11 @@ textarea::placeholder {
     }
 
     .staff-directory-actions,
-    .staff-search input {
+    .search input {
         width: 100%;
     }
 
-    .staff-directory-actions .staff-search {
+    .staff-directory-actions .search {
         flex: 1;
     }
 

@@ -284,7 +284,7 @@ export const ExamPage = {
             renderCatalog()
         }
         domainTabs.onclick = event => {
-            const button = event.target.closest('[data-domain]');
+            const button = event.target.closest('[data-panel]');
             if (!button) return;
             domainTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
             const academic = button.dataset.domain === 'academic';

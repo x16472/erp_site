@@ -33,9 +33,9 @@
             <header class="portal-topbar">
                 <span class="top-kicker">Training</span>
                 <nav class="admin-tabs" id="domainTabs" aria-label="題庫領域">
-                    <button class="active" data-domain="academic">學科刷題</button>
-                    <button data-domain="practical">術科申論</button>
-                    <button data-domain="sop_doc">SOP&nbsp;文件</button>
+                    <button class="active" data-panel="academic">學科刷題</button>
+                    <button data-panel="practical">術科申論</button>
+                    <button data-panel="sop_doc">SOP&nbsp;文件</button>
                 </nav>
                 <span class="api-state" id="apiState">載入題庫資料</span>
                 <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
@@ -188,14 +188,20 @@
                         <button class="btn second" type="button" data-manual-refresh>重新讀取</button>
                     </div>
                     <div class="form-grid">
-                        <label class="field"><span>搜尋文件</span><input type="search" data-manual-search placeholder="文件名稱、分類或檔名"></label>
-                        <label class="field"><span>文件分類</span><select data-manual-category><option value="">全部分類</option></select></label>
+                        <label class="field"><span>搜尋文件</span><input type="search" data-manual-search
+                                placeholder="文件名稱、分類或檔名"></label>
+                        <label class="field"><span>文件分類</span><select data-manual-category>
+                                <option value="">全部分類</option>
+                            </select></label>
                     </div>
                     <p data-manual-status role="status" aria-live="polite"></p>
                     <div class="knowledge-grid" data-manual-list></div>
                     <article class="portal-card full" data-manual-reader hidden>
                         <div class="card-head">
-                            <div><h2 data-manual-title></h2><p class="hint" data-manual-meta></p></div>
+                            <div>
+                                <h2 data-manual-title></h2>
+                                <p class="hint" data-manual-meta></p>
+                            </div>
                             <button class="btn second" type="button" data-manual-back>返回文件目錄</button>
                         </div>
                         <nav class="actions manual-toc" data-manual-toc aria-label="SOP 章節目錄"></nav>

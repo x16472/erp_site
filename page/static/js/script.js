@@ -29,15 +29,16 @@ export const Application = {
         const urlParams = new URLSearchParams(window.location.search);
         if (!urlParams.toString()) return;
         // 定義要支援的網址參數與對應的 HTML data 屬性
-        const tabKeys = ['domain', 'panel'];
-        for (const key of tabKeys) {
-            // 同時支援 ?panel=pl4 與 ?data-panel=pl4 兩種網址寫法
-            const value = urlParams.get(key) || urlParams.get(`data-${key}`);
-            if (value) {
-                const targetBtn = document.querySelector(`button[data-${key}="${value}"]`);
-                targetBtn?.click();
-                break; // 找到並點擊後即結束迴圈
-            }
+        const panel = urlParams.get('panel') || urlParams.get('data-panel');
+
+        if (panel) {
+            const targetBtn = document.querySelector(`[data-panel="${panel}"]`);
+            targetBtn?.click();
+        }
+        // 切換完畢後，將網址列的 ?panel=... 抹除，還原成乾淨的網址（不會重新整理頁面）
+        // 洗掉網址參數維持美觀
+        if (urlParams.toString()) {
+            window.history.replaceState({}, '', window.location.pathname);
         }
     }
 };

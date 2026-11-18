@@ -201,7 +201,7 @@ export const MisPage = {
                 dataMeta.textContent = `${result.columns.length} 欄 · ${number(result.total)} 筆 · 唯讀遮罩`;
                 dataHead.innerHTML = `<tr>${result.columns.map(column => `<th>${esc(column.name)}<br><small>${esc(column.type)}</small></th>`).join('')}</tr>`;
                 dataBody.innerHTML = result.rows.length ? result.rows.map(row => `<tr>${result.columns.map(column =>
-            `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') :
+                    `<td class="${column.classification}">${row[column.name] === null ? 'NULL' : esc(row[column.name])}</td>`).join('')}</tr>`).join('') :
                     `<tr><td colspan="${result.columns.length}">目前沒有資料。</td></tr>`;
                 const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
                 pageInfo.textContent = `第 ${page} / ${totalPages} 頁`;
@@ -270,7 +270,7 @@ export const MisPage = {
         /* 渲染SOP文件，並同步更新題目表單的文件選單。 */
         function renderTrainingTaxonomy() {
             const subjectOptions = trainingTaxonomy.subjects.map(item =>
-                `<option value="${item.id}" data-domain="${item.domain}">${item.domain === 'academic' ? '學科' : '術科'}｜${esc(item.name)}</option>`).join('');
+                `<option value="${item.id}" data-panel="${item.domain}">${item.domain === 'academic' ? '學科' : '術科'}｜${esc(item.name)}</option>`).join('');
             chapterSubject.innerHTML = subjectOptions;
             questionSubject.innerHTML = subjectOptions;
             bulkSubject.innerHTML = '<option value="">不變更科目</option>' + subjectOptions;
@@ -407,8 +407,8 @@ export const MisPage = {
             selectAllQuestions.disabled = questionBusy || !checkboxes.length;
             [questionSearch, questionStatusFilter, questionSubjectFilter, questionChapterFilter, bulkSubject, bulkChapter, bulkStatus,
                 ...questionForm.querySelectorAll('input, select, textarea, button'), ...checkboxes].forEach(input => {
-                input.disabled = questionBusy;
-            });
+                    input.disabled = questionBusy;
+                });
             questionChapterFilter.disabled = questionBusy || !questionSubjectFilter.value;
         }
 
