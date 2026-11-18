@@ -21,7 +21,25 @@ export const Application = {
         if (!loadPage) throw new Error('此頁面尚未設定啟動模組。');
         const controller = await loadPage();
         await controller.init();
+        // 1. 確保在頁面模組 (controller.init) 完成事件綁定後，再自動切換分頁
+        this.activateTabFromUrl();
     },
+    // 2. 新增統一處理網址分頁切換的方法
+    activateTabFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.toString()) return;
+        // 定義要支援的網址參數與對應的 HTML data 屬性
+        const tabKeys = ['domain', 'panel'];
+        for (const key of tabKeys) {
+            // 同時支援 ?panel=pl4 與 ?data-panel=pl4 兩種網址寫法
+            const value = urlParams.get(key) || urlParams.get(`data-${key}`);
+            if (value) {
+                const targetBtn = document.querySelector(`button[data-${key}="${value}"]`);
+                targetBtn?.click();
+                break; // 找到並點擊後即結束迴圈
+            }
+        }
+    }
 };
 
 Application.init().catch(error => {
