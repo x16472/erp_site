@@ -23,7 +23,7 @@ export const ExamPage = {
         const writeRequest = (path, payload) => jsonRequest(path, payload, {
             csrf, fallbackMessage: '題庫服務暫時無法使用'
         });
-        const domainTabs = $('#domainTabs'),
+        const examPanel = $('#examPanel'),
             academicPanel = $('#academicPanel'),
             practicalPanel = $('#practicalPanel'),
             academicHome = $('#academicHome'),
@@ -283,16 +283,16 @@ export const ExamPage = {
             $('#wrongCount').textContent = String(catalog.wrong_count || 0);
             renderCatalog()
         }
-        domainTabs.onclick = event => {
+        examPanel.onclick = event => {
             const button = event.target.closest('[data-panel]');
             if (!button) return;
-            domainTabs.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
-            const academic = button.dataset.domain === 'academic';
+            examPanel.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
+            const academic = button.dataset.panel === 'academic';
             academicPanel.hidden = !academic;
-            practicalPanel.hidden = button.dataset.domain !== 'practical';
-            manualPanel.hidden = button.dataset.domain !== 'sop_doc';
+            practicalPanel.hidden = button.dataset.panel !== 'practical';
+            manualPanel.hidden = button.dataset.panel !== 'sop_doc';
             syncFloatingTools();
-            if (button.dataset.domain === 'practical') loadPractical().catch(error => $('#practicalList').innerHTML = `<div class="error-note">${esc(error.message)}</div>`);
+            if (button.dataset.panel === 'practical') loadPractical().catch(error => $('#practicalList').innerHTML = `<div class="error-note">${esc(error.message)}</div>`);
             if (!manualPanel.hidden) manuals.load();
         };
         subjectGrid.onclick = event => {
