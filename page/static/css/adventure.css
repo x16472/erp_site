@@ -1,5 +1,4 @@
-/* 穿越冒險專屬樣式 (adventure-) */
-
+/* 穿越冒險專屬樣式 (adventure) */
 #adventure {
     padding: 1.5rem;
     max-width: 1300px;
@@ -379,7 +378,8 @@
     color: var(--muted, #64748b);
 }
 
-.adventure-npc-pills, .adventure-obj-pills {
+.adventure-npc-pills,
+.adventure-obj-pills {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
@@ -526,9 +526,17 @@
     transition: width 0.3s ease-out;
 }
 
-.adventure-bar-fill.hp { background: #ef4444; }
-.adventure-bar-fill.ep { background: #3b82f6; }
-.adventure-bar-fill.enemy-hp { background: #f97316; }
+.adventure-bar-fill.hp {
+    background: #ef4444;
+}
+
+.adventure-bar-fill.ep {
+    background: #3b82f6;
+}
+
+.adventure-bar-fill.enemy-hp {
+    background: #f97316;
+}
 
 .adventure-combat-actions {
     display: flex;
@@ -649,12 +657,32 @@
     border-left: 3px solid #94a3b8;
 }
 
-.adventure-log-item.narrative { border-left-color: #3b82f6; }
-.adventure-log-item.dialogue { border-left-color: #8b5cf6; }
-.adventure-log-item.combat { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.03); }
-.adventure-log-item.effect { border-left-color: #10b981; }
-.adventure-log-item.check { border-left-color: #f59e0b; }
-.adventure-log-item.ending { border-left-color: #ec4899; background: rgba(236, 72, 153, 0.05); font-weight: 700; }
+.adventure-log-item.narrative {
+    border-left-color: #3b82f6;
+}
+
+.adventure-log-item.dialogue {
+    border-left-color: #8b5cf6;
+}
+
+.adventure-log-item.combat {
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.03);
+}
+
+.adventure-log-item.effect {
+    border-left-color: #10b981;
+}
+
+.adventure-log-item.check {
+    border-left-color: #f59e0b;
+}
+
+.adventure-log-item.ending {
+    border-left-color: #ec4899;
+    background: rgba(236, 72, 153, 0.05);
+    font-weight: 700;
+}
 
 /* 側欄卡片共通 */
 .adventure-sidebar {
@@ -910,6 +938,7 @@
     .adventure-slots-grid {
         grid-template-columns: 1fr;
     }
+
     .adventure-layout {
         grid-template-columns: 1fr;
     }
@@ -919,21 +948,27 @@
     #adventure {
         padding: 0.75rem;
     }
+
     .adventure-hero {
         padding: 1.5rem 0.75rem;
     }
+
     .adventure-hero-title {
         font-size: 1.5rem;
     }
+
     .adventure-mobile-tabs {
         display: flex;
     }
+
     .adventure-sidebar {
         display: none;
     }
+
     .adventure-sidebar.m-active {
         display: flex;
     }
+
     .adventure-actions-grid {
         grid-template-columns: 1fr;
     }
