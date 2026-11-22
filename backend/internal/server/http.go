@@ -99,14 +99,14 @@ func writeError(w http.ResponseWriter, status int, message string) {
 // ServeHTTP 將公開靜態內容留在 Go，業務 API 經驗證的 gRPC 通道執行。
 func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	secureHeaders(w)
-	if g.allowLANHTTP && r.TLS == nil {
-		host, _, err := net.SplitHostPort(r.RemoteAddr)
-		ip := net.ParseIP(host)
-		if err != nil || ip == nil || !(ip.IsPrivate() || ip.IsLoopback()) {
-			writeError(w, http.StatusForbidden, `{"error":"此 HTTP 入口僅供內網使用","code":"LAN_ONLY"}`)
-			return
-		}
-	}
+	// if g.allowLANHTTP && r.TLS == nil {
+	// 	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	// 	ip := net.ParseIP(host)
+	// 	if err != nil || ip == nil || !(ip.IsPrivate() || ip.IsLoopback()) {
+	// 		writeError(w, http.StatusForbidden, `{"error":"此 HTTP 入口僅供內網使用","code":"LAN_ONLY"}`)
+	// 		return
+	// 	}
+	// }
 	if !strings.HasPrefix(r.URL.Path, "/api/") {
 		setWriteDeadline(w, responseWriteTimeout)
 		g.static(w, r)
@@ -195,7 +195,9 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// 內網 HTTP 已驗證直接來源；其他部署仍強制 Secure。
-			cookie.Secure = r.TLS != nil || !g.allowLANHTTP
+			// cookie.Secure = r.TLS != nil || !g.allowLANHTTP
+			// 目前暫且使用 HTTP，不依靠內網
+			cookie.Secure = r.TLS != nil
 			http.SetCookie(w, cookie)
 		case "content-type", "cache-control":
 			w.Header().Add(header.Name, header.Value)
