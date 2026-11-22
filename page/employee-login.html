@@ -12,40 +12,33 @@
 
 <body data-page="employee-login" class="employee-access-page">
     <div class="portal-shell">
-        <aside class="portal-sidebar employee-access-brand">
-
-            <a class="btn" href="index.html">返回官方網站</a>
-        </aside>
-        <main class="portal-main">
-            <header class="portal-topbar">
-                <span class="top-kicker">Company&nbsp;Operations</span>
-                <h1>員工相關入口</h1>
-                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
-                    aria-pressed="false">切換深色
-                </button>
-            </header>
-            <div class="portal-content employee-access-content">
-                <section class="portal-card employee-access-card">
-                    <div class="live-clock access-time">
-                        <small>目前時間</small>
-                        <strong id="accessClock">--:--:--</strong>
+        <header class="portal-topbar">
+            <a class="btn second" type="button" href="index.html">官方網站</a>
+            <button class="theme-toggle" type="button" data-theme-toggle aria-label="切換為深色模式"
+                aria-pressed="false">深色/淺色切換</button>
+        </header>
+        <div class="portal-content employee-access-content">
+            <section class="portal-card employee-access-card">
+                <h2 align="center">員工相關入口</h2>
+                <div class="live-clock access-time">
+                    <small>目前時間</small>
+                    <strong id="accessClock">--:--:--</strong>
+                </div>
+                <form id="accessForm">
+                    <label class="field">
+                        <p align="center">匯聚你工作所需一切，通往事業與福利的入口。</p>
+                        <span>員工編號</span>
+                        <input name="employee_id" autocomplete="username" maxlength="20" pattern="[A-Za-z0-9_-]+"
+                            placeholder="例如 K001" required autofocus>
+                    </label>
+                    <div class="clock-actions">
+                        <button class="btn" name="mode" value="CLOCK_IN" type="submit">上班打卡並進入</button>
+                        <button class="btn second" name="mode" value="ACCESS_ONLY" type="submit">不打卡進入系統</button>
                     </div>
-                    <form id="accessForm">
-                        <label class="field">
-                            <p align="center">匯聚你工作所需一切，通往事業與福利的入口。</p>
-                            <span>員工編號</span>
-                            <input name="employee_id" autocomplete="username" maxlength="20" pattern="[A-Za-z0-9_-]+"
-                                placeholder="例如 K001" required autofocus>
-                        </label>
-                        <div class="clock-actions">
-                            <button class="btn" name="mode" value="CLOCK_IN" type="submit">上班打卡並進入</button>
-                            <button class="btn second" name="mode" value="ACCESS_ONLY" type="submit">不打卡進入系統</button>
-                        </div>
-                        <p id="accessStatus" aria-live="polite">若本日已打卡，可直接進入；系統會提示最近一次打卡時間。</p>
-                    </form>
-                </section>
-            </div>
-        </main>
+                    <p id="accessStatus" aria-live="polite">若本日已打卡，可直接進入；系統會提示最近一次打卡時間。</p>
+                </form>
+            </section>
+        </div>
     </div>
 </body>
 

@@ -47,7 +47,7 @@
     --radius-md: 14px;
     --radius-lg: 24px;
     --radius-pill: 999px;
-    --sidebar-width: 245px;
+    --sidebar-width: 130px;
     --workspace-sidebar-width: minmax(220px, 280px);
     --content-space: clamp(18px, 3vw, 42px);
     --panel-space: 18px;
@@ -2357,15 +2357,6 @@ footer a {
     min-width: 150px;
 }
 
-.employee-access-brand p {
-    max-width: 620px;
-    color: var(--on-brand);
-}
-
-.employee-access-brand a {
-    color: var(--on-brand);
-}
-
 .employee-access-card .live-clock {
     margin-bottom: 20px;
 }
@@ -3383,30 +3374,9 @@ textarea::placeholder {
     background: var(--surface);
 }
 
-.employee-access-brand {
-    overflow-wrap: anywhere;
-}
 
-.employee-access-brand img {
-    max-width: 155px;
-    height: auto;
-    object-fit: contain;
-    border-radius: 0;
-    border: none !important;
-    box-shadow: none;
-    background: transparent !important;
-    width: 100px;
-}
 
-.employee-access-brand h1 {
-    margin: 12px 0;
-    line-height: 1.3;
-    font-size: 28px;
-}
 
-.employee-access-brand .btn {
-    width: 100%;
-}
 
 .workflow-panel {
     padding: var(--panel-space);
@@ -3700,24 +3670,6 @@ textarea::placeholder {
         max-height: 300px;
         overflow-y: auto;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .employee-access-brand {
-        display: grid;
-        grid-template-columns: 80px minmax(0, 1fr);
-        gap: 8px 18px;
-        align-items: center;
-    }
-
-    .employee-access-brand img {
-        grid-row: span 3;
-        width: 80px;
-    }
-
-    .employee-access-brand .btn {
-        grid-column: 1 / -1;
-        justify-self: start;
-        width: auto;
     }
 
     .employee-access-content {
@@ -4028,10 +3980,6 @@ textarea::placeholder {
 
     .hero-copy-public h1 {
         font-size: clamp(32px, 8vw, 46px);
-    }
-
-    .employee-access-brand h1 {
-        font-size: 24px;
     }
 
     .employee-access-card {
