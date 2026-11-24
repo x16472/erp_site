@@ -1,5 +1,5 @@
-/* 共用參數：顏色、側欄、內容間距；響應式規則統一放在檔尾。 */
 :root {
+    /* 共用參數：顏色、側欄、內容間距；響應式規則統一放在檔尾。 */
     color-scheme: light;
     --navy: #17365f;
     --primary: #17365f;
@@ -47,7 +47,8 @@
     --radius-md: 14px;
     --radius-lg: 24px;
     --radius-pill: 999px;
-    --sidebar-width: 130px;
+    /*左邊主選單寬度*/
+    --sidebar-width: 170px;
     --workspace-sidebar-width: minmax(220px, 280px);
     --content-space: clamp(18px, 3vw, 42px);
     --panel-space: 18px;
@@ -59,6 +60,7 @@
 }
 
 :root[data-color-mode="dark"] {
+    /*全域深色模式CSS變數*/
     color-scheme: dark;
     --blue: #78cffa;
     --red: #c83e53;
@@ -798,6 +800,7 @@ footer a {
 }
 
 .portal-main {
+    /*電腦端頁面設定*/
     margin-left: var(--sidebar-width);
     min-width: 0;
 }
@@ -3532,6 +3535,7 @@ textarea::placeholder {
     }
 
     .portal-main {
+        /*平板端所有外邊距*/
         margin: 0;
     }
 

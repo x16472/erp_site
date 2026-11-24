@@ -13,6 +13,7 @@ export const MediaPage = {
             niconico: { name: 'ニコニコ', load: () => import('./media/niconico.js').then(module => module.NiconicoPlayer) },
             douyin: { name: 'Douyin', load: () => import('./media/douyin.js').then(module => module.DouyinPlayer) },
             tiktok: { name: 'TikTok', load: () => import('./media/tiktok.js').then(module => module.TiktokPlayer) },
+            teris: { name: '俄羅斯方塊', load: () => import('./canvas/teris.js').then(module => module.TetrisGame) },
         };
         const loading = new Map();
         const players = new Map();

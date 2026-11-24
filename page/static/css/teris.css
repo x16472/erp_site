@@ -1,18 +1,18 @@
-#pl4 .game-wrapper {
+#teris .game-wrapper {
     display: flex;
     gap: 30px;
     align-items: flex-start;
 }
 
-#pl4 .left-panel,
-#pl4 .right-panel {
+#teris .left-panel,
+#teris .right-panel {
     display: flex;
     flex-direction: column;
     gap: 20px;
     min-width: 130px;
 }
 
-#pl4 .panel-box {
+#teris .panel-box {
     background: #16213e;
     border: 2px solid #0f3460;
     border-radius: 12px;
@@ -21,7 +21,7 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
-#pl4 .panel-box h3 {
+#teris .panel-box h3 {
     font-size: 13px;
     color: #a0aec0;
     letter-spacing: 2px;
@@ -29,27 +29,27 @@
     margin-bottom: 10px;
 }
 
-#pl4 .panel-box .value {
+#teris .panel-box .value {
     font-size: 28px;
     font-weight: bold;
     color: #e94560;
 }
 
-#pl4 #teris-next-canvas,
-#pl4 #teris-hold-canvas {
+#teris #teris-next-canvas,
+#teris #teris-hold-canvas {
     display: block;
     margin: 0 auto;
     border-radius: 6px;
 }
 
-#pl4 #teris_canvas {
+#teris #teris_canvas {
     border: 3px solid #0f3460;
     border-radius: 8px;
     box-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
     display: block;
 }
 
-#pl4 .btn {
+#teris .btn {
     width: 100%;
     padding: 12px;
     border: none;
@@ -61,26 +61,26 @@
     transition: all 0.2s;
 }
 
-#pl4 #teris-start-btn {
+#teris #teris-start-btn {
     background: linear-gradient(135deg, #e94560, #c0392b);
     color: white;
 }
 
-#pl4 #teris-start-btn:hover {
+#teris #teris-start-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(233, 69, 96, 0.5);
 }
 
-#pl4 #teris-pause-btn {
+#teris #teris-pause-btn {
     background: linear-gradient(135deg, #0f3460, #1a5276);
     color: white;
 }
 
-#pl4 #teris-pause-btn:hover {
+#teris #teris-pause-btn:hover {
     transform: scale(1.05);
 }
 
-#pl4 .controls-info {
+#teris .controls-info {
     background: #16213e;
     border: 2px solid #0f3460;
     border-radius: 12px;
@@ -90,7 +90,7 @@
     line-height: 2;
 }
 
-#pl4 .controls-info h3 {
+#teris .controls-info h3 {
     font-size: 13px;
     color: #e94560;
     letter-spacing: 2px;
@@ -98,7 +98,7 @@
     text-transform: uppercase;
 }
 
-#pl4 .key {
+#teris .key {
     display: inline-block;
     background: #0f3460;
     border-radius: 4px;
@@ -108,7 +108,7 @@
     font-size: 11px;
 }
 
-#pl4 #teris-overlay {
+#teris #teris-overlay {
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -124,16 +124,16 @@
     border-radius: 8px;
 }
 
-#pl4 #teris-overlay .sub {
+#teris #teris-overlay .sub {
     font-size: 14px;
     color: #a0aec0;
 }
 
-#pl4 .canvas-container {
+#teris .canvas-container {
     position: relative;
 }
 
-#pl4 .level-bar-container {
+#teris .level-bar-container {
     background: #0f3460;
     border-radius: 6px;
     height: 8px;
@@ -141,7 +141,7 @@
     overflow: hidden;
 }
 
-#pl4 .level-bar {
+#teris .level-bar {
     height: 100%;
     background: linear-gradient(90deg, #e94560, #f39c12);
     border-radius: 6px;

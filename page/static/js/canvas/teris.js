@@ -3,11 +3,11 @@ import { Theme } from '../theme.js';
 
 export const TetrisGame = {
     initialized: false,
-    init() {
-        if (this.initialized) return;
-        this.initialized = true;
+    init({ onStatus = () => {} } = {}) {
+        if (this.initialized) return this.controller;
         const teris_canvas = document.getElementById('teris_canvas');
         if (!teris_canvas) return;
+        this.initialized = true;
         const ctx = new CanvasSurface(teris_canvas).context;
         const nextCanvas = document.getElementById('teris-next-canvas');
         const nextCtx = new CanvasSurface(nextCanvas).context;
@@ -343,15 +343,7 @@ export const TetrisGame = {
             }
         }
 
-        document.getElementById('teris-start-btn').addEventListener('click', startGame);
-        document.getElementById('teris-pause-btn').addEventListener('click', togglePause);
-
-        // 切走遊戲時暫停，避免編輯 Python 時遊戲仍在背景落下。
-        new MutationObserver(() => {
-            if (!terisPanel.classList.contains('active') && !gameOver && !paused) togglePause();
-        }).observe(terisPanel, { attributes: true, attributeFilter: ['class'] });
-
-        document.addEventListener('keydown', e => {
+        function handleKeydown(e) {
             if (gameOver || !terisPanel.classList.contains('active') || e.isComposing ||
                 e.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
             switch (e.code) {
@@ -389,6 +381,29 @@ export const TetrisGame = {
                     if (!paused && !e.repeat) holdPiece();
                     break;
             }
-        });
+        }
+
+        const startButton = document.getElementById('teris-start-btn');
+        const pauseButton = document.getElementById('teris-pause-btn');
+        startButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', togglePause);
+        document.addEventListener('keydown', handleKeydown);
+
+        this.controller = {
+            activate() {
+                onStatus('俄羅斯方塊');
+            },
+            deactivate() {
+                if (!gameOver && !paused) togglePause();
+            },
+            dispose() {
+                gameOver = true;
+                cancelAnimationFrame(animId);
+                startButton.removeEventListener('click', startGame);
+                pauseButton.removeEventListener('click', togglePause);
+                document.removeEventListener('keydown', handleKeydown);
+            },
+        };
+        return this.controller;
     },
 };

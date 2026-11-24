@@ -7,7 +7,6 @@
     <title>工作面板｜銀盾共同體營運中心</title>
     <link rel="stylesheet" href="./static/css/style.css">
     <link rel="stylesheet" href="./static/css/python.css">
-    <link rel="stylesheet" href="./static/css/teris.css">
     <link rel="icon" href="./static/ico/Graphicloads-100-Flat-2-Pen.ico" type="image/x-icon">
     <script type="module" src="./static/js/script.js"></script>
 </head>
@@ -37,7 +36,6 @@
                     <button class="active" data-panel="pl1">SD參數讀取</button>
                     <button data-panel="pl2">Golang&nbsp;Playground</button>
                     <button data-panel="pl3">Python&nbsp;Playground</button>
-                    <button data-panel="pl4">俄羅斯方塊&nbsp;Teris</button>
                     <button data-panel="pl5">穿越冒險&nbsp;Adventure</button>
                 </nav>
                 <span class="api-state ok" id="playerState">工作區就緒</span>
@@ -206,67 +204,6 @@ for number in range(1, 4):
                         <p>支援 Python 指令、多行區塊（空白行結束）、python main.py、pip install 套件名稱、clear、reset。</p>
                         <p>程式在瀏覽器內執行，首次載入及安裝套件需要網路。套件須支援 Pyodide / WebAssembly；命令列為 Python 環境。</p>
                         <p>pip install 只作用於此瀏覽器；Cookie 保留套件清單 30 天，套件檔案使用瀏覽器快取，重新開啟或重設時自動還原。</p>
-                    </div>
-                </section>
-                <section class="panel workflow-panel" id="pl4">
-                    <div class="game-wrapper">
-                        <!-- 左側面板 -->
-                        <div class="left-panel">
-                            <div class="panel-box">
-                                <h3>儲存方塊</h3>
-                                <canvas id="teris-hold-canvas" width="120" height="90" aria-label="已儲存的方塊"></canvas>
-                            </div>
-                            <div class="controls-info">
-                                <h3>操作說明</h3>
-                                <span class="key">A&nbsp;或&nbsp;←&nbsp;</span>向左移動<br />
-                                <span class="key">D&nbsp;或&nbsp;→</span>向右移動<br />
-                                <span class="key">W&nbsp;或&nbsp;↑</span>旋轉<br />
-                                <span class="key">S&nbsp;或&nbsp;↓</span>加速<br />
-                                <span class="key">Space</span>直落<br />
-                                <span class="key">C&nbsp;或&nbsp;R</span>儲存／交換<br />
-                                <span class="key">P&nbsp;或&nbsp;Pause</span>暫停
-                            </div>
-                            <button class="btn" id="teris-start-btn">開始遊戲</button>
-                            <button class="btn" id="teris-pause-btn" disabled>暫停</button>
-                        </div>
-                        <!-- 遊戲畫面 -->
-                        <div class="canvas-container" id="teris-container">
-                            <canvas id="teris_canvas" width="300" height="600" tabindex="0"
-                                aria-label="俄羅斯方塊遊戲區"></canvas>
-                            <div id="teris-overlay" style="width:300px;height:600px;top:0;left:0;">
-                                <div>🎮&nbsp;俄羅斯方塊</div>
-                                <div class="sub">按「開始遊戲」開始</div>
-                            </div>
-                        </div>
-                        <!-- 右側面板 -->
-                        <div class="right-panel">
-                            <div class="panel-box">
-                                <h3>接下來五個</h3>
-                                <canvas id="teris-next-canvas" width="120" height="450"
-                                    aria-label="接下來五個方塊，由上至下依序出場"></canvas>
-                            </div>
-                        </div>
-                        <div class="right-panel">
-                            <div class="panel-box">
-                                <h3>分數</h3>
-                                <div class="value" id="teris-score">0</div>
-                            </div>
-                            <div class="panel-box">
-                                <h3>最高分</h3>
-                                <div class="value" id="teris-high-score">0</div>
-                            </div>
-                            <div class="panel-box">
-                                <h3>等級</h3>
-                                <div class="value" id="teris-level">1</div>
-                                <div class="level-bar-container">
-                                    <div class="level-bar" id="teris-level-bar" style="width:0%"></div>
-                                </div>
-                            </div>
-                            <div class="panel-box">
-                                <h3>行數</h3>
-                                <div class="value" id="teris-lines">0</div>
-                            </div>
-                        </div>
                     </div>
                 </section>
                 <section class="panel" id="pl5">

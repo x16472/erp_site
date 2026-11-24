@@ -9,7 +9,6 @@ export const WorkflowPage = {
             pl1: { name: 'SD 參數讀取', load: () => import('./sd_prompt.js').then(module => module.PromptTool) },
             pl2: { name: 'Go Playground', load: () => import('./canvas/golang.js').then(module => module.GoPlayground) },
             pl3: { name: 'Python Playground', load: () => import('./canvas/python.js').then(module => module.PythonPlayground) },
-            pl4: { name: '俄羅斯方塊', load: () => import('./canvas/teris.js').then(module => module.TetrisGame) },
             pl5: { name: '穿越冒險', load: () => import('./adventure.js').then(module => module.AdventurePlayer) },
         };
         const loading = new Map();
